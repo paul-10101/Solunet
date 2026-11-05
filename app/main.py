@@ -65,8 +65,9 @@ class NewFestival(BaseModel):
 
 # ---------- 공통 ----------
 def require_admin(x_admin_key: str = Header(default="")):
-    key = os.getenv("ADMIN_KEY", "")
-    if not key or not secrets.compare_digest(x_admin_key, key):
+    # 시연 기간용 고정 키. 바꾸려면 Render 환경변수 SOLUNET_ADMIN_KEY를 넣으면 그 값이 우선한다.
+    key = os.getenv("SOLUNET_ADMIN_KEY") or "1111"
+    if not secrets.compare_digest(x_admin_key, key):
         raise HTTPException(401, "관리자 키가 필요합니다")
 
 

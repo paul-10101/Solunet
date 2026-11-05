@@ -22,7 +22,7 @@ const Admin = (() => {
         if (r && r.status === 401) clear();
       }
       mount.innerHTML = `<div class="card gate"><h2 style="margin-bottom:8px">관리자 키 입력</h2>
-        <p class="muted" style="font-size:14px;margin-bottom:16px">Render → solunet → Environment의 ADMIN_KEY 값입니다. 이 브라우저에만 저장됩니다.</p>
+        <p class="muted" style="font-size:14px;margin-bottom:16px">팀에서 정한 관리자 키를 입력하세요. 이 브라우저에만 저장됩니다.</p>
         <form id="gateForm"><input id="gateKey" type="password" autocomplete="current-password" required>
         <p id="gateMsg" style="font-size:13px;color:#B3261E;min-height:20px;margin-top:6px"></p>
         <button class="btn" type="submit">확인</button></form></div>`;
