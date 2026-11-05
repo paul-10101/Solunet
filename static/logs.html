@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
+<title>실시간 로그 · Solunet</title>
+<link rel="stylesheet" href="/ui.css">
+<style>
+  .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .cpbars { display:grid; gap:8px; }
+  .cpb { display:grid; grid-template-columns:140px 1fr 48px; gap:10px; align-items:center; font-size:14px; }
+  .cpb .track { height:14px; background:var(--grid); border-radius:3px; overflow:hidden; } .cpb .track i { display:block; height:100%; background:var(--route); }
+  .scroll { max-height:520px; overflow:auto; }
+  tr.test td { color:var(--muted); }
+  .live { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--route); margin-right:6px; }
+  .paused .live { background:var(--line); }
+</style>
+</head>
+<body>
+<header class="topbar"><a class="logo" href="/"><i></i>Solunet</a>
+  <nav class="nav"><a href="/admin/events">행사 관리</a><a id="qrLink" href="#">QR 인쇄</a><a class="on" href="#">실시간 로그</a><a id="anaLink" href="#">분석</a></nav></header>
+<main class="page">
+  <div id="gate"></div>
+  <div id="body" hidden>
+    <div class="row" style="justify-content:space-between;margin-bottom:16px">
+      <div><h1 id="evName">실시간 로그</h1><p class="muted" style="font-size:13px" id="status"><span class="live"></span>10초마다 자동 새로고침</p></div>
+      <div class="row"><button class="btn line" id="pause">일시정지</button><button class="btn line" id="refresh">지금 새로고침</button><button class="btn" id="csv">CSV 다운로드</button></div>
+    </div>
+    <div class="kpis" style="margin-bottom:12px" id="kpis"></div>
+    <div class="grid2" style="margin-bottom:12px">
+      <section class="card"><h2 style="margin-bottom:12px">거점별 방문자</h2><div class="cpbars" id="cps"></div></section>
+      <section class="card"><h2 style="margin-bottom:12px">설문·이탈 사유</h2><div id="resp"></div></section>
+    </div>
+    <section class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px"><h2>스캔 기록</h2>
+        <label style="margin:0;font-size:13px"><input type="checkbox" id="showTest" style="width:auto;margin-right:6px">테스트 스캔도 보기</label></div>
+      <div class="scroll"><table><thead><tr><th>시각 (KST)</th><th>거점</th><th>방문자</th><th>구분</th></tr></thead><tbody id="scans"></tbody></table></div>
+      <p class="note">방문자는 익명 번호 앞 6자리만 표시합니다. 같은 사람이 60초 안에 같은 QR을 다시 열면 기록하지 않습니다.</p>
+    </section>
+  </div>
+</main>
+<script src="/admin.js"></script>
+<script>
+const fid = new URLSearchParams(location.search).get('f');
+const E = Admin.esc;
+document.getElementById('qrLink').href = '/admin/qr?f=' + encodeURIComponent(fid || '');
+document.getElementById('anaLink').href = '/admin?f=' + encodeURIComponent(fid || '');
+let data = null, timer = null, paused = false;
+const isTest = s => String(s.session || '').startsWith('test');
+
+function render() {
+  const f = data.festival, real = data.scans.filter(s => !isTest(s));
+  document.getElementById('evName').textContent = f.name + ' · 실시간 로그';
+  const bySess = {}; real.forEach(s => (bySess[s.session] ??= new Set()).add(s.checkpoint));
+  const visitors = Object.keys(bySess).length, total = f.checkpoints.length;
+  const done = Object.values(bySess).filter(v => v.size === total).length;
+  const exits = data.responses.filter(r => r.kind === 'exit' && !isTest(r)), surveys = data.responses.filter(r => r.kind === 'survey' && !isTest(r));
+  const last = real[0] ? Admin.kst(real[0].ts) : '-';
+  document.getElementById('kpis').innerHTML = [
+    ['방문자', visitors + '명', '마지막 스캔 ' + last], ['완주', done + '명', visitors ? Math.round(done / visitors * 100) + '%' : '-'],
+    ['스캔 기록', real.length + '건', '테스트 ' + (data.scans.length - real.length) + '건 제외'], ['설문 / 이탈 응답', surveys.length + ' / ' + exits.length, '']
+  ].map(([k, v, s]) => `<div class="card kpi"><span>${k}</span><b>${v}</b><small>${s}</small></div>`).join('');
+  const cnt = c => Object.values(bySess).filter(v => v.has(c.id)).length, mx = Math.max(1, ...f.checkpoints.map(cnt));
+  document.getElementById('cps').innerHTML = f.checkpoints.map((c, i) => `<div class="cpb"><span>${i + 1}. ${E(c.name)}</span><span class="track"><i style="width:${cnt(c) / mx * 100}%"></i></span><b>${cnt(c)}</b></div>`).join('');
+  const tally = (arr, k) => Object.entries(arr.reduce((a, r) => (a[r[k]] = (a[r[k]] || 0) + 1, a), {})).sort((a, b) => b[1] - a[1]);
+  const avg = k => surveys.length ? (surveys.reduce((a, r) => a + r[k], 0) / surveys.length).toFixed(1) : '-';
+  document.getElementById('resp').innerHTML =
+    `<p style="font-size:14px;margin-bottom:8px">혼잡도 평균 <b>${avg('crowd')}</b> / 5 · 동선 편의 평균 <b>${avg('route')}</b> / 5</p>` +
+    `<p class="muted" style="font-size:13px">이전 행사 대비: ${tally(surveys, 'compare').map(([k, v]) => `${E(k || '무응답')} ${v}`).join(' · ') || '응답 없음'}</p>` +
+    `<p class="muted" style="font-size:13px;margin-top:6px">이탈 사유: ${tally(exits, 'reason').map(([k, v]) => `${E(k)} ${v}`).join(' · ') || '응답 없음'}</p>`;
+  const show = document.getElementById('showTest').checked ? data.scans : real;
+  document.getElementById('scans').innerHTML = show.slice(0, 500).map(s => `<tr class="${isTest(s) ? 'test' : ''}"><td>${Admin.kst(s.ts)}</td><td>${E(s.checkpoint_name)}</td><td>${E(String(s.session).slice(0, 6))}</td><td>${isTest(s) ? '테스트' : '방문'}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">아직 스캔이 없습니다. QR을 찍으면 여기에 바로 나타납니다.</td></tr>';
+}
+async function load() {
+  try { data = await Admin.api('/api/admin/logs/' + encodeURIComponent(fid)); render();
+        document.getElementById('status').innerHTML = `<span class="live"></span>${paused ? '일시정지됨' : '10초마다 자동 새로고침'} · 갱신 ${new Date().toLocaleTimeString('ko-KR', { hour12: false })}`; }
+  catch (e) { document.getElementById('status').textContent = '불러오지 못했습니다: ' + e.message; }
+}
+function csv() {
+  const rows = [['구분', '시각(KST)', '거점', '방문자ID', '테스트', '이탈사유', '혼잡도', '동선편의', '이전대비']];
+  data.scans.forEach(s => rows.push(['스캔', Admin.kst(s.ts), s.checkpoint_name, s.session, isTest(s) ? 'Y' : '', '', '', '', '']));
+  data.responses.forEach(r => rows.push([r.kind === 'survey' ? '설문' : '이탈', Admin.kst(r.ts), r.checkpoint_name || '', r.session, isTest(r) ? 'Y' : '', r.reason || '', r.crowd || '', r.route || '', r.compare || '']));
+  const text = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
+  a.download = `solunet_${fid}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+}
+document.getElementById('refresh').onclick = load;
+document.getElementById('csv').onclick = () => data && csv();
+document.getElementById('showTest').onchange = () => data && render();
+document.getElementById('pause').onclick = e => { paused = !paused; e.target.textContent = paused ? '다시 시작' : '일시정지'; document.getElementById('status').classList.toggle('paused', paused); load(); };
+Admin.ready(document.getElementById('gate')).then(() => {
+  document.getElementById('body').hidden = false;
+  if (!fid) { document.getElementById('status').textContent = '행사 관리에서 행사를 선택해 주세요.'; return; }
+  load(); timer = setInterval(() => { if (!paused && !document.hidden) load(); }, 10000);
+});
+</script>
+</body>
+</html>

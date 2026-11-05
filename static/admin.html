@@ -1,102 +1,96 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solunet 대시보드</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
+<title>대시보드 · Solunet</title>
+<link rel="stylesheet" href="/ui.css">
 <style>
-  body { font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; margin:0; background:#f7f8fa; color:#1a1f2b; }
-  main { max-width:1080px; margin:0 auto; padding:32px 24px 64px; }
-  header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
-  h1 { font-size:24px; margin:0; } h2 { font-size:17px; margin:0 0 12px; }
-  .badge { font-size:12px; color:#b3541e; border:1px solid #b3541e; border-radius:999px; padding:2px 10px; margin-left:8px; }
-  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
-  .kpi, .card { background:#fff; border:1px solid #e3e6eb; border-radius:12px; padding:16px; }
-  .kpi b { display:block; font-size:26px; } .kpi span { font-size:13px; color:#5b6474; }
-  .kpi small { font-size:12px; color:#5b6474; }
-  .grid { display:grid; grid-template-columns:1.2fr 1fr; gap:16px; margin-bottom:16px; }
-  svg { width:100%; height:auto; }
-  table { width:100%; border-collapse:collapse; font-size:14px; }
-  td, th { padding:8px 6px; border-bottom:1px solid #eef0f3; text-align:left; } th { color:#5b6474; font-weight:500; }
-  button { padding:10px 16px; border-radius:10px; border:1px solid #1f8f5f; background:#1f8f5f; color:#fff; font-size:14px; cursor:pointer; }
-  button.ghost { background:#fff; color:#1f8f5f; }
-  pre { white-space:pre-wrap; font-family:inherit; font-size:14px; line-height:1.7; margin:0; }
-  .src { font-size:12px; color:#8a93a3; margin-top:8px; }
-  .chg { border-left:3px solid #1f8f5f; padding:6px 12px; margin-bottom:8px; font-size:14px; }
-  .chg small { color:#5b6474; display:block; }
-  @media (max-width:760px) { .kpis { grid-template-columns:repeat(2,1fr); } .grid { grid-template-columns:1fr; } }
+  .head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .gridbg { background-color:#fff; background-image:linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size:12px 12px; border:1px solid var(--grid); }
+  svg { width:100%; height:auto; display:block; }
+  pre { white-space:pre-wrap; font-family:inherit; font-size:14px; line-height:1.8; }
+  .chg { border-left:3px solid var(--route); padding:6px 12px; margin-bottom:8px; font-size:14px; } .chg small { color:var(--muted); display:block; }
+  .cpb { display:grid; grid-template-columns:150px 1fr 60px; gap:10px; align-items:center; font-size:14px; margin-bottom:8px; }
+  .cpb .track { height:14px; background:var(--grid); border-radius:3px; overflow:hidden; } .cpb .track i { display:block; height:100%; background:var(--sign); }
+  tr.hot { background:#FFF8E1; }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1 id="title">Solunet 대시보드</h1>
-    <div><a href="/sim" style="margin-right:12px;color:#1f8f5f">시뮬레이션</a><a href="/editor" style="margin-right:12px;color:#1f8f5f">격자 편집기</a><button class="ghost" id="seed">예시 데이터 불러오기</button></div>
-  </header>
-  <div class="kpis" id="kpis"></div>
-  <div class="grid">
-    <div class="card"><h2>거점별 이탈 지도</h2><div id="map"></div></div>
-    <div class="card"><h2>거점별 현황</h2><div id="table"></div></div>
-  </div>
-  <div class="src" style="margin:-4px 0 16px">병목 판단은 후보 배치 비교용입니다. 사고·안전 예측이 아닙니다.</div>
-  <div class="grid">
-    <div class="card"><h2>평가보고서 초안</h2><button id="btnReport">보고서 생성</button><div id="report" style="margin-top:12px"></div></div>
-    <div class="card"><h2>다음 회차 배치·인력 제안</h2><button id="btnDesign">제안 생성</button><div id="design" style="margin-top:12px"></div></div>
+<header class="topbar"><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><a class="logo" href="/"><i></i>Solunet</a><span class="muted" id="evName"></span><span id="demoBadge"></span></div>
+  <nav class="nav"><a class="on" href="#">대시보드</a><a href="/admin/events">행사 관리</a><a id="logsLink" href="#">실시간 로그</a><a href="/editor">격자 편집기</a><a href="/sim">시뮬레이션</a></nav></header>
+<main class="page">
+  <div id="gate"></div>
+  <div id="body" hidden>
+    <div class="head"><div id="seedBox"></div></div>
+    <div class="kpis" style="margin-bottom:12px" id="kpis"></div>
+    <div class="grid2" style="margin-bottom:12px">
+      <section class="card"><div class="head" style="margin-bottom:10px"><h2>거점별 이탈</h2><span class="note" style="margin:0" id="mapNote"></span></div><div id="map"></div></section>
+      <section class="card"><h2 style="margin-bottom:10px">거점별 현황</h2><div id="table"></div></section>
+    </div>
+    <p class="note" style="margin:-4px 0 12px">병목 판단은 후보 배치 비교용입니다. 사고·안전 예측이 아닙니다.</p>
+    <div class="grid2" style="grid-template-columns:1fr 1fr">
+      <section class="card"><div class="head" style="margin-bottom:10px"><h2>성과 평가보고서 초안</h2><button class="btn" id="btnReport">보고서 생성</button></div><div id="report"></div></section>
+      <section class="card"><div class="head" style="margin-bottom:10px"><h2>다음 회차 배치·인력 제안</h2><button class="btn line" id="btnDesign">제안 생성</button></div><div id="design"></div></section>
+    </div>
   </div>
 </main>
+<script src="/admin.js"></script>
 <script>
 const fid = new URLSearchParams(location.search).get('f') || 'demo';
-const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const isDemo = fid === 'demo', E = Admin.esc, $ = id => document.getElementById(id);
+$('logsLink').href = '/admin/logs?f=' + encodeURIComponent(fid);
+const call = (url, opts = {}) => isDemo ? fetch(url, opts).then(r => r.ok ? r.json() : Promise.reject(new Error(r.status))) : Admin.api(url, opts);
 
 async function load() {
-  const r = await fetch('/api/stats/' + fid);
-  if (!r.ok) { $('kpis').innerHTML = '<div class="card">데이터가 없습니다. "예시 데이터 불러오기"를 눌러 주세요.</div>'; return; }
-  const d = await r.json(), c = d.current, p = d.previous;
-  $('title').innerHTML = esc(d.festival.name) + (d.festival.demo ? '<span class="badge">예시 데이터</span>' : '');
-  const delta = (cur, prev, unit) => p ? `<small>작년 ${prev}${unit}</small>` : '';
+  let d;
+  try { d = await call('/api/stats/' + encodeURIComponent(fid)); }
+  catch (e) { $('kpis').innerHTML = `<div class="card" style="grid-column:1/-1">${isDemo ? '예시 데이터가 아직 없습니다. "예시 데이터 불러오기"를 눌러 주세요.' : '데이터를 불러오지 못했습니다.'}</div>`; return; }
+  const c = d.current, p = d.previous, f = d.festival;
+  $('evName').textContent = f.name;
+  $('demoBadge').innerHTML = f.demo ? '<span class="badge demo">예시 데이터</span>' : '';
+  const worst = c.checkpoints.filter(x => x.dropped_after > 0).sort((a, b) => b.drop_rate - a.drop_rate)[0];
+  const topReason = Object.keys(c.exit_reasons)[0];
   $('kpis').innerHTML = [
-    ['참여자', c.visitors, '명', p && p.visitors],
-    ['완주율', c.completion_rate, '%', p && p.completion_rate],
-    ['스캔 수', c.scans, '회', p && p.scans],
-    ['이탈 사유 응답', c.responses, '건', p && p.responses],
-  ].map(([k, v, u, pv]) => `<div class="kpi"><span>${k}</span><b>${v}${u}</b>${delta(v, pv, u)}</div>`).join('');
+    ['참여자', c.visitors + '명', p ? `작년 ${p.visitors}명` : ''],
+    ['완주율', c.completion_rate + '%', p ? `작년 ${p.completion_rate}%` : `완주 ${c.completed}명`],
+    ['병목 거점', worst ? worst.name : '-', worst ? `이후 이탈 ${worst.drop_rate}%` : '데이터 부족', 'warn'],
+    [topReason ? '이탈 사유 1위' : '설문 응답', topReason ? topReason : (c.survey.count + '건'), topReason ? `응답 ${c.exit_reasons[topReason]}건` : (c.survey.count ? `혼잡도 평균 ${c.survey.crowd_avg} / 5` : '')],
+  ].map(([k, v, s, cls]) => `<div class="card kpi ${cls || ''}"><span>${k}</span><b>${E(v)}</b><small>${E(s)}</small></div>`).join('');
 
-  // 지도: 거점 원 크기 = 방문자, 색 진하기 = 이탈률
-  const cps = d.festival.checkpoints, byId = Object.fromEntries(c.checkpoints.map(x => [x.id, x]));
-  const max = Math.max(...c.checkpoints.map(x => x.visitors), 1);
-  const X = x => 40 + x * 5.2, Y = y => 20 + y * 2.6;
-  let svg = `<svg viewBox="0 0 600 300"><rect x="0" y="0" width="600" height="300" rx="10" fill="#f2f4f7"/>`;
-  svg += `<polyline fill="none" stroke="#c7ccd4" stroke-width="3" stroke-dasharray="6 6" points="${cps.map(p => X(p.x) + ',' + Y(p.y)).join(' ')}"/>`;
-  cps.forEach(cp => {
-    const s = byId[cp.id], rad = 10 + 18 * s.visitors / max, a = Math.min(0.15 + s.drop_rate / 50, 0.95);
-    svg += `<circle cx="${X(cp.x)}" cy="${Y(cp.y)}" r="${rad}" fill="rgba(214,69,65,${a})" stroke="#fff" stroke-width="2"/>`;
-    svg += `<text x="${X(cp.x)}" y="${Y(cp.y) + rad + 16}" text-anchor="middle" font-size="13" fill="#1a1f2b">${esc(cp.name)}</text>`;
-    svg += `<text x="${X(cp.x)}" y="${Y(cp.y) + rad + 31}" text-anchor="middle" font-size="12" fill="#5b6474">이탈 ${s.drop_rate}%</text>`;
-  });
-  $('map').innerHTML = svg + '</svg><div class="src">원 크기 = 방문자 수, 붉은 정도 = 그 거점 이후 이탈률</div>';
-
+  // 좌표가 있는 예시 행사는 배치도, 실제 행사는 막대 그래프
+  if (f.demo) {
+    const pos = { gate: [10, 80], market: [30, 55], stage: [55, 70], craft: [75, 35], view: [90, 12] };
+    const X = x => 40 + x * 5.2, Y = y => 20 + y * 2.6, mx = Math.max(...c.checkpoints.map(x => x.visitors), 1);
+    let s = `<div class="gridbg"><svg viewBox="0 0 600 300"><polyline fill="none" stroke="#1F8F5F" stroke-width="4" points="${c.checkpoints.map(x => X(pos[x.id][0]) + ',' + Y(pos[x.id][1])).join(' ')}"/>`;
+    c.checkpoints.forEach(x => { const [px, py] = pos[x.id], r = 10 + 18 * x.visitors / mx;
+      s += `<circle cx="${X(px)}" cy="${Y(py)}" r="${r}" fill="#F2C230" opacity="${Math.min(0.1 + x.drop_rate / 30, 0.9)}"/><rect x="${X(px) - 8}" y="${Y(py) - 8}" width="16" height="16" fill="#17212B"/>
+            <text x="${X(px)}" y="${Y(py) + r + 14}" text-anchor="middle" font-size="12" fill="#17212B">${E(x.name)} ${x.dropped_after ? x.drop_rate + '%' : ''}</text>`; });
+    $('map').innerHTML = s + '</svg></div>'; $('mapNote').textContent = '원 크기 = 방문자, 노랑 진하기 = 이후 이탈률';
+  } else {
+    $('map').innerHTML = c.checkpoints.map((x, i) => `<div class="cpb"><span>${i + 1}. ${E(x.name)}</span><span class="track"><i style="width:${Math.min(x.drop_rate, 100)}%"></i></span><b>${x.dropped_after ? x.drop_rate + '%' : '-'}</b></div>`).join('');
+    $('mapNote').textContent = '막대 = 그 거점 다음으로 가지 않은 비율';
+  }
   const prevCp = p ? Object.fromEntries(p.checkpoints.map(x => [x.id, x])) : {};
   $('table').innerHTML = `<table><tr><th>거점</th><th>방문</th><th>이탈률</th>${p ? '<th>작년</th>' : ''}</tr>` +
-    c.checkpoints.map(x => `<tr><td>${esc(x.name)}</td><td>${x.visitors}</td><td>${x.drop_rate}%</td>${p ? `<td>${prevCp[x.id] ? prevCp[x.id].drop_rate + '%' : '-'}</td>` : ''}</tr>`).join('') +
-    '</table>' + (Object.keys(c.exit_reasons).length
-      ? '<div class="src">이탈 사유: ' + Object.entries(c.exit_reasons).map(([k, v]) => `${esc(k)} ${v}`).join(' · ') + '</div>' : '');
+    c.checkpoints.map(x => `<tr class="${worst && x.id === worst.id ? 'hot' : ''}"><td>${E(x.name)}</td><td>${x.visitors}</td><td>${x.dropped_after ? x.drop_rate + '%' : '-'}</td>${p ? `<td>${prevCp[x.id] && prevCp[x.id].dropped_after ? prevCp[x.id].drop_rate + '%' : '-'}</td>` : ''}</tr>`).join('') + '</table>' +
+    (Object.keys(c.exit_reasons).length ? `<p class="note">이탈 사유: ${Object.entries(c.exit_reasons).map(([k, v]) => `${E(k)} ${v}`).join(' · ')}</p>` : '') +
+    (c.survey.count ? `<p class="note">설문 ${c.survey.count}건 · 혼잡도 ${c.survey.crowd_avg} / 5 · 동선 편의 ${c.survey.route_avg} / 5</p>` : '');
 }
+const srcLabel = s => s === 'llm' ? 'AI 작성 · 숫자는 코드 계산값과 대조 완료' : '템플릿 작성 (AI 미연결 또는 숫자 대조 실패)';
+$('btnReport').onclick = async () => { $('report').textContent = '작성 중';
+  try { const d = await call('/api/report/' + encodeURIComponent(fid), { method: 'POST' }); $('report').innerHTML = `<pre>${E(d.text)}</pre><p class="note">${srcLabel(d.source)}</p>`; }
+  catch (e) { $('report').textContent = '생성하지 못했습니다. 잠시 후 다시 눌러 주세요.'; } };
+$('btnDesign').onclick = async () => { $('design').textContent = '작성 중';
+  try { const d = await call('/api/design/' + encodeURIComponent(fid), { method: 'POST' });
+        $('design').innerHTML = d.plan.changes.map(c => `<div class="chg"><b>${E(c.checkpoint)}</b> ${E(c.action)}<small>근거: ${E(c.evidence)}</small></div>`).join('') + `<pre style="margin-top:8px">${E(d.explanation.text)}</pre><p class="note">${srcLabel(d.explanation.source)}</p>`; }
+  catch (e) { $('design').textContent = '생성하지 못했습니다. 잠시 후 다시 눌러 주세요.'; } };
 
-const srcLabel = s => s === 'llm' ? 'AI 작성 · 숫자는 코드 계산값과 대조 완료' : '템플릿 작성 (AI 미연결)';
-$('btnReport').onclick = async () => {
-  $('report').textContent = '작성 중…';
-  const d = await (await fetch('/api/report/' + fid, { method: 'POST' })).json();
-  $('report').innerHTML = `<pre>${esc(d.text)}</pre><div class="src">${srcLabel(d.source)}</div>`;
-};
-$('btnDesign').onclick = async () => {
-  $('design').textContent = '설계 중…';
-  const d = await (await fetch('/api/design/' + fid, { method: 'POST' })).json();
-  $('design').innerHTML = d.plan.changes.map(c => `<div class="chg"><b>${esc(c.checkpoint)}</b> — ${esc(c.action)}<small>근거: ${esc(c.evidence)}</small></div>`).join('') +
-    `<pre style="margin-top:12px">${esc(d.explanation.text)}</pre><div class="src">${srcLabel(d.explanation.source)}</div>`;
-};
-$('seed').onclick = async () => { await fetch('/api/demo/seed', { method: 'POST' }); load(); };
-load();
+(isDemo ? Promise.resolve() : Admin.ready($('gate'))).then(() => {
+  $('body').hidden = false;
+  if (isDemo) { $('seedBox').innerHTML = '<button class="btn line" id="seed">예시 데이터 불러오기</button>';
+    $('seed').onclick = async () => { $('seed').disabled = true; await fetch('/api/demo/seed', { method: 'POST' }); $('seed').disabled = false; load(); }; }
+  load();
+});
 </script>
 </body>
 </html>

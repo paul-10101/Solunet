@@ -1,0 +1,12 @@
+# Render 무료 서버가 15분 동안 요청이 없으면 잠들어 첫 접속이 1분 가까이 걸린다.
+# 행사 기간에는 10분마다 깨워 둔다. (GitHub Actions 예약 실행은 몇 분 늦어질 수 있음)
+name: keep-warm
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS --max-time 90 https://solunet.onrender.com/api/health || true

@@ -3,75 +3,165 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
 <title>스탬프 랠리</title>
+<link rel="stylesheet" href="/ui.css">
 <style>
-  body { font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; margin:0; background:#f7f8fa; color:#1a1f2b; }
-  main { max-width:480px; margin:0 auto; padding:24px 20px 48px; }
-  h1 { font-size:22px; margin:0 0 4px; } .sub { color:#5b6474; font-size:14px; margin-bottom:20px; }
-  .stamps { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:20px; }
-  .st { aspect-ratio:1; border-radius:50%; border:2px dashed #c7ccd4; display:flex; align-items:center;
-        justify-content:center; font-size:11px; text-align:center; color:#8a93a3; padding:4px; }
-  .st.on { border:2px solid #1f8f5f; background:#e6f4ed; color:#1f8f5f; font-weight:600; }
-  .card { background:#fff; border:1px solid #e3e6eb; border-radius:12px; padding:16px; margin-bottom:16px; }
-  .ok { color:#1f8f5f; font-weight:600; }
-  button { width:100%; padding:12px; border-radius:10px; border:1px solid #c7ccd4; background:#fff; font-size:15px; margin-top:8px; }
-  button.pick { text-align:left; }
-  .muted { color:#8a93a3; font-size:13px; }
+  body { max-width:480px; margin:0 auto; min-height:100vh; }
+  .head { background:var(--ink); color:#fff; padding:20px; }
+  .head .ev { font-size:13px; opacity:.8; }
+  .head h1 { font-size:22px; margin-top:4px; color:#fff; }
+  .wrap { padding:20px; }
+  .prog { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .bar { height:8px; background:var(--grid); border-radius:4px; margin-bottom:20px; overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--route); width:0; transition:width .4s ease; }
+  @media (prefers-reduced-motion: reduce) { .bar i { transition:none; } }
+  .list { list-style:none; margin-bottom:20px; }
+  .list li { display:flex; align-items:center; gap:12px; padding:12px 14px; background:#fff; border:1px solid var(--grid); border-radius:6px; margin-bottom:8px; }
+  .list .mk { width:18px; height:18px; flex:none; border:2px solid var(--ink); background:#fff; }
+  .list li.done .mk { background:var(--ink); }
+  .list li.here { border:2px solid var(--route); }
+  .list li.done span.t { color:var(--muted); }
+  .list small { margin-left:auto; font-size:12px; color:var(--route); font-weight:500; }
+  .opt { display:block; width:100%; text-align:left; padding:14px 16px; margin-bottom:8px; font-size:15px; font-family:inherit; background:#fff; border:1px solid var(--grid); border-radius:6px; color:var(--ink); cursor:pointer; }
+  .opt[aria-pressed="true"] { border:2px solid var(--ink); font-weight:700; }
+  .scale { display:flex; gap:6px; margin:6px 0 4px; }
+  .scale button { flex:1; padding:10px 0; font-family:inherit; font-size:15px; background:#fff; border:1px solid var(--grid); border-radius:4px; color:var(--ink); cursor:pointer; }
+  .scale button[aria-pressed="true"] { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .ends { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:16px; }
+  .full { width:100%; text-align:center; padding:14px; font-size:16px; }
+  .lang { display:flex; gap:6px; justify-content:flex-end; padding:10px 20px 0; }
+  .lang button { font-family:inherit; font-size:12px; padding:3px 10px; border-radius:999px; border:1px solid var(--grid); background:#fff; color:var(--muted); cursor:pointer; }
+  .lang button[aria-pressed="true"] { border-color:var(--ink); color:var(--ink); }
+  .foot { font-size:12px; color:var(--muted); text-align:center; margin-top:16px; }
+  .hidden { display:none; }
+  .err { padding:40px 20px; text-align:center; }
 </style>
 </head>
 <body>
-<main>
-  <h1 id="title">스탬프 랠리</h1>
-  <div class="sub">설치 없이 QR만 찍으면 됩니다</div>
-  <div class="stamps" id="stamps"></div>
-  <div class="card" id="msg">불러오는 중…</div>
-  <div class="card">
-    <b>여기서 그만두시나요?</b>
-    <div class="muted">이유를 알려주시면 다음 축제가 더 좋아집니다 (익명)</div>
-    <div id="reasons"></div>
-  </div>
-</main>
-<script>
-const [, , fid, cid] = location.pathname.split('/');
-const KEY = 'solunet_session';
-let session;
-try { session = localStorage.getItem(KEY); } catch (e) {}
-if (!session) {
-  session = 's' + Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
-  try { localStorage.setItem(KEY, session); } catch (e) {}
-}
-const doneKey = 'solunet_done_' + fid;
-let done = [];
-try { done = JSON.parse(localStorage.getItem(doneKey) || '[]'); } catch (e) {}
+<div class="lang" role="group" aria-label="언어"><button data-l="ko" aria-pressed="true">한국어</button><button data-l="en" aria-pressed="false">English</button></div>
+<div id="app"><div class="err"><p data-t="loading"></p><p class="muted" style="font-size:13px;margin-top:6px" data-t="wake"></p></div></div>
 
-const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+<template id="tpl">
+  <div class="head"><div class="ev" id="evName"></div><h1 id="title"></h1></div>
+  <div class="wrap">
+    <div class="prog"><b id="count"></b><span class="badge ok" id="left"></span></div>
+    <div class="bar"><i id="barFill"></i></div>
+    <ul class="list" id="list"></ul>
+
+    <!-- 이탈 사유 (피그마 03) -->
+    <section id="exitBox">
+      <button class="btn line full" id="exitOpen" data-t="quit"></button>
+      <div id="exitForm" class="hidden" style="margin-top:12px">
+        <h2 data-t="quitQ"></h2><p class="muted" style="font-size:14px;margin:4px 0 12px" data-t="quitSub"></p>
+        <div id="reasons"></div>
+        <button class="btn full" id="exitSend" disabled data-t="send"></button>
+      </div>
+    </section>
+
+    <!-- 완주 설문 -->
+    <section id="surveyBox" class="hidden">
+      <div class="card" style="margin-bottom:12px"><h2 data-t="doneTitle"></h2><p class="muted" style="font-size:14px" data-t="doneSub"></p></div>
+      <p style="font-weight:500" data-t="qCrowd"></p>
+      <div class="scale" data-k="crowd"></div><div class="ends"><span data-t="crowd1"></span><span data-t="crowd5"></span></div>
+      <p style="font-weight:500" data-t="qRoute"></p>
+      <div class="scale" data-k="route"></div><div class="ends"><span data-t="route1"></span><span data-t="route5"></span></div>
+      <p style="font-weight:500;margin-bottom:6px" data-t="qCompare"></p>
+      <div id="compare"></div>
+      <button class="btn full" id="surveySend" disabled data-t="send" style="margin-top:8px"></button>
+    </section>
+    <p class="foot" data-t="privacy"></p>
+  </div>
+</template>
+
+<script>
+const T = {
+  ko: { loading:'불러오는 중', wake:'처음 접속하면 최대 1분 걸릴 수 있어요', stamped:n=>`'${n}' 스탬프 완료`, again:n=>`'${n}' 이미 찍었어요`,
+        count:(a,b)=>`${a} / ${b} 거점`, left:n=>n?`완주까지 ${n}곳`:'완주!', here:'지금 여기', quit:'여기서 그만두기',
+        quitQ:'여기서 그만두시나요?', quitSub:'이유를 하나만 골라 주세요. 익명이며, 다음 행사 배치를 바꾸는 데 씁니다.', send:'보내기', thanks:'응답 감사합니다!',
+        reasons:['대기 줄이 너무 김','다음 장소가 멀다','화장실·쉴 곳이 없다','시간이 없다','기타'],
+        doneTitle:'모든 스탬프를 모았어요', doneSub:'두 가지만 답해 주시면 다음 행사를 더 좋게 만드는 데 씁니다.',
+        qCrowd:'오늘 행사, 얼마나 붐볐나요?', crowd1:'한산', crowd5:'매우 혼잡', qRoute:'거점 사이 이동은 편했나요?', route1:'불편', route5:'편함',
+        qCompare:'이전에 참여한 행사와 비교하면 혼잡·동선은?', compare:['더 나았다','비슷했다','더 나빴다','처음 참여'],
+        privacy:'이름, 연락처, 위치는 기록하지 않습니다', notfound:'등록되지 않은 QR이에요. 행사 운영진에게 알려 주세요.', neterr:'연결이 불안정해요. 잠시 후 새로고침해 주세요.' },
+  en: { loading:'Loading', wake:'The first visit can take up to a minute', stamped:n=>`Stamped: ${n}`, again:n=>`Already stamped: ${n}`,
+        count:(a,b)=>`${a} / ${b} spots`, left:n=>n?`${n} to go`:'Complete!', here:'You are here', quit:'Stop here',
+        quitQ:'Leaving here?', quitSub:'Pick one reason. It is anonymous and helps us improve the next event.', send:'Send', thanks:'Thank you!',
+        reasons:['Lines too long','Next spot too far','No restroom or rest area','Out of time','Other'],
+        doneTitle:'You collected every stamp', doneSub:'Two quick questions to help us improve the next event.',
+        qCrowd:'How crowded was the event?', crowd1:'Quiet', crowd5:'Very crowded', qRoute:'Was moving between spots easy?', route1:'Hard', route5:'Easy',
+        qCompare:'Compared with previous events?', compare:['Better','About the same','Worse','First time'],
+        privacy:'We do not record names, contacts, or locations', notfound:'This QR is not registered. Please tell the staff.', neterr:'Connection problem. Please refresh in a moment.' },
+};
+const KO_VALUES = { reasons:T.ko.reasons, compare:T.ko.compare }; // 저장은 항상 한국어 값으로
+let L = (navigator.language || 'ko').startsWith('ko') ? 'ko' : 'en'; try { L = localStorage.getItem('solunet_lang') || L; } catch (e) {}
+const [, , fid, token] = location.pathname.split('/');
+const TEST = new URLSearchParams(location.search).has('test'); // 운영진 테스트: 통계에서 제외
+let session; try { if (!TEST) session = localStorage.getItem('solunet_sid'); } catch (e) {}
+if (TEST) session = 'test' + Math.random().toString(36).slice(2, 12);
+if (!session) { session = 'v' + (crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'').slice(0,16) : Math.random().toString(36).slice(2) + Date.now().toString(36)); try { localStorage.setItem('solunet_sid', session); } catch (e) {} }
+const post = (u, b) => fetch(u, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(b) });
+const $ = id => document.getElementById(id);
+let state = null, pick = { reason:null, crowd:null, route:null, compare:'' };
+
+function applyLang() {
+  document.documentElement.lang = L;
+  document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === L));
+  document.querySelectorAll('[data-t]').forEach(e => { const v = T[L][e.dataset.t]; if (typeof v === 'string') e.textContent = v; });
+  if (state) render();
+}
+document.querySelectorAll('.lang button').forEach(b => b.onclick = () => { L = b.dataset.l; try { localStorage.setItem('solunet_lang', L); } catch (e) {} applyLang(); });
+
+function render() {
+  const { f, r } = state, total = f.checkpoints.length, done = new Set(r.done);
+  $('evName').textContent = f.name;
+  $('title').textContent = r.duplicate ? T[L].again(r.checkpoint.name) : T[L].stamped(r.checkpoint.name);
+  $('count').textContent = T[L].count(done.size, total);
+  $('left').textContent = T[L].left(total - done.size);
+  $('barFill').style.width = (done.size / total * 100) + '%';
+  $('list').innerHTML = f.checkpoints.map(c => `<li class="${done.has(c.id) ? 'done' : ''} ${c.id === r.checkpoint.id ? 'here' : ''}"><span class="mk"></span><span class="t">${c.name.replace(/[&<>]/g, '')}</span>${c.id === r.checkpoint.id ? `<small>${T[L].here}</small>` : ''}</li>`).join('');
+  const complete = done.size === total;
+  $('exitBox').classList.toggle('hidden', complete);
+  $('surveyBox').classList.toggle('hidden', !complete);
+  if ($('reasons')) $('reasons').innerHTML = T[L].reasons.map((t, i) => `<button class="opt" data-i="${i}" aria-pressed="${pick.reason === i}">${t}</button>`).join('');
+  document.querySelectorAll('#reasons .opt').forEach(b => b.onclick = () => { pick.reason = +b.dataset.i; $('exitSend').disabled = false; render(); });
+  if (state.surveyed || !$('compare')) return;
+  document.querySelectorAll('.scale').forEach(s => { const k = s.dataset.k; s.innerHTML = [1,2,3,4,5].map(n => `<button aria-pressed="${pick[k] === n}" data-n="${n}">${n}</button>`).join('');
+    s.querySelectorAll('button').forEach(b => b.onclick = () => { pick[k] = +b.dataset.n; render(); }); });
+  $('compare').innerHTML = T[L].compare.map((t, i) => `<button class="opt" data-i="${i}" aria-pressed="${pick.compare === KO_VALUES.compare[i]}">${t}</button>`).join('');
+  document.querySelectorAll('#compare .opt').forEach(b => b.onclick = () => { pick.compare = KO_VALUES.compare[+b.dataset.i]; render(); });
+  $('surveySend').disabled = !(pick.crowd && pick.route);
+}
 
 async function main() {
-  const res = await fetch('/api/festival/' + fid);
-  if (!res.ok) { document.getElementById('msg').textContent = '축제 정보를 찾을 수 없습니다.'; return; }
-  const f = await res.json();
-  document.getElementById('title').textContent = f.name;
-  const cp = f.checkpoints.find(c => c.id === cid);
-  if (cp && !done.includes(cid)) {
-    const r = await post('/api/scan', { festival: fid, checkpoint: cid, session });
-    if (r.ok) { done.push(cid); try { localStorage.setItem(doneKey, JSON.stringify(done)); } catch (e) {} }
+  try {
+    const fr = await fetch('/api/festival/' + encodeURIComponent(fid));
+    if (!fr.ok) throw 404;
+    const f = await fr.json();
+    const rr = await post('/api/scan', { festival: fid, token, session });
+    if (rr.status === 404) throw 404;
+    if (!rr.ok) throw 0;
+    state = { f, r: await rr.json() };
+    $('app').innerHTML = $('tpl').innerHTML;
+    $('exitOpen').onclick = () => { $('exitForm').classList.remove('hidden'); $('exitOpen').classList.add('hidden'); };
+    $('exitSend').onclick = async () => {
+      $('exitSend').disabled = true;
+      const ok = (await post('/api/exit-reason', { festival: fid, token, session, reason: KO_VALUES.reasons[pick.reason] }).catch(() => ({}))).ok;
+      $('exitForm').innerHTML = `<p class="badge ok" style="font-size:14px;padding:8px 14px">${ok ? T[L].thanks : T[L].neterr}</p>`;
+    };
+    $('surveySend').onclick = async () => {
+      $('surveySend').disabled = true;
+      const ok = (await post('/api/survey', { festival: fid, session, crowd: pick.crowd, route: pick.route, compare: pick.compare }).catch(() => ({}))).ok;
+      state.surveyed = ok;
+      $('surveyBox').innerHTML = `<div class="card"><b>${ok ? T[L].thanks : T[L].neterr}</b></div>`;
+      $('surveyBox').classList.remove('hidden');
+    };
+    applyLang();
+  } catch (e) {
+    $('app').innerHTML = `<div class="err"><p>${e === 404 ? T[L].notfound : T[L].neterr}</p></div>`;
   }
-  document.getElementById('stamps').innerHTML = f.checkpoints
-    .map(c => `<div class="st ${done.includes(c.id) ? 'on' : ''}">${c.name}</div>`).join('');
-  const left = f.checkpoints.filter(c => !done.includes(c.id));
-  document.getElementById('msg').innerHTML = cp
-    ? `<span class="ok">'${cp.name}' 스탬프 완료!</span><br>` +
-      (left.length ? `남은 곳: ${left.map(c => c.name).join(', ')}` : '🎉 모든 스탬프를 모았습니다!')
-    : '알 수 없는 거점입니다.';
-  const reasons = ['화장실·편의시설 부족', '대기 줄이 김', '다음 장소가 멀다', '시간이 없음', '기타'];
-  document.getElementById('reasons').innerHTML = reasons
-    .map(r => `<button class="pick" data-r="${r}">${r}</button>`).join('');
-  document.querySelectorAll('.pick').forEach(b => b.onclick = async () => {
-    await post('/api/exit-reason', { festival: fid, checkpoint: cid, session, reason: b.dataset.r });
-    document.getElementById('reasons').innerHTML = '<p class="ok">응답 감사합니다!</p>';
-  });
 }
-main();
+applyLang(); main();
 </script>
 </body>
 </html>

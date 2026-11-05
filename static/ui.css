@@ -1,0 +1,33 @@
+/* Solunet 공통 토큰 (피그마 00 디자인 토큰과 동일) */
+:root { --paper:#F3F5F2; --ink:#17212B; --grid:#D5DCD6; --route:#1F8F5F; --sign:#F2C230; --muted:#55606B; --line:#B9C2BB; --soft:#EEF6F1; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; color:var(--ink); background:var(--paper);
+       line-height:1.6; word-break:keep-all; overflow-wrap:break-word; -webkit-font-smoothing:antialiased; }
+a { color:inherit; }
+:focus-visible { outline:3px solid var(--sign); outline-offset:2px; }
+.topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; padding:16px 32px; border-bottom:1px solid var(--grid); background:var(--paper); }
+.logo { font-weight:700; font-size:18px; text-decoration:none; } .logo i { display:inline-block; width:10px; height:10px; background:var(--route); margin-right:8px; }
+.nav a { margin-left:20px; font-size:14px; color:var(--muted); text-decoration:none; }
+.nav a.on { color:var(--ink); font-weight:500; border-bottom:2px solid var(--sign); }
+main.page { max-width:1200px; margin:0 auto; padding:28px 32px 64px; }
+h1 { font-size:26px; letter-spacing:-0.02em; } h2 { font-size:18px; }
+.muted { color:var(--muted); }
+.card { background:#fff; border:1px solid var(--grid); border-radius:6px; padding:20px; }
+.btn { display:inline-block; padding:10px 16px; font-size:14px; font-weight:500; font-family:inherit; border:2px solid var(--ink); border-radius:4px; background:var(--ink); color:var(--paper); cursor:pointer; text-decoration:none; }
+.btn.line { background:transparent; color:var(--ink); }
+.btn:disabled { opacity:.5; cursor:default; }
+.badge { display:inline-block; font-size:12px; padding:2px 10px; border-radius:999px; background:#F1F1EE; color:var(--muted); }
+.badge.ok { background:var(--soft); color:var(--route); } .badge.demo { background:#FFF4D6; color:#7A5B00; }
+input, textarea, select { width:100%; font-family:inherit; font-size:15px; padding:10px 12px; border:1px solid var(--line); border-radius:4px; background:#fff; color:var(--ink); }
+label { display:block; font-size:13px; color:var(--muted); margin-bottom:12px; } label input, label textarea, label select { margin-top:6px; }
+table { width:100%; border-collapse:collapse; font-size:14px; }
+th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--grid); vertical-align:top; }
+th { color:var(--muted); font-weight:500; font-size:13px; }
+.kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.kpi span { font-size:13px; color:var(--muted); display:block; } .kpi b { font-size:26px; font-variant-numeric:tabular-nums; display:block; } .kpi small { font-size:12px; color:var(--muted); }
+.kpi.warn { border-top:4px solid var(--sign); }
+.grid2 { display:grid; grid-template-columns:3fr 2fr; gap:12px; }
+.note { font-size:12px; color:var(--muted); margin-top:8px; }
+.gate { max-width:420px; margin:80px auto; }
+@media (max-width:820px) { .kpis { grid-template-columns:1fr 1fr; } .grid2 { grid-template-columns:1fr; } .topbar, main.page { padding-left:16px; padding-right:16px; } .nav a { margin-left:12px; } }
+@media print { .noprint { display:none !important; } body { background:#fff; } }

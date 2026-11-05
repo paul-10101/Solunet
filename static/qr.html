@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
+<title>QR 인쇄 · Solunet</title>
+<link rel="stylesheet" href="/ui.css">
+<style>
+  .sheet { display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; }
+  .qcard { background:#fff; border:2px solid var(--ink); border-radius:6px; padding:18px; text-align:center; break-inside:avoid; page-break-inside:avoid; }
+  .qcard .no { font-size:13px; color:var(--muted); }
+  .qcard h3 { font-size:24px; margin:2px 0 10px; }
+  .qcard .qr { width:62mm; height:62mm; margin:0 auto; }
+  .qcard .qr svg { width:100%; height:100%; display:block; }
+  .qcard p { font-size:14px; margin-top:8px; }
+  .qcard .url { font-size:9px; color:var(--muted); word-break:break-all; margin-top:4px; }
+  .tools { display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin-bottom:20px; }
+  .tools label { margin:0; min-width:280px; }
+  @media print {
+    @page { size:A4; margin:10mm; }
+    .topbar, .tools, .noprint { display:none !important; }
+    main.page { padding:0; max-width:none; }
+    .sheet { gap:8mm; }
+    .qcard { border-width:1.5px; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar noprint"><a class="logo" href="/"><i></i>Solunet</a>
+  <nav class="nav"><a href="/admin/events">행사 관리</a><a id="logsLink" href="#">실시간 로그</a></nav></header>
+<main class="page">
+  <div id="gate"></div>
+  <div id="body" hidden>
+    <div class="tools noprint">
+      <div><h1 id="evName">QR 인쇄</h1><p class="muted" style="font-size:14px">A4 한 장에 4개씩 인쇄됩니다. 인쇄 전에 아래 "열어 보기"로 각 QR을 한 번씩 확인하세요.</p></div>
+      <label>QR에 넣을 주소
+        <select id="base">
+          <option value="https://solunet.onrender.com">https://solunet.onrender.com (권장: 가장 안정적)</option>
+          <option value="https://www.solunet.software">https://www.solunet.software</option>
+        </select>
+      </label>
+      <button class="btn" onclick="print()">인쇄</button>
+    </div>
+    <div class="sheet" id="sheet"></div>
+  </div>
+</main>
+<script src="/admin.js"></script>
+<script src="/qrcode.js"></script>
+<script>
+const fid = new URLSearchParams(location.search).get('f');
+const E = Admin.esc;
+document.getElementById('logsLink').href = '/admin/logs?f=' + encodeURIComponent(fid || '');
+let fest = null;
+const sel = document.getElementById('base');
+try { const b = localStorage.getItem('solunet_qr_base'); if (b) sel.value = b; } catch (e) {}
+sel.onchange = () => { try { localStorage.setItem('solunet_qr_base', sel.value); } catch (e) {} render(); };
+
+function qrSvg(text) {
+  const q = qrcode(0, 'Q');          // 오류 복원 Q: 야외 오염·구김 대비
+  q.addData(text); q.make();
+  return q.createSvgTag({ cellSize: 4, margin: 16, scalable: true }); // 여백 4칸(16px/4px)
+}
+function render() {
+  if (!fest) return;
+  document.getElementById('evName').textContent = fest.name + ' · QR 인쇄';
+  document.getElementById('sheet').innerHTML = fest.checkpoints.map((c, i) => {
+    const url = `${sel.value}/s/${encodeURIComponent(fest.id)}/${encodeURIComponent(c.token)}`;
+    return `<div class="qcard"><div class="no">${E(fest.name)} · ${i + 1}번 거점</div><h3>${E(c.name)}</h3>
+      <div class="qr">${qrSvg(url)}</div>
+      <p><b>카메라로 찍으면 스탬프가 찍혀요</b><br>앱 설치·로그인 없음</p>
+      <div class="url">${E(url)}</div>
+      <a class="noprint" href="${E(url)}?test=1" target="_blank" rel="noopener" style="font-size:13px">열어 보기 (테스트)</a></div>`;
+  }).join('');
+}
+Admin.ready(document.getElementById('gate')).then(async () => {
+  document.getElementById('body').hidden = false;
+  if (!fid) { document.getElementById('sheet').innerHTML = '<p>행사 관리에서 행사를 선택해 주세요.</p>'; return; }
+  try { fest = await Admin.api('/api/admin/festival/' + encodeURIComponent(fid)); render(); }
+  catch (e) { document.getElementById('sheet').innerHTML = `<p>${E(e.message)}</p>`; }
+});
+</script>
+</body>
+</html>

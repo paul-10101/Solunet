@@ -26,7 +26,10 @@ def compute_stats(festival, scans, responses):
             "drop_rate": round(dropped / reached * 100, 1) if reached else 0.0,
         })
 
-    reasons = Counter(r.get("reason", "기타") for r in responses)
+    exits = [r for r in responses if r.get("reason")]
+    surveys = [r for r in responses if r.get("kind") == "survey"]
+    reasons = Counter(r["reason"] for r in exits)
+    avg = lambda k: round(sum(r[k] for r in surveys) / len(surveys), 2) if surveys else None
     hours = Counter(s["ts"][11:13] for s in scans if isinstance(s.get("ts"), str))
 
     return {
@@ -34,7 +37,9 @@ def compute_stats(festival, scans, responses):
         "completed": completed,
         "completion_rate": round(completed / visitors * 100, 1) if visitors else 0.0,
         "scans": len(scans),
-        "responses": len(responses),
+        "responses": len(exits),
+        "survey": {"count": len(surveys), "crowd_avg": avg("crowd"), "route_avg": avg("route"),
+                   "compare": dict(Counter(r.get("compare") or "무응답" for r in surveys))},
         "checkpoints": per_cp,
         "exit_reasons": dict(reasons.most_common()),
         "scans_by_hour": dict(sorted(hours.items())),

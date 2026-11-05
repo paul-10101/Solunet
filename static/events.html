@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
+<title>행사 관리 · Solunet</title>
+<link rel="stylesheet" href="/ui.css">
+</head>
+<body>
+<header class="topbar"><a class="logo" href="/"><i></i>Solunet</a>
+  <nav class="nav"><a class="on" href="/admin/events">행사 관리</a><a href="/admin">대시보드</a><a href="#" id="logout">로그아웃</a></nav></header>
+<main class="page" id="root">
+  <div id="gate"></div>
+  <div id="body" hidden>
+    <h1 style="margin-bottom:20px">행사 관리</h1>
+    <div class="grid2">
+      <section class="card">
+        <h2 style="margin-bottom:6px">행사 목록</h2>
+        <p class="muted" style="font-size:14px;margin-bottom:12px">QR을 인쇄하고, 행사 중에는 실시간 로그를 열어 두세요.</p>
+        <div id="list"><p class="muted">불러오는 중</p></div>
+      </section>
+      <section class="card">
+        <h2 style="margin-bottom:12px">새 행사 만들기</h2>
+        <form id="newForm">
+          <label>행사 이름<input name="name" required maxlength="60" placeholder="예: 디지털ICT공학과 학과 행사"></label>
+          <label>날짜<input name="date" type="date"></label>
+          <label>거점 이름 (한 줄에 하나, 동선 순서대로)<textarea name="cps" rows="7" required placeholder="입구&#10;부스 A&#10;부스 B&#10;포토존&#10;출구"></textarea></label>
+          <button class="btn" type="submit">행사 만들기</button>
+          <p id="newMsg" class="note"></p>
+        </form>
+        <p class="note">거점마다 추측할 수 없는 QR 토큰이 자동으로 만들어집니다. 만든 뒤에는 거점 이름과 순서를 바꿀 수 없으니, 인쇄 전에 확인하세요.</p>
+      </section>
+    </div>
+  </div>
+</main>
+<script src="/admin.js"></script>
+<script>
+document.getElementById('logout').onclick = e => { e.preventDefault(); Admin.logout(); };
+const E = Admin.esc;
+async function load() {
+  const fs = await Admin.api('/api/admin/festivals');
+  document.getElementById('list').innerHTML = fs.length ? `<table><tr><th>행사</th><th>거점</th><th></th></tr>` + fs.map(f =>
+    `<tr><td><b>${E(f.name)}</b><br><span class="muted" style="font-size:12px">${E(f.date || '')} · ID ${E(f.id)}</span></td><td>${f.checkpoints.length}곳</td>
+     <td style="white-space:nowrap"><a class="btn line" href="/admin/qr?f=${E(f.id)}">QR 인쇄</a> <a class="btn" href="/admin/logs?f=${E(f.id)}">실시간 로그</a> <a class="btn line" href="/admin?f=${E(f.id)}">분석</a></td></tr>`).join('') + '</table>'
+    : '<p class="muted">아직 만든 행사가 없습니다. 오른쪽에서 만들어 주세요.</p>';
+}
+document.getElementById('newForm').onsubmit = async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target), msg = document.getElementById('newMsg');
+  const cps = fd.get('cps').split('\n').map(s => s.trim()).filter(Boolean);
+  if (!cps.length) { msg.textContent = '거점 이름을 하나 이상 입력하세요.'; return; }
+  try {
+    const f = await Admin.api('/api/admin/festivals', { method: 'POST', body: JSON.stringify({ name: fd.get('name'), date: fd.get('date'), checkpoints: cps }) });
+    msg.textContent = `'${f.name}' 행사를 만들었습니다. 거점 ${f.checkpoints.length}곳.`;
+    e.target.reset(); load();
+  } catch (err) { msg.textContent = err.message; }
+};
+Admin.ready(document.getElementById('gate')).then(() => { document.getElementById('body').hidden = false; load(); });
+</script>
+</body>
+</html>

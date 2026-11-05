@@ -1,10 +1,9 @@
 import os
 import random
+import secrets
 from datetime import datetime, timedelta, timezone
 
-import secrets
-
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -20,21 +19,31 @@ if os.getenv("SENTRY_DSN"):
 STATIC = os.path.join(os.path.dirname(__file__), "..", "static")
 app = FastAPI(title="Solunet API")
 db = make_store()
+DUP_WINDOW_SEC = 60  # 같은 방문자가 같은 거점을 60초 안에 다시 열면 새로고침으로 보고 기록하지 않음
 
 
 # ---------- 모델 ----------
 class Scan(BaseModel):
-    festival: str
-    checkpoint: str
+    festival: str = Field(max_length=40)
+    token: str = Field(max_length=40)  # QR에 들어간 거점 토큰 (데모 축제는 거점 ID도 허용)
     session: str = Field(min_length=6, max_length=64)  # 익명 방문 ID (개인정보 없음)
-    event: str = Field(default="visit", pattern="^(visit|enter|queue|start|done)$")  # 입장·줄 서기·이용 시작·완료
+    event: str = Field(default="visit", pattern="^(visit|enter|queue|start|done)$")
 
 
 class ExitReason(BaseModel):
-    festival: str
-    checkpoint: str
+    festival: str = Field(max_length=40)
+    token: str = Field(max_length=40)
     session: str = Field(min_length=6, max_length=64)
     reason: str = Field(max_length=40)
+    comment: str = Field(default="", max_length=300)
+
+
+class Survey(BaseModel):
+    festival: str = Field(max_length=40)
+    session: str = Field(min_length=6, max_length=64)
+    crowd: int = Field(ge=1, le=5)  # 혼잡도: 1 매우 한산 ~ 5 매우 혼잡
+    route: int = Field(ge=1, le=5)  # 동선 편의: 1 매우 불편 ~ 5 매우 편함
+    compare: str = Field(default="", max_length=20)  # 이전 행사와 비교: 더 나음 / 비슷 / 더 나쁨 / 처음
     comment: str = Field(default="", max_length=300)
 
 
@@ -48,37 +57,94 @@ class Inquiry(BaseModel):
     message: str = Field(default="", max_length=1000)
 
 
+class NewFestival(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    date: str = Field(default="", max_length=20)
+    checkpoints: list[str] = Field(min_length=1, max_length=40)
+
+
+# ---------- 공통 ----------
+def require_admin(x_admin_key: str = Header(default="")):
+    key = os.getenv("ADMIN_KEY", "")
+    if not key or not secrets.compare_digest(x_admin_key, key):
+        raise HTTPException(401, "관리자 키가 필요합니다")
+
+
 def _festival(fid):
     f = db.get_festival(fid)
     if not f:
-        raise HTTPException(404, "축제를 찾을 수 없습니다")
+        raise HTTPException(404, "행사를 찾을 수 없습니다")
     return f
 
 
+def _public(f):
+    """방문객에게 보여 줄 정보. 토큰은 절대 내보내지 않는다."""
+    return {"id": f["id"], "name": f["name"], "date": f.get("date", ""), "demo": f.get("demo", False),
+            "checkpoints": [{"id": c["id"], "name": c["name"]} for c in f["checkpoints"]]}
+
+
+def _checkpoint_by_token(f, token):
+    for c in f["checkpoints"]:
+        if c.get("token") == token or (f.get("demo") and c["id"] == token):
+            return c
+    raise HTTPException(404, "등록되지 않은 QR입니다")
+
+
+def _guard(f, x_admin_key):
+    """예시(데모) 행사는 공개, 실제 행사 데이터는 관리자만."""
+    if not f.get("demo"):
+        require_admin(x_admin_key)
+
+
+def _real(rows):
+    return [r for r in rows if not str(r.get("session", "")).startswith("test")]  # 운영진 테스트 스캔 제외
+
+
 def _stats(f, edition):
-    return stats.compute_stats(f, db.scans_for(f["id"], edition), db.responses_for(f["id"], edition))
+    return stats.compute_stats(f, _real(db.scans_for(f["id"], edition)), _real(db.responses_for(f["id"], edition)))
+
+
+def _session_done(f, session):
+    return sorted({s["checkpoint"] for s in db.scans_for(f["id"], f["edition"]) if s["session"] == session})
 
 
 # ---------- 방문객 API ----------
+@app.get("/api/festival/{fid}")
+def get_festival(fid: str):
+    return _public(_festival(fid))
+
+
 @app.post("/api/scan")
 def post_scan(s: Scan):
     f = _festival(s.festival)
-    if s.checkpoint not in {c["id"] for c in f["checkpoints"]}:
-        raise HTTPException(400, "없는 거점입니다")
-    db.add_scan({**s.model_dump(), "edition": f["edition"], "ts": now().isoformat()})
-    return {"ok": True}
+    cp = _checkpoint_by_token(f, s.token)
+    t = now()
+    mine = [x for x in db.scans_for(f["id"], f["edition"]) if x["session"] == s.session]
+    recent = any(x["checkpoint"] == cp["id"] and
+                 (t - datetime.fromisoformat(x["ts"])).total_seconds() < DUP_WINDOW_SEC for x in mine)
+    if not recent:
+        db.add_scan({"festival": f["id"], "checkpoint": cp["id"], "session": s.session, "event": s.event,
+                     "edition": f["edition"], "ts": t.isoformat()})
+    done = sorted({x["checkpoint"] for x in mine} | {cp["id"]})
+    return {"ok": True, "duplicate": recent, "checkpoint": {"id": cp["id"], "name": cp["name"]},
+            "done": done, "total": len(f["checkpoints"])}
 
 
 @app.post("/api/exit-reason")
 def post_exit_reason(r: ExitReason):
     f = _festival(r.festival)
-    db.add_response({**r.model_dump(), "edition": f["edition"], "ts": now().isoformat()})
+    cp = _checkpoint_by_token(f, r.token)
+    db.add_response({"kind": "exit", "festival": f["id"], "checkpoint": cp["id"], "session": r.session,
+                     "reason": r.reason, "comment": r.comment, "edition": f["edition"], "ts": now().isoformat()})
     return {"ok": True}
 
 
-@app.get("/api/festival/{fid}")
-def get_festival(fid: str):
-    return _festival(fid)
+@app.post("/api/survey")
+def post_survey(v: Survey):
+    f = _festival(v.festival)
+    db.add_response({"kind": "survey", **v.model_dump(), "festival": f["id"], "edition": f["edition"],
+                     "ts": now().isoformat()})
+    return {"ok": True}
 
 
 # ---------- 도입 문의 ----------
@@ -88,48 +154,88 @@ def post_inquiry(q: Inquiry):
     return {"ok": True}
 
 
-@app.get("/api/inquiries")
-def list_inquiries(x_admin_key: str = Header(default="")):
-    """연락처가 들어 있으므로 ADMIN_KEY 헤더가 맞을 때만 보여준다."""
-    key = os.getenv("ADMIN_KEY", "")
-    if not key or not secrets.compare_digest(x_admin_key, key):
-        raise HTTPException(401, "관리자 키가 필요합니다")
+@app.get("/api/inquiries", dependencies=[Depends(require_admin)])
+def list_inquiries():
     return db.list_inquiries()
 
 
-# ---------- 관리자 API ----------
+# ---------- 관리자 API (행사 운영) ----------
+@app.get("/api/admin/check", dependencies=[Depends(require_admin)])
+def admin_check():
+    return {"ok": True}
+
+
+@app.post("/api/admin/festivals", dependencies=[Depends(require_admin)])
+def create_festival(n: NewFestival):
+    names = [x.strip() for x in n.checkpoints if x.strip()]
+    if not names:
+        raise HTTPException(400, "거점 이름을 하나 이상 입력하세요")
+    fid = "f" + secrets.token_hex(3)
+    f = {"id": fid, "name": n.name.strip(), "date": n.date, "edition": 1, "demo": False, "created": now().isoformat(),
+         "checkpoints": [{"id": f"c{i + 1}", "name": nm[:40], "token": secrets.token_urlsafe(6)}
+                         for i, nm in enumerate(names)]}
+    db.upsert_festival(f)
+    return f
+
+
+@app.get("/api/admin/festivals", dependencies=[Depends(require_admin)])
+def admin_festivals():
+    fs = [f for f in db.list_festivals() if not f.get("demo")]
+    return sorted(fs, key=lambda f: f.get("created", ""), reverse=True)
+
+
+@app.get("/api/admin/festival/{fid}", dependencies=[Depends(require_admin)])
+def admin_festival(fid: str):
+    return _festival(fid)
+
+
+@app.get("/api/admin/logs/{fid}", dependencies=[Depends(require_admin)])
+def admin_logs(fid: str):
+    f = _festival(fid)
+    names = {c["id"]: c["name"] for c in f["checkpoints"]}
+    scans = sorted(db.scans_for(fid, f["edition"]), key=lambda s: s["ts"], reverse=True)
+    resp = sorted(db.responses_for(fid, f["edition"]), key=lambda r: r["ts"], reverse=True)
+    for x in scans + resp:
+        if "checkpoint" in x:
+            x["checkpoint_name"] = names.get(x["checkpoint"], x["checkpoint"])
+    return {"festival": _public(f), "scans": scans, "responses": resp}
+
+
+# ---------- 분석 API ----------
 @app.get("/api/festivals")
 def list_festivals():
-    return db.list_festivals()
+    return [_public(f) for f in db.list_festivals() if f.get("demo")]
 
 
 @app.get("/api/stats/{fid}")
-def get_stats(fid: str):
+def get_stats(fid: str, x_admin_key: str = Header(default="")):
     f = _festival(fid)
+    _guard(f, x_admin_key)
     cur = _stats(f, f["edition"])
     prev = _stats(f, f["edition"] - 1) if f["edition"] > 1 else None
     if prev and prev["visitors"] == 0:
         prev = None
-    return {"festival": f, "current": cur, "previous": prev, "comparison": stats.compare(prev, cur)}
+    return {"festival": _public(f), "current": cur, "previous": prev, "comparison": stats.compare(prev, cur)}
 
 
 @app.post("/api/report/{fid}")
-def make_report(fid: str):
-    d = get_stats(fid)
+def make_report(fid: str, x_admin_key: str = Header(default="")):
+    d = get_stats(fid, x_admin_key)
     return ai.write_report(d["festival"], d["current"], d["comparison"])
 
 
 @app.post("/api/design/{fid}")
-def make_design(fid: str):
-    d = get_stats(fid)
+def make_design(fid: str, x_admin_key: str = Header(default="")):
+    d = get_stats(fid, x_admin_key)
     plan = design.propose(d["current"])
     return {"plan": plan, "explanation": ai.explain_design(plan)}
 
 
 # ---------- 배치(격자 편집기 ↔ Unity 공통 JSON) ----------
 @app.put("/api/layout/{fid}")
-def put_layout(fid: str, layout: dict):
+def put_layout(fid: str, layout: dict, x_admin_key: str = Header(default="")):
     f = _festival(fid)
+    _guard(f, x_admin_key)
     if not isinstance(layout.get("checkpoints"), list):
         raise HTTPException(400, "checkpoints 배열이 필요합니다")
     f["layout"] = layout
@@ -138,15 +244,14 @@ def put_layout(fid: str, layout: dict):
 
 
 @app.get("/api/layout/{fid}")
-def get_layout(fid: str):
+def get_layout(fid: str, x_admin_key: str = Header(default="")):
     f = _festival(fid)
+    _guard(f, x_admin_key)
     layout = f.get("layout")
     if not layout:
         raise HTTPException(404, "저장된 배치가 없습니다")
-    # 시뮬레이터 보정용: 실측 이탈률을 함께 내려준다 (drop_prob, 0~1)
     cur = _stats(f, f["edition"])
-    layout = {**layout, "drop_prob": {c["id"]: round(c["drop_rate"] / 100, 3) for c in cur["checkpoints"]}}
-    return layout
+    return {**layout, "drop_prob": {c["id"]: round(c["drop_rate"] / 100, 3) for c in cur["checkpoints"]}}
 
 
 @app.get("/api/health")
@@ -163,7 +268,6 @@ DEMO_CPS = [
     {"id": "craft", "name": "체험 부스", "x": 75, "y": 35},
     {"id": "view", "name": "전망대", "x": 90, "y": 12},
 ]
-
 
 # 격자 1칸 = 1m. capacity·service_sec는 운영자 추정값(실측 전)
 DEMO_LAYOUT = {
@@ -190,11 +294,11 @@ def _seed_edition(edition, keep_prob, reasons, n=320, seed=0):
         t = day + timedelta(minutes=rnd.randint(0, 420))
         for j, cp in enumerate(DEMO_CPS):
             if j > 0 and rnd.random() > keep_prob[j - 1]:
-                db.add_response({"festival": DEMO_ID, "checkpoint": DEMO_CPS[j - 1]["id"], "session": sess,
-                                 "reason": rnd.choices(list(reasons), weights=list(reasons.values()))[0],
+                db.add_response({"kind": "exit", "festival": DEMO_ID, "checkpoint": DEMO_CPS[j - 1]["id"],
+                                 "session": sess, "reason": rnd.choices(list(reasons), weights=list(reasons.values()))[0],
                                  "comment": "", "edition": edition, "ts": t.isoformat()})
                 break
-            db.add_scan({"festival": DEMO_ID, "checkpoint": cp["id"], "session": sess,
+            db.add_scan({"festival": DEMO_ID, "checkpoint": cp["id"], "session": sess, "event": "visit",
                          "edition": edition, "ts": t.isoformat()})
             t += timedelta(minutes=rnd.randint(8, 25))
 
@@ -205,31 +309,49 @@ def seed_demo():
     db.upsert_festival({"id": DEMO_ID, "name": "예시 축제 (시연용 가상 데이터)", "edition": 2,
                         "demo": True, "checkpoints": DEMO_CPS, "layout": DEMO_LAYOUT})
     db.clear_festival(DEMO_ID)
-    # 1회차: 메인 무대 → 체험 부스 구간 이탈이 큼 / 2회차: 개선 후 이탈 감소
     _seed_edition(1, [0.9, 0.85, 0.55, 0.8], {"화장실·편의시설 부족": 5, "대기 줄이 김": 2, "다음 장소가 멀다": 3}, seed=1)
     _seed_edition(2, [0.9, 0.87, 0.78, 0.82], {"대기 줄이 김": 4, "다음 장소가 멀다": 2, "화장실·편의시설 부족": 1}, seed=2)
     return {"ok": True, "festival": DEMO_ID}
 
 
 # ---------- 화면 ----------
-@app.get("/s/{fid}/{cid}")
-def visitor_page(fid: str, cid: str):
-    return FileResponse(os.path.join(STATIC, "visit.html"))
+def _page(name):
+    return FileResponse(os.path.join(STATIC, name))
+
+
+@app.get("/s/{fid}/{token}")
+def visitor_page(fid: str, token: str):
+    return _page("visit.html")
 
 
 @app.get("/sim")
 def sim_page():
-    return FileResponse(os.path.join(STATIC, "sim.html"))
+    return _page("sim.html")
 
 
 @app.get("/editor")
 def editor_page():
-    return FileResponse(os.path.join(STATIC, "editor.html"))
+    return _page("editor.html")
 
 
 @app.get("/admin")
 def admin_page():
-    return FileResponse(os.path.join(STATIC, "admin.html"))
+    return _page("admin.html")
+
+
+@app.get("/admin/events")
+def events_page():
+    return _page("events.html")
+
+
+@app.get("/admin/qr")
+def qr_page():
+    return _page("qr.html")
+
+
+@app.get("/admin/logs")
+def logs_page():
+    return _page("logs.html")
 
 
 app.mount("/", StaticFiles(directory=STATIC, html=True), name="static")
