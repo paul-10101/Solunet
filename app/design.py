@@ -15,7 +15,7 @@ def propose(stats):
             if top_reason and "화장실" in top_reason:
                 action = "이 거점 인근에 화장실·편의시설 배치"
             elif top_reason and ("대기" in top_reason or "줄" in top_reason):
-                action = "이 거점 체험 부스 분산 또는 대기열 안내 배치"
+                action = "이 거점 부스 분산 + 줄 관리 인력 배치"
             elif top_reason and ("멀" in top_reason or "거리" in top_reason):
                 action = "다음 거점을 더 가까운 위치로 이동"
             changes.append({

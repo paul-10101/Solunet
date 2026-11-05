@@ -3,41 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solunet — 축제 회차 개선 플랫폼</title>
-<meta name="description" content="작년 데이터로 올해 축제를 다시 설계하고, 성과를 숫자로 보고합니다.">
+<title>Solunet — 회차마다 더 잘 짜는 행사 시뮬레이터</title>
+<meta name="description" content="1회차 QR 스캔 데이터로 시뮬레이터를 보정하고, 2회차 규모와 배치를 제안합니다.">
 <style>
-  :root { --ink:#1a1f2b; --sub:#5b6474; --accent:#1f8f5f; --bg:#f7f8fa; }
+  :root { --ink:#1a1f2b; --sub:#5b6474; --accent:#1f8f5f; --bg:#f7f8fa; --line:#e3e6eb; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
          color:var(--ink); background:var(--bg); line-height:1.6; }
-  main { max-width:720px; margin:0 auto; padding:72px 24px; }
+  main { max-width:880px; margin:0 auto; padding:64px 24px 80px; }
+  section { margin-bottom:56px; }
   .tag { display:inline-block; font-size:13px; color:var(--accent); border:1px solid var(--accent);
-         border-radius:999px; padding:4px 12px; margin-bottom:24px; }
+         border-radius:999px; padding:4px 12px; margin-bottom:20px; }
   h1 { font-size:40px; letter-spacing:-0.02em; margin-bottom:12px; }
-  .lead { font-size:20px; color:var(--sub); margin-bottom:48px; }
-  .loop { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:48px; }
-  .step { background:#fff; border:1px solid #e3e6eb; border-radius:12px; padding:16px; }
-  .step b { display:block; font-size:15px; margin-bottom:4px; }
-  .step span { font-size:13px; color:var(--sub); }
-  .quote { font-size:17px; border-left:3px solid var(--accent); padding-left:16px; margin-bottom:48px; }
+  h2 { font-size:20px; margin-bottom:16px; }
+  .lead { font-size:19px; color:var(--sub); margin-bottom:28px; }
+  .cta { display:flex; gap:10px; flex-wrap:wrap; }
+  .cta a { padding:12px 18px; border-radius:10px; text-decoration:none; font-size:15px; border:1px solid var(--accent); }
+  .cta a.main { background:var(--accent); color:#fff; } .cta a.sub { color:var(--accent); background:#fff; }
+  .loop { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; }
+  .card b { display:block; font-size:15px; margin-bottom:4px; } .card span { font-size:13px; color:var(--sub); }
+  .num { font-size:12px; color:var(--accent); font-weight:600; }
+  .steps { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+  .st { font-size:11px; padding:2px 8px; border-radius:999px; display:inline-block; margin-top:8px; }
+  .done { background:#e6f4ed; color:#1f8f5f; } .wip { background:#fff4e5; color:#b3541e; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  ul { padding-left:18px; font-size:14px; color:var(--sub); } li { margin-bottom:4px; }
+  .quote { font-size:17px; border-left:3px solid var(--accent); padding-left:16px; }
+  .note { font-size:13px; color:var(--sub); margin-top:12px; }
   footer { font-size:13px; color:var(--sub); }
-  @media (max-width:600px) { h1 { font-size:30px; } .loop { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:720px) { h1 { font-size:30px; } .loop, .steps { grid-template-columns:1fr 1fr; } .two { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
 <main>
-  <span class="tag">준비 중 · 2026 G-Star 창업경진대회 본선</span>
-  <h1>Solunet</h1>
-  <p class="lead">작년 데이터로 올해 축제를 다시 설계하고,<br>성과를 숫자로 보고합니다.</p>
+  <section>
+    <span class="tag">2026 G-Star 창업경진대회 본선 · 개발 중</span>
+    <h1>Solunet</h1>
+    <p class="lead">행사를 회차마다 더 잘 짜 주는 시뮬레이터.<br>1회차 QR 스캔 데이터로 2회차의 규모와 배치를 제안합니다.</p>
+    <div class="cta">
+      <a class="main" href="/admin">대시보드 시연</a>
+      <a class="sub" href="/sim">시뮬레이션 5단계</a>
+      <a class="sub" href="/editor">격자 편집기</a>
+      <a class="sub" href="/s/demo/gate">방문객 QR 체험</a>
+    </div>
+  </section>
 
-  <div class="loop">
-    <div class="step"><b>행사 전</b><span>동선·부스 설계</span></div>
-    <div class="step"><b>행사 중</b><span>무설치 QR 데이터 수집</span></div>
-    <div class="step"><b>행사 후</b><span>평가보고서</span></div>
-    <div class="step"><b>다음 회차</b><span>개선안</span></div>
-  </div>
+  <section>
+    <h2>회차가 돌수록 정확해지는 구조</h2>
+    <div class="loop">
+      <div class="card"><span class="num">1</span><b>1회차 무료 운영</b><span>무설치 웹 QR 스탬프</span></div>
+      <div class="card"><span class="num">2</span><b>스캔 데이터 수집</b><span>익명 ID · 거점 · 시각</span></div>
+      <div class="card"><span class="num">3</span><b>시뮬레이터 보정</b><span>실측 이동·대기 시간 반영</span></div>
+      <div class="card"><span class="num">4</span><b>2회차 제안</b><span>규모 · 배치 · 인력 위치</span></div>
+      <div class="card"><span class="num">5</span><b>결과 비교</b><span>제안 대비 실제, 다시 보정</span></div>
+    </div>
+  </section>
 
-  <p class="quote">우리는 사람을 대체하지 않습니다.<br>같은 인원이 더 많은 일을, 기록을 남기며 하게 만듭니다.</p>
+  <section>
+    <h2>시연 흐름</h2>
+    <div class="steps">
+      <div class="card"><b>① 데이터 로드</b><span>격자 배치 + 스캔 로그</span><br><span class="st wip">개발 중</span></div>
+      <div class="card"><b>② 시뮬레이션</b><span>방문자 이동·줄 서기</span><br><span class="st wip">개발 중</span></div>
+      <div class="card"><b>③ 병목 감지</b><span>대기·이탈 구간</span><br><span class="st done">집계 구현</span></div>
+      <div class="card"><b>④ 배치안 탐색</b><span>후보 배치 비교</span><br><span class="st wip">개발 중</span></div>
+      <div class="card"><b>⑤ 최종 배치</b><span>배치 + 인력 위치 + 보고서</span><br><span class="st done">보고서 초안 구현</span></div>
+    </div>
+    <p class="note">시뮬레이션은 사고를 예측하지 않습니다. 후보 배치를 비교해 의사결정을 돕는 도구입니다.</p>
+  </section>
+
+  <section class="two">
+    <div class="card">
+      <h2>수집하는 것</h2>
+      <ul>
+        <li>익명 방문 ID (로그인 없음)</li>
+        <li>거점 ID와 시각 (입장 · 줄 서기 · 이용 시작 · 완료)</li>
+        <li>운영자 입력: 거점 위치(격자 1칸 = 1m), 수용 인원, 이용 시간</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>수집하지 않는 것</h2>
+      <ul>
+        <li>이름 · 연락처</li>
+        <li>참가자 GPS 위치</li>
+        <li>영상</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <p class="quote">우리는 사람을 대체하지 않습니다.<br>같은 인원이 더 많은 일을, 기록을 남기며 하게 만듭니다.</p>
+  </section>
 
   <footer>© 2026 Solunet · 국립경국대학교</footer>
 </main>

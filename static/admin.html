@@ -31,16 +31,17 @@
 <main>
   <header>
     <h1 id="title">Solunet 대시보드</h1>
-    <div><button class="ghost" id="seed">예시 데이터 불러오기</button></div>
+    <div><a href="/sim" style="margin-right:12px;color:#1f8f5f">시뮬레이션</a><a href="/editor" style="margin-right:12px;color:#1f8f5f">격자 편집기</a><button class="ghost" id="seed">예시 데이터 불러오기</button></div>
   </header>
   <div class="kpis" id="kpis"></div>
   <div class="grid">
     <div class="card"><h2>거점별 이탈 지도</h2><div id="map"></div></div>
     <div class="card"><h2>거점별 현황</h2><div id="table"></div></div>
   </div>
+  <div class="src" style="margin:-4px 0 16px">병목 판단은 후보 배치 비교용입니다. 사고·안전 예측이 아닙니다.</div>
   <div class="grid">
     <div class="card"><h2>평가보고서 초안</h2><button id="btnReport">보고서 생성</button><div id="report" style="margin-top:12px"></div></div>
-    <div class="card"><h2>다음 회차 설계안</h2><button id="btnDesign">설계안 생성</button><div id="design" style="margin-top:12px"></div></div>
+    <div class="card"><h2>다음 회차 배치·인력 제안</h2><button id="btnDesign">제안 생성</button><div id="design" style="margin-top:12px"></div></div>
   </div>
 </main>
 <script>

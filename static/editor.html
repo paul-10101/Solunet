@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solunet 격자 편집기</title>
+<style>
+  body { font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; margin:0; background:#f7f8fa; color:#1a1f2b; }
+  main { max-width:960px; margin:0 auto; padding:32px 24px 64px; }
+  a { color:#1f8f5f; } h1 { font-size:24px; margin:0 0 4px; } .sub { color:#5b6474; margin-bottom:20px; }
+  .card { background:#fff; border:1px solid #e3e6eb; border-radius:12px; padding:16px; margin-bottom:16px; }
+  textarea { width:100%; min-height:240px; font-family:ui-monospace,Consolas,monospace; font-size:13px;
+             border:1px solid #c7ccd4; border-radius:8px; padding:10px; box-sizing:border-box; }
+  button { padding:10px 16px; border-radius:10px; border:1px solid #1f8f5f; background:#1f8f5f; color:#fff; font-size:14px; cursor:pointer; margin-top:8px; }
+  button.ghost { background:#fff; color:#1f8f5f; }
+  #msg { font-size:13px; margin-top:8px; color:#5b6474; }
+  ul { font-size:14px; color:#5b6474; padding-left:18px; }
+</style>
+</head>
+<body>
+<main>
+  <a href="/">← Solunet</a>
+  <h1>격자 편집기</h1>
+  <div class="sub">격자(1칸 = 1m)에 거점을 배치하고 JSON으로 내보냅니다. 편집 화면은 기존 QN 격자 편집기를 연동할 예정입니다.</div>
+
+  <div class="card">
+    <b>배치 JSON 불러오기 / 저장</b>
+    <ul>
+      <li>격자 편집기에서 내보낸 JSON을 붙여넣고 저장하면, 시뮬레이션(Unity)과 대시보드가 같은 배치를 씁니다.</li>
+      <li>QR에는 좌표 없이 거점 ID만 들어갑니다. 부스를 옮겨도 QR을 다시 인쇄할 필요가 없습니다.</li>
+    </ul>
+    <textarea id="json"></textarea>
+    <button class="ghost" id="load">현재 저장본 불러오기</button>
+    <button id="save">저장</button>
+    <div id="msg"></div>
+  </div>
+</main>
+<script>
+const fid = new URLSearchParams(location.search).get('f') || 'demo';
+const $ = id => document.getElementById(id);
+async function load() {
+  const r = await fetch('/api/layout/' + fid);
+  $('json').value = r.ok ? JSON.stringify(await r.json(), null, 2) : '';
+  $('msg').textContent = r.ok ? '불러왔습니다.' : '저장된 배치가 없습니다. 대시보드에서 예시 데이터를 먼저 불러오세요.';
+}
+$('load').onclick = load;
+$('save').onclick = async () => {
+  let body;
+  try { body = JSON.parse($('json').value); } catch (e) { $('msg').textContent = 'JSON 형식이 올바르지 않습니다.'; return; }
+  const r = await fetch('/api/layout/' + fid, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  $('msg').textContent = r.ok ? '저장했습니다.' : '저장 실패: ' + (await r.text());
+};
+load();
+</script>
+</body>
+</html>
