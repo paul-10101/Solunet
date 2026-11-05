@@ -40,7 +40,7 @@ async function load() {
   const fs = await Admin.api('/api/admin/festivals');
   document.getElementById('list').innerHTML = fs.length ? `<table><tr><th>행사</th><th>거점</th><th></th></tr>` + fs.map(f =>
     `<tr><td><b>${E(f.name)}</b><br><span class="muted" style="font-size:12px">${E(f.date || '')} · ID ${E(f.id)}</span></td><td>${f.checkpoints.length}곳</td>
-     <td style="white-space:nowrap"><a class="btn line" href="/admin/qr?f=${E(f.id)}">QR 인쇄</a> <a class="btn" href="/admin/logs?f=${E(f.id)}">실시간 로그</a> <a class="btn line" href="/admin?f=${E(f.id)}">분석</a></td></tr>`).join('') + '</table>'
+     <td style="white-space:nowrap"><a class="btn line" href="/admin/qr?f=${E(f.id)}">QR 인쇄</a> <a class="btn" href="/admin/logs?f=${E(f.id)}">실시간 로그</a> <a class="btn line" href="/editor?f=${E(f.id)}">격자판</a> <a class="btn line" href="/admin?f=${E(f.id)}">분석</a></td></tr>`).join('') + '</table>'
     : '<p class="muted">아직 만든 행사가 없습니다. 오른쪽에서 만들어 주세요.</p>';
 }
 document.getElementById('newForm').onsubmit = async e => {

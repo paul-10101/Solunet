@@ -254,6 +254,30 @@ def get_layout(fid: str, x_admin_key: str = Header(default="")):
     return {**layout, "drop_prob": {c["id"]: round(c["drop_rate"] / 100, 3) for c in cur["checkpoints"]}}
 
 
+@app.get("/api/intervals/{fid}")
+def get_intervals(fid: str, x_admin_key: str = Header(default="")):
+    """스캔 로그로 거점 사이 실측 이동시간을 구한다. 줄 선 시간이 섞이므로 하위 25% 값을 쓴다."""
+    f = _festival(fid)
+    _guard(f, x_admin_key)
+    by_sess = {}
+    for s in _real(db.scans_for(f["id"], f["edition"])):
+        by_sess.setdefault(s["session"], []).append(s)
+    pairs = {}
+    for rows in by_sess.values():
+        rows.sort(key=lambda s: s["ts"])
+        for a, b in zip(rows, rows[1:]):
+            if a["checkpoint"] == b["checkpoint"]:
+                continue
+            dt = (datetime.fromisoformat(b["ts"]) - datetime.fromisoformat(a["ts"])).total_seconds()
+            if 0 < dt < 3 * 3600:
+                pairs.setdefault(f'{a["checkpoint"]}>{b["checkpoint"]}', []).append(dt)
+    out = {}
+    for k, v in pairs.items():
+        v.sort()
+        out[k] = {"n": len(v), "p25_sec": round(v[max(0, int(len(v) * 0.25) - 1)] if len(v) >= 4 else v[0], 1)}
+    return out
+
+
 @app.get("/api/health")
 def health():
     return {"ok": True, "store": db.kind, "llm": ai.llm_provider()}
@@ -300,7 +324,7 @@ def _seed_edition(edition, keep_prob, reasons, n=320, seed=0):
                 break
             db.add_scan({"festival": DEMO_ID, "checkpoint": cp["id"], "session": sess, "event": "visit",
                          "edition": edition, "ts": t.isoformat()})
-            t += timedelta(minutes=rnd.randint(8, 25))
+            t += timedelta(minutes=rnd.randint(3, 15))  # 이동 + 부스 이용 시간이 섞인 간격
 
 
 @app.post("/api/demo/seed")

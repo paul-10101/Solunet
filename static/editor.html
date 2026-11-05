@@ -1,56 +1,274 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solunet 격자 편집기</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
+<title>격자 편집기 · Solunet</title>
+<link rel="stylesheet" href="/ui.css">
 <style>
-  body { font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; margin:0; background:#f7f8fa; color:#1a1f2b; }
-  main { max-width:960px; margin:0 auto; padding:32px 24px 64px; }
-  a { color:#1f8f5f; } h1 { font-size:24px; margin:0 0 4px; } .sub { color:#5b6474; margin-bottom:20px; }
-  .card { background:#fff; border:1px solid #e3e6eb; border-radius:12px; padding:16px; margin-bottom:16px; }
-  textarea { width:100%; min-height:240px; font-family:ui-monospace,Consolas,monospace; font-size:13px;
-             border:1px solid #c7ccd4; border-radius:8px; padding:10px; box-sizing:border-box; }
-  button { padding:10px 16px; border-radius:10px; border:1px solid #1f8f5f; background:#1f8f5f; color:#fff; font-size:14px; cursor:pointer; margin-top:8px; }
-  button.ghost { background:#fff; color:#1f8f5f; }
-  #msg { font-size:13px; margin-top:8px; color:#5b6474; }
-  ul { font-size:14px; color:#5b6474; padding-left:18px; }
+  body { height:100vh; display:flex; flex-direction:column; }
+  .work { flex:1; display:grid; grid-template-columns:230px 1fr 330px; min-height:0; }
+  .side { background:#fff; border-right:1px solid var(--grid); padding:16px; overflow:auto; }
+  .side.r { border-right:0; border-left:1px solid var(--grid); }
+  .side h2 { font-size:14px; color:var(--muted); font-weight:500; margin:14px 0 8px; } .side h2:first-child { margin-top:0; }
+  .tool { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 10px; margin-bottom:6px; font:inherit; font-size:14px; background:#fff; border:1px solid var(--grid); border-radius:6px; cursor:pointer; color:var(--ink); }
+  .tool[aria-pressed="true"] { border:2px solid var(--ink); font-weight:700; }
+  .sym { width:14px; height:14px; flex:none; display:inline-block; }
+  .canvasWrap { overflow:auto; background:#E9ECE9; padding:16px; position:relative; }
+  svg#map { background:#fff; display:block; touch-action:none; user-select:none; }
+  .pending { list-style:none; } .pending li { font-size:13px; padding:6px 8px; border:1px dashed var(--line); border-radius:4px; margin-bottom:6px; cursor:pointer; }
+  .pending li[aria-selected="true"] { border:2px solid var(--route); background:var(--soft); }
+  .route li { display:flex; align-items:center; gap:6px; font-size:13px; padding:5px 0; border-bottom:1px solid var(--grid); }
+  .route li span { flex:1; } .route button { font:inherit; font-size:12px; padding:1px 7px; border:1px solid var(--grid); background:#fff; border-radius:3px; cursor:pointer; }
+  .props label { margin-bottom:10px; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .seg td, .seg th { padding:6px 4px; font-size:12px; }
+  .hint { font-size:12px; color:var(--muted); margin-top:6px; }
+  .msg { font-size:13px; margin-left:8px; color:var(--muted); }
+  @media (max-width:1000px) { .work { grid-template-columns:1fr; } .side { border:0; border-bottom:1px solid var(--grid); } }
 </style>
 </head>
 <body>
-<main>
-  <a href="/">← Solunet</a>
-  <h1>격자 편집기</h1>
-  <div class="sub">격자(1칸 = 1m)에 거점을 배치하고 JSON으로 내보냅니다. 편집 화면은 기존 QN 격자 편집기를 연동할 예정입니다.</div>
-
-  <div class="card">
-    <b>배치 JSON 불러오기 / 저장</b>
-    <ul>
-      <li>격자 편집기에서 내보낸 JSON을 붙여넣고 저장하면, 시뮬레이션(Unity)과 대시보드가 같은 배치를 씁니다.</li>
-      <li>QR에는 좌표 없이 거점 ID만 들어갑니다. 부스를 옮겨도 QR을 다시 인쇄할 필요가 없습니다.</li>
-    </ul>
-    <textarea id="json"></textarea>
-    <button class="ghost" id="load">현재 저장본 불러오기</button>
-    <button id="save">저장</button>
-    <div id="msg"></div>
+<header class="topbar">
+  <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><a class="logo" href="/"><i></i>Solunet</a><span class="muted" id="evName">격자 편집기</span><span id="demoBadge"></span></div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <a class="btn line" id="qrBtn" href="#" hidden>QR 시트 출력</a>
+    <a class="btn line" href="/sim">시뮬레이션</a>
+    <button class="btn line" id="exportBtn">JSON 내보내기</button>
+    <button class="btn" id="saveBtn">배치 저장</button><span class="msg" id="saveMsg"></span>
   </div>
-</main>
+</header>
+<div id="gate"></div>
+<div class="work" id="work" hidden>
+  <aside class="side">
+    <h2>도구</h2>
+    <button class="tool" data-tool="select"><span class="sym" style="border:2px solid #17212B"></span>선택·이동</button>
+    <button class="tool" data-tool="place"><span class="sym" style="background:#17212B"></span>스탬프 거점 놓기</button>
+    <button class="tool" data-tool="facility"><span class="sym" style="border:2px solid #17212B;background:#fff"></span>화장실·휴게 놓기</button>
+    <button class="tool" data-tool="staff"><span class="sym" style="background:#17212B;transform:rotate(45deg) scale(.75)"></span>운영 인력 놓기</button>
+    <button class="tool" data-tool="block"><span class="sym" style="background:#E4E8E4;border:1px dashed #B9C2BB"></span>설치 불가 구역 그리기</button>
+    <button class="tool" data-tool="erase"><span class="sym" style="border:2px solid #B3261E"></span>지우기</button>
+    <h2>아직 놓지 않은 거점</h2>
+    <ul class="pending" id="pending"></ul>
+    <button class="tool" id="autoBtn">자동 배치</button>
+    <h2>격자 크기 (m)</h2>
+    <div class="row2"><label>가로<input id="gw" type="number" min="10" max="300"></label><label>세로<input id="gh" type="number" min="10" max="300"></label></div>
+    <p class="hint">격자 1칸 = 1m. 10m마다 진한 선.</p>
+  </aside>
+
+  <div class="canvasWrap" id="wrap"><svg id="map"></svg></div>
+
+  <aside class="side r">
+    <h2>선택한 항목</h2>
+    <div class="props" id="props"><p class="hint">격자 위 항목을 누르면 여기서 수정합니다.</p></div>
+    <h2>동선 순서</h2>
+    <ol class="route" id="route" style="list-style:none"></ol>
+    <h2>동선 구간 거리</h2>
+    <table class="seg"><thead><tr><th>구간</th><th>거리</th><th>도보 예상</th><th>실측 하위25%</th></tr></thead><tbody id="segs"></tbody></table>
+    <p class="hint">거리는 설치 불가 구역을 돌아가는 최단 경로(A*)입니다. 도보 예상은 초속 1.2m 가정. 실측은 1회차 스캔 간격의 하위 25% 값으로, 줄 선 시간이 섞여 실제보다 길 수 있습니다.</p>
+  </aside>
+</div>
+
+<script src="/admin.js"></script>
 <script>
 const fid = new URLSearchParams(location.search).get('f') || 'demo';
-const $ = id => document.getElementById(id);
+const isDemo = fid === 'demo', E = Admin.esc, $ = id => document.getElementById(id);
+const C = 10, WALK = 1.2;   // 1m = 10px, 도보 속도 가정(m/s)
+const TYPES = { stamp: '스탬프 거점', booth: '부스', stage: '무대', info: '안내', spot: '포토·전망' };
+let fest = null, L = null, tool = 'select', sel = null, pendingPick = null, intervals = {}, paths = [];
+const call = (u, o = {}) => isDemo ? fetch(u, { ...o, headers: { 'Content-Type': 'application/json' } }).then(async r => { if (!r.ok) throw new Error(r.status); return r.json(); }) : Admin.api(u, o);
+
+// ---------- 불러오기 ----------
 async function load() {
-  const r = await fetch('/api/layout/' + fid);
-  $('json').value = r.ok ? JSON.stringify(await r.json(), null, 2) : '';
-  $('msg').textContent = r.ok ? '불러왔습니다.' : '저장된 배치가 없습니다. 대시보드에서 예시 데이터를 먼저 불러오세요.';
+  fest = isDemo ? await call('/api/festival/demo') : await call('/api/admin/festival/' + encodeURIComponent(fid));
+  let saved = null;
+  try { saved = await call('/api/layout/' + encodeURIComponent(fid)); } catch (e) {}
+  try { intervals = await call('/api/intervals/' + encodeURIComponent(fid)); } catch (e) { intervals = {}; }
+  const savedCp = Object.fromEntries(((saved && saved.checkpoints) || []).map(c => [c.id, c]));
+  L = {
+    grid: (saved && saved.grid) || { w: 100, h: 60, cell_m: 1 },
+    checkpoints: fest.checkpoints.map(c => ({ id: c.id, name: c.name, type: 'stamp', capacity: null, service_sec: null, estimated: true, ...(savedCp[c.id] || {}), name: c.name })),
+    route: (saved && saved.route && saved.route.length) ? saved.route.filter(id => fest.checkpoints.some(c => c.id === id)) : fest.checkpoints.map(c => c.id),
+    blocked: (saved && saved.blocked) || [], facilities: (saved && saved.facilities) || [], staff: (saved && saved.staff) || [],
+  };
+  fest.checkpoints.forEach(c => { if (!L.route.includes(c.id)) L.route.push(c.id); });
+  $('evName').textContent = fest.name + ' · 격자 편집기';
+  $('demoBadge').innerHTML = isDemo ? '<span class="badge demo">예시 데이터</span>' : '';
+  if (!isDemo) { $('qrBtn').hidden = false; $('qrBtn').href = '/admin/qr?f=' + encodeURIComponent(fid); }
+  $('gw').value = L.grid.w; $('gh').value = L.grid.h;
+  setTool('select'); draw();
 }
-$('load').onclick = load;
-$('save').onclick = async () => {
-  let body;
-  try { body = JSON.parse($('json').value); } catch (e) { $('msg').textContent = 'JSON 형식이 올바르지 않습니다.'; return; }
-  const r = await fetch('/api/layout/' + fid, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  $('msg').textContent = r.ok ? '저장했습니다.' : '저장 실패: ' + (await r.text());
+
+// ---------- A* 경로 (8방향, 모서리 가로지르기 금지) ----------
+function blockedGrid() {
+  const { w, h } = L.grid, g = new Uint8Array(w * h);
+  L.blocked.forEach(b => { for (let y = b.y; y < b.y + b.h; y++) for (let x = b.x; x < b.x + b.w; x++) if (x >= 0 && y >= 0 && x < w && y < h) g[y * w + x] = 1; });
+  return g;
+}
+function astar(g, a, b) {
+  const { w, h } = L.grid, N = w * h, idx = (x, y) => y * w + x;
+  const gs = new Float64Array(N).fill(Infinity), from = new Int32Array(N).fill(-1), closed = new Uint8Array(N);
+  const hfn = (x, y) => { const dx = Math.abs(x - b.x), dy = Math.abs(y - b.y); return Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy); };
+  const open = [[hfn(a.x, a.y), idx(a.x, a.y)]]; gs[idx(a.x, a.y)] = 0;
+  const free = (x, y) => x >= 0 && y >= 0 && x < w && y < h && (!g[idx(x, y)] || (x === b.x && y === b.y));
+  while (open.length) {
+    let bi = 0; for (let i = 1; i < open.length; i++) if (open[i][0] < open[bi][0]) bi = i;
+    const [, cur] = open.splice(bi, 1)[0];
+    if (closed[cur]) continue; closed[cur] = 1;
+    const cx = cur % w, cy = (cur / w) | 0;
+    if (cx === b.x && cy === b.y) { const p = []; for (let k = cur; k !== -1; k = from[k]) p.push([k % w, (k / w) | 0]); return { len: gs[cur], pts: p.reverse() }; }
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+      const nx = cx + dx, ny = cy + dy; if (!free(nx, ny)) continue;
+      if (dx && dy && (!free(cx + dx, cy) || !free(cx, cy + dy))) continue;
+      const ng = gs[cur] + (dx && dy ? Math.SQRT2 : 1), k = idx(nx, ny);
+      if (ng < gs[k]) { gs[k] = ng; from[k] = cur; open.push([ng + hfn(nx, ny), k]); }
+    }
+  }
+  return null;
+}
+function computePaths() {
+  const g = blockedGrid(), byId = Object.fromEntries(L.checkpoints.map(c => [c.id, c]));
+  const placed = L.route.map(id => byId[id]).filter(c => c && c.x != null);
+  paths = [];
+  for (let i = 0; i < placed.length - 1; i++) {
+    const a = placed[i], b = placed[i + 1], r = astar(g, a, b);
+    paths.push({ a, b, len: r ? Math.round(r.len * L.grid.cell_m) : null, pts: r ? r.pts : null });
+  }
+}
+
+// ---------- 그리기 ----------
+function draw() {
+  const { w, h } = L.grid, svg = $('map');
+  svg.setAttribute('width', w * C); svg.setAttribute('height', h * C); svg.setAttribute('viewBox', `0 0 ${w * C} ${h * C}`);
+  computePaths();
+  let s = `<defs><pattern id="g1" width="${C}" height="${C}" patternUnits="userSpaceOnUse"><path d="M${C} 0H0V${C}" fill="none" stroke="#E3E8E4" stroke-width="1"/></pattern>
+    <pattern id="g10" width="${C * 10}" height="${C * 10}" patternUnits="userSpaceOnUse"><rect width="${C * 10}" height="${C * 10}" fill="url(#g1)"/><path d="M${C * 10} 0H0V${C * 10}" fill="none" stroke="#C9D1CB" stroke-width="1"/></pattern></defs>
+    <rect width="${w * C}" height="${h * C}" fill="url(#g10)" data-bg="1"/>`;
+  L.blocked.forEach((b, i) => s += `<rect data-kind="blocked" data-i="${i}" x="${b.x * C}" y="${b.y * C}" width="${b.w * C}" height="${b.h * C}" fill="#E4E8E4" stroke="${sel && sel.kind === 'blocked' && sel.i === i ? '#17212B' : '#B9C2BB'}" stroke-dasharray="5 4" stroke-width="${sel && sel.kind === 'blocked' && sel.i === i ? 2 : 1}"/>`);
+  paths.forEach(p => { if (p.pts) s += `<polyline points="${p.pts.map(([x, y]) => `${x * C + C / 2},${y * C + C / 2}`).join(' ')}" fill="none" stroke="#1F8F5F" stroke-width="3" stroke-linejoin="round" opacity=".9"/>`;
+    else s += `<line x1="${p.a.x * C + C / 2}" y1="${p.a.y * C + C / 2}" x2="${p.b.x * C + C / 2}" y2="${p.b.y * C + C / 2}" stroke="#B3261E" stroke-width="2" stroke-dasharray="6 4"/>`; });
+  L.facilities.forEach((f, i) => { const on = sel && sel.kind === 'facility' && sel.i === i;
+    s += `<g data-kind="facility" data-i="${i}"><rect x="${f.x * C - 7}" y="${f.y * C - 7}" width="${C + 14}" height="${C + 14}" fill="#fff" stroke="${on ? '#F2C230' : '#17212B'}" stroke-width="${on ? 4 : 2}"/>
+          <text x="${f.x * C + C / 2}" y="${f.y * C + C + 22}" text-anchor="middle" font-size="12" fill="#17212B">${E(f.name)}</text></g>`; });
+  L.checkpoints.filter(c => c.x != null).forEach(c => { const on = sel && sel.kind === 'cp' && sel.id === c.id, n = L.route.indexOf(c.id) + 1;
+    s += `<g data-kind="cp" data-id="${E(c.id)}"><rect x="${c.x * C - 8}" y="${c.y * C - 8}" width="${C + 16}" height="${C + 16}" fill="#17212B" stroke="${on ? '#F2C230' : '#17212B'}" stroke-width="${on ? 4 : 0}"/>
+          <text x="${c.x * C + C / 2}" y="${c.y * C + C / 2 + 4}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">${n}</text>
+          <text x="${c.x * C + C / 2}" y="${c.y * C + C + 24}" text-anchor="middle" font-size="13" font-weight="${on ? 700 : 500}" fill="#17212B">${E(c.name)}</text></g>`; });
+  L.staff.forEach((t, i) => { const on = sel && sel.kind === 'staff' && sel.i === i;
+    s += `<g data-kind="staff" data-i="${i}"><rect x="${t.x * C}" y="${t.y * C}" width="${C}" height="${C}" fill="#17212B" stroke="${on ? '#F2C230' : 'none'}" stroke-width="3" transform="rotate(45 ${t.x * C + C / 2} ${t.y * C + C / 2})"/></g>`; });
+  if (drag && drag.kind === 'newblock') { const r = rectOf(drag.a, drag.b); s += `<rect x="${r.x * C}" y="${r.y * C}" width="${r.w * C}" height="${r.h * C}" fill="#E4E8E4" opacity=".7" stroke="#17212B" stroke-dasharray="5 4"/>`; }
+  s += `<text x="8" y="${h * C - 8}" font-size="12" fill="#55606B">격자 1칸 = 1m · ${w} × ${h}m</text>`;
+  svg.innerHTML = s;
+  drawSide();
+}
+function drawSide() {
+  const unplaced = L.checkpoints.filter(c => c.x == null);
+  if (pendingPick && !unplaced.some(c => c.id === pendingPick)) pendingPick = unplaced[0] ? unplaced[0].id : null;
+  if (!pendingPick && unplaced[0]) pendingPick = unplaced[0].id;
+  $('pending').innerHTML = unplaced.length ? unplaced.map(c => `<li data-id="${E(c.id)}" aria-selected="${c.id === pendingPick}">${E(c.name)}</li>`).join('') : '<li style="border:0;color:#1F8F5F">모든 거점을 놓았습니다</li>';
+  $('pending').querySelectorAll('li[data-id]').forEach(li => li.onclick = () => { pendingPick = li.dataset.id; setTool('place'); drawSide(); });
+  const byId = Object.fromEntries(L.checkpoints.map(c => [c.id, c]));
+  $('route').innerHTML = L.route.map((id, i) => `<li><b>${i + 1}</b><span>${E(byId[id].name)}${byId[id].x == null ? ' <small class="muted">(미배치)</small>' : ''}</span>
+    <button data-mv="${i}" data-d="-1" aria-label="위로">↑</button><button data-mv="${i}" data-d="1" aria-label="아래로">↓</button></li>`).join('');
+  $('route').querySelectorAll('button').forEach(b => b.onclick = () => { const i = +b.dataset.mv, j = i + +b.dataset.d; if (j < 0 || j >= L.route.length) return; [L.route[i], L.route[j]] = [L.route[j], L.route[i]]; draw(); });
+  let total = 0;
+  $('segs').innerHTML = paths.map(p => { const iv = intervals[`${p.a.id}>${p.b.id}`]; if (p.len) total += p.len;
+    return `<tr><td>${E(p.a.name)} → ${E(p.b.name)}</td><td>${p.len == null ? '<b style="color:#B3261E">막힘</b>' : p.len + 'm'}</td><td>${p.len == null ? '-' : (p.len / WALK / 60).toFixed(1) + '분'}</td><td>${iv ? (iv.p25_sec / 60).toFixed(1) + '분 <small class="muted">(' + iv.n + '명)</small>' : '-'}</td></tr>`; }).join('')
+    + (paths.length ? `<tr><th>전체</th><th>${total}m</th><th>${(total / WALK / 60).toFixed(1)}분</th><th></th></tr>` : '<tr><td colspan="4" class="muted">거점을 두 곳 이상 놓으면 계산됩니다</td></tr>');
+  drawProps();
+}
+function drawProps() {
+  const P = $('props');
+  if (!sel) { P.innerHTML = '<p class="hint">격자 위 항목을 누르면 여기서 수정합니다. Delete 키로 지울 수 있습니다.</p>'; return; }
+  if (sel.kind === 'cp') {
+    const c = L.checkpoints.find(x => x.id === sel.id);
+    P.innerHTML = `<p style="font-weight:700;margin-bottom:8px">${E(c.name)}</p>
+      <label>종류<select data-f="type">${Object.entries(TYPES).map(([k, v]) => `<option value="${k}" ${c.type === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+      <div class="row2"><label>x (m)<input data-f="x" type="number" value="${c.x}"></label><label>y (m)<input data-f="y" type="number" value="${c.y}"></label></div>
+      <div class="row2"><label>수용 인원<input data-f="capacity" type="number" min="0" value="${c.capacity ?? ''}"></label><label>1인 이용(분)<input data-f="service_min" type="number" min="0" step="0.5" value="${c.service_sec != null ? c.service_sec / 60 : ''}"></label></div>
+      <label style="display:flex;gap:8px;align-items:center"><input data-f="estimated" type="checkbox" style="width:auto" ${c.estimated ? 'checked' : ''}>운영자 추정값 (실측 전)</label>
+      <p class="hint">QR에는 거점 ID만 들어갑니다. 위치를 옮겨도 QR을 다시 인쇄하지 않습니다.</p>`;
+    P.querySelectorAll('[data-f]').forEach(inp => inp.onchange = () => {
+      const f = inp.dataset.f, v = inp.type === 'checkbox' ? inp.checked : inp.value;
+      if (f === 'service_min') c.service_sec = v === '' ? null : Math.round(+v * 60);
+      else if (f === 'x' || f === 'y') c[f] = clamp(+v, f === 'x' ? L.grid.w : L.grid.h);
+      else if (f === 'capacity') c.capacity = v === '' ? null : +v;
+      else c[f] = v;
+      draw();
+    });
+  } else if (sel.kind === 'facility') {
+    const f = L.facilities[sel.i];
+    P.innerHTML = `<label>시설 이름<input data-f="name" value="${E(f.name)}" maxlength="20"></label><p class="hint">스탬프는 없는 시설입니다. 시뮬레이션에서 쉬어 가는 지점으로 씁니다.</p>`;
+    P.querySelector('input').oninput = e => { f.name = e.target.value; draw(); };
+  } else if (sel.kind === 'staff') P.innerHTML = '<p>운영 인력</p><p class="hint">줄 관리·안내 인력 위치. 시뮬레이션에서 병목 거점 옆에 둡니다.</p>';
+  else if (sel.kind === 'blocked') { const b = L.blocked[sel.i]; P.innerHTML = `<p>설치 불가 구역</p><p class="hint">${b.w} × ${b.h}m. 동선이 이 구역을 돌아갑니다.</p>`; }
+}
+
+// ---------- 조작 ----------
+const clamp = (v, max) => Math.max(0, Math.min(max - 1, Math.round(v || 0)));
+function cell(ev) { const svg = $('map'), pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return { x: clamp(Math.floor(p.x / C), L.grid.w), y: clamp(Math.floor(p.y / C), L.grid.h) }; }
+const rectOf = (a, b) => ({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x) + 1, h: Math.abs(a.y - b.y) + 1 });
+function hit(ev) { const g = ev.target.closest('[data-kind]'); if (!g) return null; return { kind: g.dataset.kind, id: g.dataset.id, i: g.dataset.i != null ? +g.dataset.i : null }; }
+function setTool(t) { tool = t; document.querySelectorAll('.tool[data-tool]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tool === t)); $('map').style.cursor = t === 'select' ? 'default' : 'crosshair'; }
+document.querySelectorAll('.tool[data-tool]').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+let drag = null;
+$('map').addEventListener('pointerdown', ev => {
+  const c = cell(ev), h = hit(ev);
+  if (tool === 'erase') { if (h) { remove(h); sel = null; draw(); } return; }
+  if (tool === 'place') { const id = pendingPick; if (!id) return; const cp = L.checkpoints.find(x => x.id === id); cp.x = c.x; cp.y = c.y; sel = { kind: 'cp', id }; pendingPick = null; draw();
+    if (!L.checkpoints.some(x => x.x == null)) setTool('select'); return; }
+  if (tool === 'facility') { L.facilities.push({ id: 'fac' + Date.now().toString(36), name: '화장실', type: 'toilet', x: c.x, y: c.y }); sel = { kind: 'facility', i: L.facilities.length - 1 }; draw(); return; }
+  if (tool === 'staff') { L.staff.push({ x: c.x, y: c.y }); sel = { kind: 'staff', i: L.staff.length - 1 }; draw(); return; }
+  if (tool === 'block') { drag = { kind: 'newblock', a: c, b: c }; $('map').setPointerCapture(ev.pointerId); draw(); return; }
+  if (h && h.kind !== 'blocked') { sel = h; drag = { kind: 'move', h, start: c }; $('map').setPointerCapture(ev.pointerId); }
+  else sel = h; draw();
+});
+$('map').addEventListener('pointermove', ev => {
+  if (!drag) return; const c = cell(ev);
+  if (drag.kind === 'newblock') { drag.b = c; draw(); return; }
+  const o = item(drag.h); if (o && (o.x !== c.x || o.y !== c.y)) { o.x = c.x; o.y = c.y; draw(); }
+});
+$('map').addEventListener('pointerup', () => {
+  if (drag && drag.kind === 'newblock') { const r = rectOf(drag.a, drag.b); if (r.w * r.h > 1) { L.blocked.push(r); sel = { kind: 'blocked', i: L.blocked.length - 1 }; } }
+  drag = null; draw();
+});
+function item(h) { return h.kind === 'cp' ? L.checkpoints.find(x => x.id === h.id) : h.kind === 'facility' ? L.facilities[h.i] : h.kind === 'staff' ? L.staff[h.i] : null; }
+function remove(h) {
+  if (h.kind === 'cp') { const c = L.checkpoints.find(x => x.id === h.id); c.x = c.y = null; }  // 거점은 QR과 연결돼 있어 지우지 않고 '미배치'로 돌림
+  else if (h.kind === 'facility') L.facilities.splice(h.i, 1);
+  else if (h.kind === 'staff') L.staff.splice(h.i, 1);
+  else if (h.kind === 'blocked') L.blocked.splice(h.i, 1);
+}
+document.addEventListener('keydown', e => { if ((e.key === 'Delete' || e.key === 'Backspace') && sel && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) { remove(sel); sel = null; draw(); } });
+$('gw').onchange = $('gh').onchange = () => { L.grid.w = Math.max(10, Math.min(300, +$('gw').value || 100)); L.grid.h = Math.max(10, Math.min(300, +$('gh').value || 60));
+  L.checkpoints.forEach(c => { if (c.x != null) { c.x = clamp(c.x, L.grid.w); c.y = clamp(c.y, L.grid.h); } }); draw(); };
+$('autoBtn').onclick = () => { // 미배치 거점을 동선 순서대로 지그재그로 놓는다
+  const un = L.route.map(id => L.checkpoints.find(c => c.id === id)).filter(c => c.x == null); if (!un.length) return;
+  const cols = Math.max(2, Math.ceil(Math.sqrt(un.length * L.grid.w / L.grid.h))), gx = L.grid.w / (cols + 1), rows = Math.ceil(un.length / cols), gy = L.grid.h / (rows + 1);
+  un.forEach((c, i) => { const r = Math.floor(i / cols), k = i % cols, col = r % 2 ? cols - 1 - k : k; c.x = clamp(gx * (col + 1), L.grid.w); c.y = clamp(gy * (r + 1), L.grid.h); });
+  draw();
 };
-load();
+
+// ---------- 저장 ----------
+function exportLayout() {
+  computePaths();
+  return { id: fid + '-plan', grid: L.grid, entrance: L.route[0] || null, route: L.route,
+    checkpoints: L.checkpoints.filter(c => c.x != null).map(({ id, name, type, x, y, capacity, service_sec, estimated }) => ({ id, name, type, x, y, capacity, service_sec, estimated })),
+    facilities: L.facilities, staff: L.staff, blocked: L.blocked,
+    distances_m: Object.fromEntries(paths.filter(p => p.len != null).map(p => [`${p.a.id}>${p.b.id}`, p.len])),
+    walk_speed_mps: WALK, estimated: L.checkpoints.some(c => c.estimated), saved_at: new Date().toISOString() };
+}
+$('saveBtn').onclick = async () => {
+  $('saveMsg').textContent = '저장 중';
+  try { await call('/api/layout/' + encodeURIComponent(fid), { method: 'PUT', body: JSON.stringify(exportLayout()) }); $('saveMsg').textContent = '저장됨 ' + new Date().toLocaleTimeString('ko-KR', { hour12: false }); }
+  catch (e) { $('saveMsg').textContent = '저장 실패: ' + e.message; }
+};
+$('exportBtn').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(exportLayout(), null, 2)], { type: 'application/json' })); a.download = `solunet_layout_${fid}.json`; a.click(); };
+
+(isDemo ? Promise.resolve() : Admin.ready($('gate'))).then(async () => {
+  $('work').hidden = false;
+  try { await load(); } catch (e) { $('wrap').innerHTML = `<div class="card" style="margin:20px">${isDemo ? '예시 데이터가 없습니다. 대시보드에서 "예시 데이터 불러오기"를 먼저 눌러 주세요.' : '행사를 불러오지 못했습니다: ' + E(e.message)}</div>`; }
+});
 </script>
 </body>
 </html>
