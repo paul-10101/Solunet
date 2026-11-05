@@ -19,10 +19,33 @@ def _grounded(text, data):
     return all(n in allowed for n in re.findall(r"\d+(?:\.\d+)?", text))
 
 
+GH_MODEL = os.getenv("GH_MODEL", "openai/gpt-4.1-mini")
+
+
+def llm_provider():
+    if os.getenv("GITHUB_MODELS_TOKEN"):
+        return "github"
+    if os.getenv("ANTHROPIC_API_KEY"):
+        return "anthropic"
+    return None
+
+
 def _call_llm(system, payload):
-    key = os.getenv("ANTHROPIC_API_KEY")
-    if not key:
+    provider = llm_provider()
+    if provider == "github":  # GitHub 계정만으로 쓰는 무료 추론 API (추가 가입 없음)
+        r = httpx.post(
+            "https://models.github.ai/inference/chat/completions",
+            headers={"Authorization": f"Bearer {os.getenv('GITHUB_MODELS_TOKEN')}", "Content-Type": "application/json"},
+            json={"model": GH_MODEL, "temperature": 0.3,
+                  "messages": [{"role": "system", "content": system},
+                               {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]},
+            timeout=60,
+        )
+        r.raise_for_status()
+        return r.json()["choices"][0]["message"]["content"]
+    if provider != "anthropic":
         return None
+    key = os.getenv("ANTHROPIC_API_KEY")
     r = httpx.post(
         "https://api.anthropic.com/v1/messages",
         headers={"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"},

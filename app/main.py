@@ -99,7 +99,7 @@ def make_design(fid: str):
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "store": db.kind, "llm": bool(os.getenv("ANTHROPIC_API_KEY"))}
+    return {"ok": True, "store": db.kind, "llm": ai.llm_provider()}
 
 
 # ---------- 시연용 예시 데이터 ----------

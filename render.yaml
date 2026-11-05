@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: solunet
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: GITHUB_MODELS_TOKEN
+        sync: false
+      - key: MONGODB_URI
+        sync: false

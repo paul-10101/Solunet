@@ -18,14 +18,10 @@ uvicorn app.main:app --reload
 | 이름 | 용도 |
 |---|---|
 | `MONGODB_URI` | MongoDB Atlas 연결 문자열 |
-| `ANTHROPIC_API_KEY` | AI 보고서·설계 설명 (없으면 템플릿 문장) |
+| `GITHUB_MODELS_TOKEN` | AI 보고서·설계 설명 — GitHub 토큰(models:read)으로 무료 사용. 없으면 템플릿 문장 |
+| `ANTHROPIC_API_KEY` | (선택) 다른 LLM 사용 시 |
 | `SENTRY_DSN` | 에러 추적 (선택) |
 
-## 배포 (Heroku)
-```bash
-heroku create solunet
-heroku ps:type eco
-git push heroku main
-heroku domains:add www.solunet.software
-heroku certs:auto:enable
-```
+## 배포 (Render)
+Render → New → Blueprint → 이 저장소 선택 (render.yaml 자동 적용) → 환경변수 입력.
+도메인: Settings → Custom Domains → `www.solunet.software` → Name.com에 CNAME 추가.
