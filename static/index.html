@@ -166,6 +166,16 @@
     .proof .wrap { grid-template-columns:1fr 1fr; }
     .proof .wrap > div { border-left:0; padding-left:0; }
   }
+  .sub { font-size:20px; margin:56px 0 20px; }
+  .demos { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .demo { display:block; text-decoration:none; background:var(--ink); color:#F3F5F2; padding:28px; border-radius:6px; transition:transform .15s; }
+  .demo:hover { transform:translateY(-4px); }
+  .demo .tag { display:inline-block; font-size:12px; font-weight:700; background:var(--sign); color:var(--ink); padding:2px 8px; border-radius:2px; margin-bottom:14px; }
+  .demo h3 { font-size:21px; margin-bottom:8px; }
+  .demo p { font-size:15px; color:#AEB8C2; margin-bottom:18px; }
+  .demo b { color:var(--sign); font-size:15px; }
+  .fact .n { font-size:34px !important; }
+  @media (max-width:900px) { .demos { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -173,9 +183,8 @@
   <nav>
     <a class="logo" href="/"><i></i>Solunet</a>
     <div class="links">
-      <a href="#how">진행 방식</a>
-      <a href="#price">도입 방식</a>
-      <a href="/admin">데모 보기</a>
+      <a href="#how">서비스</a>
+      <a href="#demo">데모 체험</a>
       <a class="req" href="#contact">1회차 무료 신청</a>
     </div>
   </nav>
@@ -186,7 +195,7 @@
       <h1>작년 축제 데이터로<br><em>올해 부스 배치</em>를 정합니다</h1>
       <p>1회차는 무료로 운영하며 방문 데이터를 모읍니다. 2회차부터는 그 데이터로 부스 배치와 운영 인력 위치를 시뮬레이션해 제안하고, 결과를 보고서로 드립니다.</p>
       <a class="btn solid" href="#contact">1회차 무료 운영 신청</a>
-      <a class="btn line" href="/admin">데모 대시보드</a>
+      <a class="btn line" href="#demo">데모 바로 체험</a>
     </div>
 
     <figure class="plan" aria-label="예시 축제 배치도: 1회차 실측과 2회차 제안 비교">
@@ -232,9 +241,9 @@
     <h2>축제는 늘었는데, 무엇이 나아졌는지 증명하기는 어렵습니다</h2>
     <p class="intro">매년 같은 축제를 열지만 작년의 동선과 대기 문제는 기록으로 남지 않고, 평가는 행사 당일 받은 설문 몇백 부에 기대고 있습니다.</p>
     <div class="facts">
-      <div class="fact"><div class="n">1,214개</div><p>2025년 전국 지역축제 수. 2019년 884개에서 37% 늘었습니다.</p><small>나라살림연구소 보고서, 세계일보 보도</small></div>
-      <div class="fact"><div class="n">약 0%</div><p>같은 기간 방문객 1인당 소비 증가율. 규모는 커졌지만 성과는 제자리입니다.</p><small>나라살림연구소 보고서, 세계일보 보도</small></div>
-      <div class="fact"><div class="n">320부</div><p>한 지역축제 조사평가에서 현장 배포한 종이 설문 수. 동선과 대기는 설문으로 잡히지 않습니다.</p><small>2023 군산시간여행축제 조사평가</small></div>
+      <div class="fact"><div class="n">관련 없음</div><p>지역축제 평가 결과와 방문자 만족도 사이에 유의한 관련이 없었습니다. 지금 평가는 현장을 못 잡습니다.</p><small>KCI 등재 논문, 2015</small></div>
+      <div class="fact"><div class="n">320부</div><p>1,800만 원짜리 조사평가에서 받은 종이 설문 수. 동선과 대기는 설문으로 잡히지 않습니다.</p><small>군산시 축제 조사평가 용역</small></div>
+      <div class="fact"><div class="n">방문객 수만</div><p>통신·카드 빅데이터와 QR 툴은 몇 명이 왔는지는 셉니다. 어느 거점에서 막히고 그만뒀는지는 남지 않습니다.</p><small>동해시 KT 빅데이터 분석, 팝핀 리포트 항목 기준</small></div>
     </div>
   </div>
 </section>
@@ -250,6 +259,19 @@
       <li><b>2회차 배치 제안</b><p>후보 배치를 비교해 부스 위치와 운영 인력 위치를 제안합니다.</p></li>
       <li><b>결과 비교</b><p>제안대로 운영한 결과를 보고서로 정리하고 다시 보정합니다.</p></li>
     </ol>
+    <h3 class="sub" id="price">도입 비용</h3>
+    <div class="price">
+      <div class="tier first">
+        <h3>1회차 운영</h3>
+        <div class="cost">무료</div>
+        <ul><li>거점 QR 제작과 웹 스탬프 랠리 운영</li><li>방문·대기·이탈 데이터 수집</li><li>행사 후 기본 결과 요약</li></ul>
+      </div>
+      <div class="tier next">
+        <h3>2회차부터 회차 패키지</h3>
+        <div class="cost">축제 규모에 따라 협의</div>
+        <ul><li>배치·인력 제안서 (행사 전)</li><li>성과 평가보고서 (행사 후)</li><li>회차 비교 개선안과 데이터 누적 관리</li></ul>
+      </div>
+
   </div>
 </section>
 
@@ -282,24 +304,6 @@
   </div>
 </section>
 
-<section class="block" id="price">
-  <div class="wrap">
-    <h2>처음 한 번은 비용 없이 시작합니다</h2>
-    <p class="intro">데이터가 없는 상태에서 제안할 수는 없습니다. 그래서 1회차 운영은 무료로 하고, 그 결과를 보고 도입을 결정하시면 됩니다.</p>
-    <div class="price">
-      <div class="tier first">
-        <h3>1회차 운영</h3>
-        <div class="cost">무료</div>
-        <ul><li>거점 QR 제작과 웹 스탬프 랠리 운영</li><li>방문·대기·이탈 데이터 수집</li><li>행사 후 기본 결과 요약</li></ul>
-      </div>
-      <div class="tier next">
-        <h3>2회차부터 회차 패키지</h3>
-        <div class="cost">축제 규모에 따라 협의</div>
-        <ul><li>배치·인력 제안서 (행사 전)</li><li>성과 평가보고서 (행사 후)</li><li>회차 비교 개선안과 데이터 누적 관리</li></ul>
-      </div>
-    </div>
-  </div>
-</section>
 
 <section class="block">
   <div class="wrap data">
@@ -312,6 +316,18 @@
       <ul><li>익명 방문 번호</li><li>찍은 거점과 시각 (도착·대기·이용 시작·완료)</li><li>선택형 이탈 사유</li></ul>
       <h3 style="margin-top:20px">기록하지 않는 것</h3>
       <ul><li>이름과 연락처</li><li>참가자 GPS 위치</li><li>영상</li></ul>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="demo">
+  <div class="wrap">
+    <h2>지금 바로 눌러 보세요</h2>
+    <p class="intro">가입 없이 열리는 실제 화면입니다. 예시 축제 데이터가 들어 있습니다.</p>
+    <div class="demos">
+      <a class="demo" href="/s/demo/gate?test=1"><span class="tag">방문객</span><h3>QR 스탬프 화면</h3><p>방문객이 QR을 찍으면 보는 화면입니다. 앱 설치도 가입도 없습니다.</p><b>열어 보기 →</b></a>
+      <a class="demo" href="/admin"><span class="tag">담당자</span><h3>분석 대시보드</h3><p>거점별 도착·이탈, 1·2회차 비교, AI 보고서 초안을 봅니다.</p><b>열어 보기 →</b></a>
+      <a class="demo" href="/editor"><span class="tag">설계</span><h3>격자 배치 편집기</h3><p>1m 격자 위에 거점·시설·인력을 놓으면 우회 거리와 이동 시간을 계산합니다.</p><b>열어 보기 →</b></a>
     </div>
   </div>
 </section>
