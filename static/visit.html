@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스탬프 랠리</title>
+<style>
+  body { font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; margin:0; background:#f7f8fa; color:#1a1f2b; }
+  main { max-width:480px; margin:0 auto; padding:24px 20px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; } .sub { color:#5b6474; font-size:14px; margin-bottom:20px; }
+  .stamps { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:20px; }
+  .st { aspect-ratio:1; border-radius:50%; border:2px dashed #c7ccd4; display:flex; align-items:center;
+        justify-content:center; font-size:11px; text-align:center; color:#8a93a3; padding:4px; }
+  .st.on { border:2px solid #1f8f5f; background:#e6f4ed; color:#1f8f5f; font-weight:600; }
+  .card { background:#fff; border:1px solid #e3e6eb; border-radius:12px; padding:16px; margin-bottom:16px; }
+  .ok { color:#1f8f5f; font-weight:600; }
+  button { width:100%; padding:12px; border-radius:10px; border:1px solid #c7ccd4; background:#fff; font-size:15px; margin-top:8px; }
+  button.pick { text-align:left; }
+  .muted { color:#8a93a3; font-size:13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">스탬프 랠리</h1>
+  <div class="sub">설치 없이 QR만 찍으면 됩니다</div>
+  <div class="stamps" id="stamps"></div>
+  <div class="card" id="msg">불러오는 중…</div>
+  <div class="card">
+    <b>여기서 그만두시나요?</b>
+    <div class="muted">이유를 알려주시면 다음 축제가 더 좋아집니다 (익명)</div>
+    <div id="reasons"></div>
+  </div>
+</main>
+<script>
+const [, , fid, cid] = location.pathname.split('/');
+const KEY = 'solunet_session';
+let session;
+try { session = localStorage.getItem(KEY); } catch (e) {}
+if (!session) {
+  session = 's' + Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+  try { localStorage.setItem(KEY, session); } catch (e) {}
+}
+const doneKey = 'solunet_done_' + fid;
+let done = [];
+try { done = JSON.parse(localStorage.getItem(doneKey) || '[]'); } catch (e) {}
+
+const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+async function main() {
+  const res = await fetch('/api/festival/' + fid);
+  if (!res.ok) { document.getElementById('msg').textContent = '축제 정보를 찾을 수 없습니다.'; return; }
+  const f = await res.json();
+  document.getElementById('title').textContent = f.name;
+  const cp = f.checkpoints.find(c => c.id === cid);
+  if (cp && !done.includes(cid)) {
+    const r = await post('/api/scan', { festival: fid, checkpoint: cid, session });
+    if (r.ok) { done.push(cid); try { localStorage.setItem(doneKey, JSON.stringify(done)); } catch (e) {} }
+  }
+  document.getElementById('stamps').innerHTML = f.checkpoints
+    .map(c => `<div class="st ${done.includes(c.id) ? 'on' : ''}">${c.name}</div>`).join('');
+  const left = f.checkpoints.filter(c => !done.includes(c.id));
+  document.getElementById('msg').innerHTML = cp
+    ? `<span class="ok">'${cp.name}' 스탬프 완료!</span><br>` +
+      (left.length ? `남은 곳: ${left.map(c => c.name).join(', ')}` : '🎉 모든 스탬프를 모았습니다!')
+    : '알 수 없는 거점입니다.';
+  const reasons = ['화장실·편의시설 부족', '대기 줄이 김', '다음 장소가 멀다', '시간이 없음', '기타'];
+  document.getElementById('reasons').innerHTML = reasons
+    .map(r => `<button class="pick" data-r="${r}">${r}</button>`).join('');
+  document.querySelectorAll('.pick').forEach(b => b.onclick = async () => {
+    await post('/api/exit-reason', { festival: fid, checkpoint: cid, session, reason: b.dataset.r });
+    document.getElementById('reasons').innerHTML = '<p class="ok">응답 감사합니다!</p>';
+  });
+}
+main();
+</script>
+</body>
+</html>

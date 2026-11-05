@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solunet 대시보드</title>
+<style>
+  body { font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; margin:0; background:#f7f8fa; color:#1a1f2b; }
+  main { max-width:1080px; margin:0 auto; padding:32px 24px 64px; }
+  header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+  h1 { font-size:24px; margin:0; } h2 { font-size:17px; margin:0 0 12px; }
+  .badge { font-size:12px; color:#b3541e; border:1px solid #b3541e; border-radius:999px; padding:2px 10px; margin-left:8px; }
+  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+  .kpi, .card { background:#fff; border:1px solid #e3e6eb; border-radius:12px; padding:16px; }
+  .kpi b { display:block; font-size:26px; } .kpi span { font-size:13px; color:#5b6474; }
+  .kpi small { font-size:12px; color:#5b6474; }
+  .grid { display:grid; grid-template-columns:1.2fr 1fr; gap:16px; margin-bottom:16px; }
+  svg { width:100%; height:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  td, th { padding:8px 6px; border-bottom:1px solid #eef0f3; text-align:left; } th { color:#5b6474; font-weight:500; }
+  button { padding:10px 16px; border-radius:10px; border:1px solid #1f8f5f; background:#1f8f5f; color:#fff; font-size:14px; cursor:pointer; }
+  button.ghost { background:#fff; color:#1f8f5f; }
+  pre { white-space:pre-wrap; font-family:inherit; font-size:14px; line-height:1.7; margin:0; }
+  .src { font-size:12px; color:#8a93a3; margin-top:8px; }
+  .chg { border-left:3px solid #1f8f5f; padding:6px 12px; margin-bottom:8px; font-size:14px; }
+  .chg small { color:#5b6474; display:block; }
+  @media (max-width:760px) { .kpis { grid-template-columns:repeat(2,1fr); } .grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="title">Solunet 대시보드</h1>
+    <div><button class="ghost" id="seed">예시 데이터 불러오기</button></div>
+  </header>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid">
+    <div class="card"><h2>거점별 이탈 지도</h2><div id="map"></div></div>
+    <div class="card"><h2>거점별 현황</h2><div id="table"></div></div>
+  </div>
+  <div class="grid">
+    <div class="card"><h2>평가보고서 초안</h2><button id="btnReport">보고서 생성</button><div id="report" style="margin-top:12px"></div></div>
+    <div class="card"><h2>다음 회차 설계안</h2><button id="btnDesign">설계안 생성</button><div id="design" style="margin-top:12px"></div></div>
+  </div>
+</main>
+<script>
+const fid = new URLSearchParams(location.search).get('f') || 'demo';
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+async function load() {
+  const r = await fetch('/api/stats/' + fid);
+  if (!r.ok) { $('kpis').innerHTML = '<div class="card">데이터가 없습니다. "예시 데이터 불러오기"를 눌러 주세요.</div>'; return; }
+  const d = await r.json(), c = d.current, p = d.previous;
+  $('title').innerHTML = esc(d.festival.name) + (d.festival.demo ? '<span class="badge">예시 데이터</span>' : '');
+  const delta = (cur, prev, unit) => p ? `<small>작년 ${prev}${unit}</small>` : '';
+  $('kpis').innerHTML = [
+    ['참여자', c.visitors, '명', p && p.visitors],
+    ['완주율', c.completion_rate, '%', p && p.completion_rate],
+    ['스캔 수', c.scans, '회', p && p.scans],
+    ['이탈 사유 응답', c.responses, '건', p && p.responses],
+  ].map(([k, v, u, pv]) => `<div class="kpi"><span>${k}</span><b>${v}${u}</b>${delta(v, pv, u)}</div>`).join('');
+
+  // 지도: 거점 원 크기 = 방문자, 색 진하기 = 이탈률
+  const cps = d.festival.checkpoints, byId = Object.fromEntries(c.checkpoints.map(x => [x.id, x]));
+  const max = Math.max(...c.checkpoints.map(x => x.visitors), 1);
+  const X = x => 40 + x * 5.2, Y = y => 20 + y * 2.6;
+  let svg = `<svg viewBox="0 0 600 300"><rect x="0" y="0" width="600" height="300" rx="10" fill="#f2f4f7"/>`;
+  svg += `<polyline fill="none" stroke="#c7ccd4" stroke-width="3" stroke-dasharray="6 6" points="${cps.map(p => X(p.x) + ',' + Y(p.y)).join(' ')}"/>`;
+  cps.forEach(cp => {
+    const s = byId[cp.id], rad = 10 + 18 * s.visitors / max, a = Math.min(0.15 + s.drop_rate / 50, 0.95);
+    svg += `<circle cx="${X(cp.x)}" cy="${Y(cp.y)}" r="${rad}" fill="rgba(214,69,65,${a})" stroke="#fff" stroke-width="2"/>`;
+    svg += `<text x="${X(cp.x)}" y="${Y(cp.y) + rad + 16}" text-anchor="middle" font-size="13" fill="#1a1f2b">${esc(cp.name)}</text>`;
+    svg += `<text x="${X(cp.x)}" y="${Y(cp.y) + rad + 31}" text-anchor="middle" font-size="12" fill="#5b6474">이탈 ${s.drop_rate}%</text>`;
+  });
+  $('map').innerHTML = svg + '</svg><div class="src">원 크기 = 방문자 수, 붉은 정도 = 그 거점 이후 이탈률</div>';
+
+  const prevCp = p ? Object.fromEntries(p.checkpoints.map(x => [x.id, x])) : {};
+  $('table').innerHTML = `<table><tr><th>거점</th><th>방문</th><th>이탈률</th>${p ? '<th>작년</th>' : ''}</tr>` +
+    c.checkpoints.map(x => `<tr><td>${esc(x.name)}</td><td>${x.visitors}</td><td>${x.drop_rate}%</td>${p ? `<td>${prevCp[x.id] ? prevCp[x.id].drop_rate + '%' : '-'}</td>` : ''}</tr>`).join('') +
+    '</table>' + (Object.keys(c.exit_reasons).length
+      ? '<div class="src">이탈 사유: ' + Object.entries(c.exit_reasons).map(([k, v]) => `${esc(k)} ${v}`).join(' · ') + '</div>' : '');
+}
+
+const srcLabel = s => s === 'llm' ? 'AI 작성 · 숫자는 코드 계산값과 대조 완료' : '템플릿 작성 (AI 미연결)';
+$('btnReport').onclick = async () => {
+  $('report').textContent = '작성 중…';
+  const d = await (await fetch('/api/report/' + fid, { method: 'POST' })).json();
+  $('report').innerHTML = `<pre>${esc(d.text)}</pre><div class="src">${srcLabel(d.source)}</div>`;
+};
+$('btnDesign').onclick = async () => {
+  $('design').textContent = '설계 중…';
+  const d = await (await fetch('/api/design/' + fid, { method: 'POST' })).json();
+  $('design').innerHTML = d.plan.changes.map(c => `<div class="chg"><b>${esc(c.checkpoint)}</b> — ${esc(c.action)}<small>근거: ${esc(c.evidence)}</small></div>`).join('') +
+    `<pre style="margin-top:12px">${esc(d.explanation.text)}</pre><div class="src">${srcLabel(d.explanation.source)}</div>`;
+};
+$('seed').onclick = async () => { await fetch('/api/demo/seed', { method: 'POST' }); load(); };
+load();
+</script>
+</body>
+</html>
