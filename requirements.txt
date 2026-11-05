@@ -1,5 +1,6 @@
 fastapi
 uvicorn[standard]
 pymongo
+psycopg[binary]
 httpx
 sentry-sdk[fastapi]

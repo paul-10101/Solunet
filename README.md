@@ -5,7 +5,7 @@
 ## 구조
 - `/` 소개 페이지 · `/admin` 관리자 대시보드 · `/s/{축제}/{거점}` 방문객 QR 페이지
 - `app/stats.py` 집계(코드 계산) · `app/design.py` 규칙 기반 설계안 · `app/ai.py` LLM 문장 작성(숫자 대조 검증)
-- 저장소: `MONGODB_URI` 있으면 MongoDB, 없으면 메모리
+- 저장소: `DATABASE_URL` 있으면 PostgreSQL, `MONGODB_URI` 있으면 MongoDB, 둘 다 없으면 메모리
 
 ## 로컬 실행
 ```bash
@@ -17,7 +17,8 @@ uvicorn app.main:app --reload
 ## 환경변수
 | 이름 | 용도 |
 |---|---|
-| `MONGODB_URI` | MongoDB Atlas 연결 문자열 |
+| `DATABASE_URL` | PostgreSQL (Render 무료 DB, render.yaml이 자동 연결) |
+| `MONGODB_URI` | (선택) MongoDB 사용 시 |
 | `GITHUB_MODELS_TOKEN` | AI 보고서·설계 설명 — GitHub 토큰(models:read)으로 무료 사용. 없으면 템플릿 문장 |
 | `ANTHROPIC_API_KEY` | (선택) 다른 LLM 사용 시 |
 | `SENTRY_DSN` | 에러 추적 (선택) |

@@ -1,3 +1,9 @@
+databases:
+  - name: solunet-db
+    plan: free
+    databaseName: solunet
+    user: solunet
+
 services:
   - type: web
     name: solunet
@@ -11,5 +17,7 @@ services:
         value: 3.12.7
       - key: GITHUB_MODELS_TOKEN
         sync: false
-      - key: MONGODB_URI
-        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: solunet-db
+          property: connectionString

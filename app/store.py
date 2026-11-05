@@ -76,6 +76,75 @@ class MongoStore:
         self.db.responses.delete_many({"festival": fid})
 
 
+class PostgresStore:
+    """Render 무료 PostgreSQL. 문서를 JSONB로 저장해서 Mongo와 같은 방식으로 쓴다."""
+    kind = "postgres"
+
+    def __init__(self, url):
+        import psycopg
+        from psycopg.types.json import Jsonb
+
+        self.Jsonb, self.psycopg, self.url = Jsonb, psycopg, url
+        self.conn = psycopg.connect(url, autocommit=True)
+        with self.conn.cursor() as c:
+            c.execute("CREATE TABLE IF NOT EXISTS festivals (id TEXT PRIMARY KEY, doc JSONB NOT NULL)")
+            for t in ("scans", "responses"):
+                c.execute(f"CREATE TABLE IF NOT EXISTS {t} (id BIGSERIAL PRIMARY KEY, festival TEXT NOT NULL, "
+                          f"edition INT NOT NULL, doc JSONB NOT NULL)")
+                c.execute(f"CREATE INDEX IF NOT EXISTS {t}_fe ON {t} (festival, edition)")
+
+    def _q(self, sql, args=(), fetch=False, retry=True):
+        try:
+            with self.conn.cursor() as c:
+                c.execute(sql, args)
+                return c.fetchall() if fetch else None
+        except self.psycopg.OperationalError:
+            if not retry:
+                raise
+            self.conn = self.psycopg.connect(self.url, autocommit=True)  # 끊긴 연결 재접속
+            return self._q(sql, args, fetch, retry=False)
+
+    def upsert_festival(self, fest):
+        self._q("INSERT INTO festivals (id, doc) VALUES (%s, %s) ON CONFLICT (id) DO UPDATE SET doc = EXCLUDED.doc",
+                (fest["id"], self.Jsonb(fest)))
+
+    def get_festival(self, fid):
+        rows = self._q("SELECT doc FROM festivals WHERE id = %s", (fid,), fetch=True)
+        return rows[0][0] if rows else None
+
+    def list_festivals(self):
+        return [r[0] for r in self._q("SELECT doc FROM festivals", fetch=True)]
+
+    def _add(self, table, doc):
+        self._q(f"INSERT INTO {table} (festival, edition, doc) VALUES (%s, %s, %s)",
+                (doc["festival"], doc["edition"], self.Jsonb(doc)))
+
+    def add_scan(self, doc):
+        self._add("scans", doc)
+
+    def add_response(self, doc):
+        self._add("responses", doc)
+
+    def _get(self, table, fid, edition):
+        if edition is None:
+            return [r[0] for r in self._q(f"SELECT doc FROM {table} WHERE festival = %s", (fid,), fetch=True)]
+        return [r[0] for r in self._q(f"SELECT doc FROM {table} WHERE festival = %s AND edition = %s",
+                                      (fid, edition), fetch=True)]
+
+    def scans_for(self, fid, edition=None):
+        return self._get("scans", fid, edition)
+
+    def responses_for(self, fid, edition=None):
+        return self._get("responses", fid, edition)
+
+    def clear_festival(self, fid):
+        self._q("DELETE FROM scans WHERE festival = %s", (fid,))
+        self._q("DELETE FROM responses WHERE festival = %s", (fid,))
+
+
 def make_store():
-    uri = os.getenv("MONGODB_URI")
-    return MongoStore(uri) if uri else MemoryStore()
+    if os.getenv("MONGODB_URI"):
+        return MongoStore(os.getenv("MONGODB_URI"))
+    if os.getenv("DATABASE_URL"):
+        return PostgresStore(os.getenv("DATABASE_URL"))
+    return MemoryStore()
