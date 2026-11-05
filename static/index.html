@@ -3,99 +3,375 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solunet — 회차마다 더 잘 짜는 행사 시뮬레이터</title>
-<meta name="description" content="1회차 QR 스캔 데이터로 시뮬레이터를 보정하고, 2회차 규모와 배치를 제안합니다.">
+<title>Solunet — 작년 축제 데이터로 올해 배치를 정합니다</title>
+<meta name="description" content="1회차는 무료로 운영하고, 그 데이터로 다음 회차의 부스 배치와 운영 인력 위치를 제안합니다. 지역축제·행사 담당자를 위한 회차 개선 서비스.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root { --ink:#1a1f2b; --sub:#5b6474; --accent:#1f8f5f; --bg:#f7f8fa; --line:#e3e6eb; }
+  :root {
+    --paper:#F3F5F2;   /* 현장 배치도 용지 */
+    --ink:#17212B;     /* 도면 잉크 */
+    --grid:#D5DCD6;    /* 1m 격자 */
+    --route:#1F8F5F;   /* 동선 */
+    --sign:#F2C230;    /* 현장 안내판 노랑: 병목·주의 */
+    --muted:#55606B;
+  }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
-         color:var(--ink); background:var(--bg); line-height:1.6; }
-  main { max-width:880px; margin:0 auto; padding:64px 24px 80px; }
-  section { margin-bottom:56px; }
-  .tag { display:inline-block; font-size:13px; color:var(--accent); border:1px solid var(--accent);
-         border-radius:999px; padding:4px 12px; margin-bottom:20px; }
-  h1 { font-size:40px; letter-spacing:-0.02em; margin-bottom:12px; }
-  h2 { font-size:20px; margin-bottom:16px; }
-  .lead { font-size:19px; color:var(--sub); margin-bottom:28px; }
-  .cta { display:flex; gap:10px; flex-wrap:wrap; }
-  .cta a { padding:12px 18px; border-radius:10px; text-decoration:none; font-size:15px; border:1px solid var(--accent); }
-  .cta a.main { background:var(--accent); color:#fff; } .cta a.sub { color:var(--accent); background:#fff; }
-  .loop { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
-  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; }
-  .card b { display:block; font-size:15px; margin-bottom:4px; } .card span { font-size:13px; color:var(--sub); }
-  .num { font-size:12px; color:var(--accent); font-weight:600; }
-  .steps { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
-  .st { font-size:11px; padding:2px 8px; border-radius:999px; display:inline-block; margin-top:8px; }
-  .done { background:#e6f4ed; color:#1f8f5f; } .wip { background:#fff4e5; color:#b3541e; }
-  .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  ul { padding-left:18px; font-size:14px; color:var(--sub); } li { margin-bottom:4px; }
-  .quote { font-size:17px; border-left:3px solid var(--accent); padding-left:16px; }
-  .note { font-size:13px; color:var(--sub); margin-top:12px; }
-  footer { font-size:13px; color:var(--sub); }
-  @media (max-width:720px) { h1 { font-size:30px; } .loop, .steps { grid-template-columns:1fr 1fr; } .two { grid-template-columns:1fr; } }
+  html { scroll-behavior:smooth; }
+  body { font-family:"IBM Plex Sans KR",system-ui,sans-serif; color:var(--ink); background:var(--paper);
+         line-height:1.65; font-size:17px; -webkit-font-smoothing:antialiased; word-break:keep-all; overflow-wrap:break-word; }
+  a { color:inherit; }
+  :focus-visible { outline:3px solid var(--sign); outline-offset:2px; }
+  .wrap { max-width:1160px; margin:0 auto; padding:0 28px; }
+
+  /* 상단 */
+  nav { display:flex; justify-content:space-between; align-items:center; padding:22px 0; }
+  .logo { font-weight:700; font-size:20px; letter-spacing:-0.01em; text-decoration:none; }
+  .logo i { font-style:normal; display:inline-block; width:10px; height:10px; background:var(--route); margin-right:8px; transform:translateY(-1px); }
+  nav .links a { margin-left:24px; font-size:15px; text-decoration:none; color:var(--muted); }
+  nav .links a.req { color:var(--ink); font-weight:500; border-bottom:2px solid var(--sign); }
+
+  /* 히어로 */
+  .hero { display:grid; grid-template-columns:5fr 7fr; gap:48px; align-items:center; padding:40px 0 72px; }
+  h1 { font-size:46px; line-height:1.22; letter-spacing:-0.025em; font-weight:700; margin-bottom:20px; }
+  .hero p { color:var(--muted); font-size:18px; max-width:30em; margin-bottom:32px; }
+  .btn { display:inline-block; padding:14px 22px; font-size:16px; font-weight:500; text-decoration:none; border:2px solid var(--ink); border-radius:4px; cursor:pointer; font-family:inherit; }
+  .btn.solid { background:var(--ink); color:var(--paper); }
+  .btn.line { background:transparent; color:var(--ink); margin-left:8px; }
+
+  .plan { background:#fff; border:1px solid var(--grid); border-radius:6px; padding:18px; }
+  .plan-head { display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:14px; color:var(--muted); }
+  .toggle { display:inline-flex; border:1px solid var(--ink); border-radius:4px; overflow:hidden; }
+  .toggle button { white-space:nowrap; font-family:inherit; font-size:14px; padding:6px 14px; border:0; background:#fff; color:var(--ink); cursor:pointer; }
+  .toggle button[aria-pressed="true"] { background:var(--ink); color:#fff; }
+  .plan svg { width:100%; height:auto; display:block; }
+  .plan-foot { display:flex; gap:28px; margin-top:12px; font-size:14px; color:var(--muted); flex-wrap:wrap; }
+  .plan-foot b { color:var(--ink); font-size:20px; font-weight:700; margin-right:6px; font-variant-numeric:tabular-nums; }
+  .legend { display:flex; gap:16px; font-size:13px; color:var(--muted); margin-top:8px; flex-wrap:wrap; }
+  .legend span::before { content:""; display:inline-block; width:10px; height:10px; margin-right:6px; vertical-align:-1px; }
+  .lg-route::before { background:var(--route); } .lg-jam::before { background:var(--sign); border-radius:50%; } .lg-staff::before { background:var(--ink); transform:rotate(45deg); }
+
+  /* 공통 섹션 */
+  section.block { padding:80px 0; border-top:1px solid var(--grid); }
+  h2 { font-size:32px; line-height:1.3; letter-spacing:-0.02em; margin-bottom:16px; max-width:22em; }
+  .intro { color:var(--muted); max-width:36em; margin-bottom:40px; }
+
+  /* 문제 */
+  .facts { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; }
+  .fact .n { font-size:40px; font-weight:700; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }
+  .fact p { color:var(--muted); font-size:15px; }
+  .fact small { display:block; font-size:12px; color:var(--muted); margin-top:6px; opacity:.85; }
+
+  /* 진행 순서 (실제 순서라서 번호 사용) */
+  .steps { list-style:none; display:grid; grid-template-columns:repeat(5,1fr); counter-reset:s; position:relative; }
+  .steps::before { content:""; position:absolute; top:17px; left:18px; right:18px; height:2px; background:var(--route); }
+  .steps li { counter-increment:s; padding-right:20px; position:relative; }
+  .steps li::before { content:counter(s); display:flex; align-items:center; justify-content:center; width:36px; height:36px;
+                      border-radius:50%; background:var(--paper); border:2px solid var(--route); font-weight:700; margin-bottom:16px; position:relative; }
+  .steps li.free::before { background:var(--sign); border-color:var(--sign); }
+  .steps b { display:block; margin-bottom:4px; }
+  .steps p { font-size:15px; color:var(--muted); }
+
+  /* 결과물 */
+  .deliver { display:grid; grid-template-columns:repeat(3,1fr); gap:0; border:1px solid var(--grid); background:#fff; }
+  .deliver > div { padding:28px; border-right:1px solid var(--grid); }
+  .deliver > div:last-child { border-right:0; }
+  .deliver h3 { font-size:19px; margin-bottom:8px; }
+  .deliver p { font-size:15px; color:var(--muted); }
+  .deliver .when { font-size:13px; color:var(--route); font-weight:500; margin-bottom:10px; }
+
+  /* 비교 */
+  table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--grid); font-size:15px; }
+  th, td { text-align:left; padding:14px 18px; border-bottom:1px solid var(--grid); vertical-align:top; }
+  th { font-weight:500; color:var(--muted); font-size:14px; }
+  td:first-child { font-weight:500; width:28%; }
+  tr.us td { background:#EEF6F1; }
+  .tnote { font-size:13px; color:var(--muted); margin-top:12px; }
+
+  /* 도입 방식 */
+  .price { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .tier { background:#fff; border:1px solid var(--grid); padding:28px; }
+  .tier.first { border-top:6px solid var(--sign); }
+  .tier.next { border-top:6px solid var(--route); }
+  .tier h3 { font-size:22px; margin-bottom:4px; }
+  .tier .cost { font-size:15px; color:var(--muted); margin-bottom:16px; }
+  .tier ul { padding-left:18px; font-size:15px; } .tier li { margin-bottom:6px; }
+
+  /* 데이터 원칙 */
+  .data { display:grid; grid-template-columns:1fr 1fr; gap:48px; }
+  .data h3 { font-size:18px; margin-bottom:10px; }
+  .data ul { padding-left:18px; color:var(--muted); font-size:15px; } .data li { margin-bottom:6px; }
+
+  /* 문의 */
+  .contact { display:grid; grid-template-columns:5fr 7fr; gap:48px; }
+  form { background:#fff; border:1px solid var(--grid); padding:28px; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  label { font-size:14px; color:var(--muted); display:block; }
+  input, textarea, select { width:100%; font-family:inherit; font-size:16px; padding:10px 12px; border:1px solid #B9C2BB; border-radius:4px; margin-top:6px; background:#fff; color:var(--ink); }
+  textarea { min-height:110px; resize:vertical; }
+  .full { grid-column:1 / -1; }
+  #formMsg { font-size:15px; }
+  .quote { font-size:20px; line-height:1.6; border-left:4px solid var(--sign); padding-left:20px; margin-top:28px; }
+
+  footer { border-top:1px solid var(--grid); padding:32px 0 48px; font-size:14px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+
+  /* 히어로 애니메이션: 한 번만, 동선 위 방문자 이동 */
+  .walker { fill:var(--route); }
+  .jam { fill:var(--sign); }
+  @media (prefers-reduced-motion: reduce) { .walker { display:none; } }
+
+  @media (max-width:900px) {
+    .hero, .contact, .data, .price { grid-template-columns:1fr; }
+    h1 { font-size:34px; } h2 { font-size:26px; }
+    .facts, .deliver { grid-template-columns:1fr; }
+    .deliver > div { border-right:0; border-bottom:1px solid var(--grid); }
+    .steps { grid-template-columns:1fr; gap:20px; }
+    .steps::before { top:0; bottom:0; left:17px; right:auto; width:2px; height:auto; }
+    .steps li { padding-left:56px; } .steps li::before { position:absolute; left:0; top:0; }
+    form { grid-template-columns:1fr; }
+    nav .links a:not(.req) { display:none; }
+    .btn.line { margin-left:0; margin-top:8px; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <section>
-    <span class="tag">2026 G-Star 창업경진대회 본선 · 개발 중</span>
-    <h1>Solunet</h1>
-    <p class="lead">행사를 회차마다 더 잘 짜 주는 시뮬레이터.<br>1회차 QR 스캔 데이터로 2회차의 규모와 배치를 제안합니다.</p>
-    <div class="cta">
-      <a class="main" href="/admin">대시보드 시연</a>
-      <a class="sub" href="/sim">시뮬레이션 5단계</a>
-      <a class="sub" href="/editor">격자 편집기</a>
-      <a class="sub" href="/s/demo/gate">방문객 QR 체험</a>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="/"><i></i>Solunet</a>
+    <div class="links">
+      <a href="#how">진행 방식</a>
+      <a href="#price">도입 방식</a>
+      <a href="/admin">데모 보기</a>
+      <a class="req" href="#contact">1회차 무료 신청</a>
     </div>
-  </section>
+  </nav>
 
-  <section>
-    <h2>회차가 돌수록 정확해지는 구조</h2>
-    <div class="loop">
-      <div class="card"><span class="num">1</span><b>1회차 무료 운영</b><span>무설치 웹 QR 스탬프</span></div>
-      <div class="card"><span class="num">2</span><b>스캔 데이터 수집</b><span>익명 ID · 거점 · 시각</span></div>
-      <div class="card"><span class="num">3</span><b>시뮬레이터 보정</b><span>실측 이동·대기 시간 반영</span></div>
-      <div class="card"><span class="num">4</span><b>2회차 제안</b><span>규모 · 배치 · 인력 위치</span></div>
-      <div class="card"><span class="num">5</span><b>결과 비교</b><span>제안 대비 실제, 다시 보정</span></div>
+  <header class="hero">
+    <div>
+      <h1>작년 축제 데이터로<br>올해 부스 배치를 정합니다</h1>
+      <p>1회차는 무료로 운영하며 방문 데이터를 모읍니다. 2회차부터는 그 데이터로 부스 배치와 운영 인력 위치를 시뮬레이션해 제안하고, 결과를 보고서로 드립니다.</p>
+      <a class="btn solid" href="#contact">1회차 무료 운영 신청</a>
+      <a class="btn line" href="/admin">데모 대시보드</a>
     </div>
-  </section>
 
-  <section>
-    <h2>시연 흐름</h2>
-    <div class="steps">
-      <div class="card"><b>① 데이터 로드</b><span>격자 배치 + 스캔 로그</span><br><span class="st wip">개발 중</span></div>
-      <div class="card"><b>② 시뮬레이션</b><span>방문자 이동·줄 서기</span><br><span class="st wip">개발 중</span></div>
-      <div class="card"><b>③ 병목 감지</b><span>대기·이탈 구간</span><br><span class="st done">집계 구현</span></div>
-      <div class="card"><b>④ 배치안 탐색</b><span>후보 배치 비교</span><br><span class="st wip">개발 중</span></div>
-      <div class="card"><b>⑤ 최종 배치</b><span>배치 + 인력 위치 + 보고서</span><br><span class="st done">보고서 초안 구현</span></div>
+    <figure class="plan" aria-label="예시 축제 배치도: 1회차 실측과 2회차 제안 비교">
+      <div class="plan-head">
+        <span>예시 축제 배치도 (격자 1칸 = 1m)</span>
+        <div class="toggle" role="group" aria-label="배치안 선택">
+          <button type="button" id="tA" aria-pressed="true">1회차 실측</button>
+          <button type="button" id="tB" aria-pressed="false">2회차 제안</button>
+        </div>
+      </div>
+      <svg viewBox="0 0 600 340" role="img" aria-labelledby="planTitle">
+        <title id="planTitle">입구에서 전망대까지 다섯 거점과 동선. 1회차에는 메인 무대에서 대기가 몰렸고, 2회차 제안은 체험 부스를 옮기고 줄 관리 인력을 둡니다.</title>
+        <defs>
+          <pattern id="g" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M12 0H0V12" fill="none" stroke="#D5DCD6" stroke-width="0.8"/></pattern>
+        </defs>
+        <rect width="600" height="340" fill="url(#g)"/>
+        <rect x="372" y="168" width="120" height="60" fill="#E4E8E4" stroke="#B9C2BB" stroke-dasharray="4 3"/>
+        <text x="432" y="202" text-anchor="middle" font-size="12" fill="#55606B">설치 불가 구역</text>
+
+        <path id="route" d="" fill="none" stroke="#1F8F5F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <g id="nodes"></g>
+        <g id="walkers"></g>
+      </svg>
+      <div class="plan-foot" aria-live="polite">
+        <span><b id="mDone">32.2%</b>완주율</span>
+        <span><b id="mJam">메인 무대</b>대기 집중 거점</span>
+      </div>
+      <div class="legend"><span class="lg-route">동선</span><span class="lg-jam">대기 집중</span><span class="lg-staff">줄 관리 인력</span></div>
+      <small style="display:block;margin-top:8px;font-size:12px;color:var(--muted)">예시 데이터입니다. 실제 수치는 축제마다 1회차 운영 후 산출됩니다.</small>
+    </figure>
+  </header>
+</div>
+
+<section class="block">
+  <div class="wrap">
+    <h2>축제는 늘었는데, 무엇이 나아졌는지 증명하기는 어렵습니다</h2>
+    <p class="intro">매년 같은 축제를 열지만 작년의 동선과 대기 문제는 기록으로 남지 않고, 평가는 행사 당일 받은 설문 몇백 부에 기대고 있습니다.</p>
+    <div class="facts">
+      <div class="fact"><div class="n">1,214개</div><p>2025년 전국 지역축제 수. 2019년 884개에서 37% 늘었습니다.</p><small>나라살림연구소 보고서, 세계일보 보도</small></div>
+      <div class="fact"><div class="n">약 0%</div><p>같은 기간 방문객 1인당 소비 증가율. 규모는 커졌지만 성과는 제자리입니다.</p><small>나라살림연구소 보고서, 세계일보 보도</small></div>
+      <div class="fact"><div class="n">320부</div><p>한 지역축제 조사평가에서 현장 배포한 종이 설문 수. 동선과 대기는 설문으로 잡히지 않습니다.</p><small>2023 군산시간여행축제 조사평가</small></div>
     </div>
-    <p class="note">시뮬레이션은 사고를 예측하지 않습니다. 후보 배치를 비교해 의사결정을 돕는 도구입니다.</p>
-  </section>
+  </div>
+</section>
 
-  <section class="two">
-    <div class="card">
-      <h2>수집하는 것</h2>
-      <ul>
-        <li>익명 방문 ID (로그인 없음)</li>
-        <li>거점 ID와 시각 (입장 · 줄 서기 · 이용 시작 · 완료)</li>
-        <li>운영자 입력: 거점 위치(격자 1칸 = 1m), 수용 인원, 이용 시간</li>
-      </ul>
+<section class="block" id="how">
+  <div class="wrap">
+    <h2>한 번 운영하면, 다음 회차부터 배치가 데이터로 정해집니다</h2>
+    <p class="intro">방문객은 앱 설치 없이 거점의 QR만 찍습니다. 회차가 쌓일수록 시뮬레이션이 실제 축제에 맞춰집니다.</p>
+    <ol class="steps">
+      <li class="free"><b>1회차 무료 운영</b><p>거점마다 QR을 붙이고 무설치 웹 스탬프 랠리로 운영합니다.</p></li>
+      <li><b>방문 데이터 수집</b><p>거점별 도착·대기·이용 시각과 이탈 사유를 익명으로 기록합니다.</p></li>
+      <li><b>시뮬레이터 보정</b><p>실측 이동·대기 시간으로 우리 축제에 맞춘 시뮬레이션을 만듭니다.</p></li>
+      <li><b>2회차 배치 제안</b><p>후보 배치를 비교해 부스 위치와 운영 인력 위치를 제안합니다.</p></li>
+      <li><b>결과 비교</b><p>제안대로 운영한 결과를 보고서로 정리하고 다시 보정합니다.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <h2>담당자가 받는 것</h2>
+    <p class="intro">화면을 보는 데서 끝나지 않고, 예산 집행과 다음 해 기획에 바로 쓰는 문서로 드립니다.</p>
+    <div class="deliver">
+      <div><div class="when">행사 전</div><h3>배치·인력 제안서</h3><p>부스, 편의시설, 운영 인력을 어디에 두면 대기가 줄어드는지 후보 배치를 비교한 결과입니다.</p></div>
+      <div><div class="when">행사 후</div><h3>성과 평가보고서</h3><p>참여자 수, 완주율, 거점별 이탈과 사유를 정리합니다. 수치는 모두 실측 데이터에서 계산합니다.</p></div>
+      <div><div class="when">다음 회차 기획 때</div><h3>회차 비교 개선안</h3><p>작년과 올해를 같은 기준으로 비교하고, 다음 회차에 바꿀 지점을 근거와 함께 제시합니다.</p></div>
     </div>
-    <div class="card">
-      <h2>수집하지 않는 것</h2>
-      <ul>
-        <li>이름 · 연락처</li>
-        <li>참가자 GPS 위치</li>
-        <li>영상</li>
-      </ul>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <h2>스탬프 서비스와 무엇이 다른가요</h2>
+    <p class="intro">QR 스탬프와 참여 통계는 이미 여러 서비스가 제공합니다. 솔루넷은 그 데이터로 다음 회차의 배치를 정하는 데 집중합니다.</p>
+    <table>
+      <thead><tr><th></th><th>기존 스탬프·통계 서비스</th><th>종이 설문 평가</th><th>솔루넷</th></tr></thead>
+      <tbody>
+        <tr><td>참여·완주 통계</td><td>제공</td><td>설문 표본 기준</td><td>거점별 실측</td></tr>
+        <tr><td>동선·대기 파악</td><td>거점 방문 수 중심</td><td>응답자 기억에 의존</td><td>도착·대기·이용 시각으로 계산</td></tr>
+        <tr class="us"><td>다음 회차 배치 제안</td><td>확인된 곳 없음</td><td>정성 의견</td><td>후보 배치를 시뮬레이션으로 비교</td></tr>
+        <tr><td>회차 간 비교</td><td>서비스마다 다름</td><td>매년 새로 조사</td><td>같은 축제 데이터를 누적해 비교</td></tr>
+      </tbody>
+    </table>
+    <p class="tnote">기존 서비스는 공개된 소개 페이지를 기준으로 비교했습니다.</p>
+  </div>
+</section>
+
+<section class="block" id="price">
+  <div class="wrap">
+    <h2>처음 한 번은 비용 없이 시작합니다</h2>
+    <p class="intro">데이터가 없는 상태에서 제안할 수는 없습니다. 그래서 1회차 운영은 무료로 하고, 그 결과를 보고 도입을 결정하시면 됩니다.</p>
+    <div class="price">
+      <div class="tier first">
+        <h3>1회차 운영</h3>
+        <div class="cost">무료</div>
+        <ul><li>거점 QR 제작과 웹 스탬프 랠리 운영</li><li>방문·대기·이탈 데이터 수집</li><li>행사 후 기본 결과 요약</li></ul>
+      </div>
+      <div class="tier next">
+        <h3>2회차부터 회차 패키지</h3>
+        <div class="cost">축제 규모에 따라 협의</div>
+        <ul><li>배치·인력 제안서 (행사 전)</li><li>성과 평가보고서 (행사 후)</li><li>회차 비교 개선안과 데이터 누적 관리</li></ul>
+      </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section>
-    <p class="quote">우리는 사람을 대체하지 않습니다.<br>같은 인원이 더 많은 일을, 기록을 남기며 하게 만듭니다.</p>
-  </section>
+<section class="block">
+  <div class="wrap data">
+    <div>
+      <h2>개인을 추적하지 않습니다</h2>
+      <p class="intro" style="margin-bottom:0">방문객은 로그인 없이 참여합니다. 기록은 익명 방문 번호와 거점, 시각뿐입니다.</p>
+    </div>
+    <div>
+      <h3>기록하는 것</h3>
+      <ul><li>익명 방문 번호</li><li>찍은 거점과 시각 (도착·대기·이용 시작·완료)</li><li>선택형 이탈 사유</li></ul>
+      <h3 style="margin-top:20px">기록하지 않는 것</h3>
+      <ul><li>이름과 연락처</li><li>참가자 GPS 위치</li><li>영상</li></ul>
+    </div>
+  </div>
+</section>
 
-  <footer>© 2026 Solunet · 국립경국대학교</footer>
-</main>
+<section class="block" id="contact">
+  <div class="wrap contact">
+    <div>
+      <h2>올해 축제, 1회차 무료 운영을 신청하세요</h2>
+      <p class="intro">축제 일정과 규모를 남겨 주시면 거점 구성과 운영 방식을 정리해 연락드립니다.</p>
+      <p class="quote">사람을 대체하지 않습니다. 같은 인원이 더 많은 일을, 기록을 남기며 하게 만듭니다.</p>
+    </div>
+    <form id="inq" novalidate>
+      <label>기관·단체명<input name="org" required maxlength="80" autocomplete="organization"></label>
+      <label>담당자 이름<input name="name" required maxlength="40" autocomplete="name"></label>
+      <label>이메일 또는 전화<input name="contact" required maxlength="80"></label>
+      <label>축제·행사명<input name="festival" maxlength="80"></label>
+      <label>예상 방문객 수
+        <select name="scale"><option value="">선택</option><option>1천 명 미만</option><option>1천~1만 명</option><option>1만~5만 명</option><option>5만 명 이상</option></select>
+      </label>
+      <label>개최 시기<input name="when" maxlength="40" placeholder="예: 2027년 5월"></label>
+      <label class="full">문의 내용<textarea name="message" maxlength="1000"></textarea></label>
+      <div class="full"><button class="btn solid" type="submit">신청 보내기</button> <span id="formMsg" role="status"></span></div>
+    </form>
+  </div>
+</section>
+
+<div class="wrap">
+  <footer>
+    <span>© 2026 Solunet · 국립경국대학교 창업팀</span>
+    <span><a href="/admin">데모 대시보드</a> &nbsp; <a href="/sim">시뮬레이션</a></span>
+  </footer>
+</div>
+
+<script>
+// 히어로 배치도: 두 배치안 (예시 데이터)
+const PLANS = {
+  A: { done: '32.2%', jam: '메인 무대',
+       nodes: [
+        { id:'gate', n:'입구', x:60, y:280 }, { id:'market', n:'먹거리 장터', x:170, y:200 },
+        { id:'stage', n:'메인 무대', x:300, y:250, jam:1 }, { id:'craft', n:'체험 부스', x:430, y:110 },
+        { id:'view', n:'전망대', x:540, y:50 } ], staff: [] },
+  B: { done: '52.0%', jam: '분산됨',
+       nodes: [
+        { id:'gate', n:'입구', x:60, y:280 }, { id:'market', n:'먹거리 장터', x:170, y:200 },
+        { id:'stage', n:'메인 무대', x:300, y:250 }, { id:'craft', n:'체험 부스', x:290, y:120 },
+        { id:'wc', n:'화장실 추가', x:200, y:90, extra:1 }, { id:'view', n:'전망대', x:540, y:50 } ],
+       staff: [{ x:330, y:220 }, { x:262, y:140 }] },
+};
+const NS = 'http://www.w3.org/2000/svg';
+const el = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function draw(key) {
+  const p = PLANS[key], route = p.nodes.filter(n => !n.extra);
+  document.getElementById('route').setAttribute('d', 'M' + route.map(n => n.x + ' ' + n.y).join(' L'));
+  const g = document.getElementById('nodes'); g.innerHTML = '';
+  p.nodes.forEach(n => {
+    if (n.jam) g.appendChild(el('circle', { cx:n.x, cy:n.y, r:30, class:'jam', opacity:.55 }));
+    g.appendChild(el('rect', { x:n.x-9, y:n.y-9, width:18, height:18, fill: n.extra ? '#fff' : '#17212B', stroke:'#17212B', 'stroke-width':2 }));
+    const t = el('text', { x:n.x, y:n.y+30, 'text-anchor':'middle', 'font-size':13, fill:'#17212B', 'font-weight':500 });
+    t.textContent = n.n; g.appendChild(t);
+  });
+  p.staff.forEach(s => g.appendChild(el('rect', { x:s.x-6, y:s.y-6, width:12, height:12, fill:'#17212B', transform:`rotate(45 ${s.x} ${s.y})` })));
+  document.getElementById('mDone').textContent = p.done;
+  document.getElementById('mJam').textContent = p.jam;
+  document.getElementById('tA').setAttribute('aria-pressed', key === 'A');
+  document.getElementById('tB').setAttribute('aria-pressed', key === 'B');
+  walk();
+}
+
+// 방문자 점이 동선을 따라 한 번 지나가는 장면 (페이지당 유일한 자동 모션)
+function walk() {
+  const w = document.getElementById('walkers'); w.innerHTML = '';
+  if (reduce) return;
+  const path = document.getElementById('route'), len = path.getTotalLength();
+  const dots = Array.from({ length: 14 }, (_, i) => { const c = el('circle', { r:4, class:'walker' }); w.appendChild(c); return { c, d: i * 0.06 }; });
+  const t0 = performance.now(), dur = 4200;
+  (function frame(now) {
+    const k = (now - t0) / dur; let alive = false;
+    dots.forEach(({ c, d }) => {
+      const u = Math.min(Math.max(k - d, 0), 1); if (u < 1) alive = true;
+      const pt = path.getPointAtLength(u * len); c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y);
+      c.setAttribute('opacity', u >= 1 ? 0 : 1);
+    });
+    if (alive) requestAnimationFrame(frame);
+  })(t0);
+}
+document.getElementById('tA').onclick = () => draw('A');
+document.getElementById('tB').onclick = () => draw('B');
+draw('A');
+
+// 신청 폼
+document.getElementById('inq').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, msg = document.getElementById('formMsg');
+  const data = Object.fromEntries(new FormData(f));
+  if (!data.org || !data.name || !data.contact) { msg.textContent = '기관명, 담당자 이름, 연락처를 입력해 주세요.'; return; }
+  msg.textContent = '보내는 중';
+  const r = await fetch('/api/inquiry', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(data) });
+  if (r.ok) { f.reset(); msg.textContent = '신청이 접수되었습니다. 확인 후 연락드리겠습니다.'; }
+  else msg.textContent = '접수하지 못했습니다. 잠시 후 다시 보내 주세요.';
+});
+</script>
 </body>
 </html>

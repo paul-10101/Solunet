@@ -11,7 +11,13 @@ class MemoryStore:
     kind = "memory"
 
     def __init__(self):
-        self.festivals, self.scans, self.responses = {}, [], []
+        self.festivals, self.scans, self.responses, self.inquiries = {}, [], [], []
+
+    def add_inquiry(self, doc):
+        self.inquiries.append(doc)
+
+    def list_inquiries(self):
+        return list(reversed(self.inquiries))
 
     def upsert_festival(self, fest):
         self.festivals[fest["id"]] = fest
@@ -47,6 +53,12 @@ class MongoStore:
 
         self.db = MongoClient(uri, serverSelectionTimeoutMS=5000)["solunet"]
         self.db.scans.create_index([("festival", 1), ("edition", 1)])
+
+    def add_inquiry(self, doc):
+        self.db.inquiries.insert_one(dict(doc))
+
+    def list_inquiries(self):
+        return list(self.db.inquiries.find({}, {"_id": 0}).sort("ts", -1))
 
     def upsert_festival(self, fest):
         self.db.festivals.replace_one({"id": fest["id"]}, fest, upsert=True)
@@ -88,6 +100,7 @@ class PostgresStore:
         self.conn = psycopg.connect(url, autocommit=True)
         with self.conn.cursor() as c:
             c.execute("CREATE TABLE IF NOT EXISTS festivals (id TEXT PRIMARY KEY, doc JSONB NOT NULL)")
+            c.execute("CREATE TABLE IF NOT EXISTS inquiries (id BIGSERIAL PRIMARY KEY, doc JSONB NOT NULL)")
             for t in ("scans", "responses"):
                 c.execute(f"CREATE TABLE IF NOT EXISTS {t} (id BIGSERIAL PRIMARY KEY, festival TEXT NOT NULL, "
                           f"edition INT NOT NULL, doc JSONB NOT NULL)")
@@ -103,6 +116,12 @@ class PostgresStore:
                 raise
             self.conn = self.psycopg.connect(self.url, autocommit=True)  # 끊긴 연결 재접속
             return self._q(sql, args, fetch, retry=False)
+
+    def add_inquiry(self, doc):
+        self._q("INSERT INTO inquiries (doc) VALUES (%s)", (self.Jsonb(doc),))
+
+    def list_inquiries(self):
+        return [r[0] for r in self._q("SELECT doc FROM inquiries ORDER BY id DESC", fetch=True)]
 
     def upsert_festival(self, fest):
         self._q("INSERT INTO festivals (id, doc) VALUES (%s, %s) ON CONFLICT (id) DO UPDATE SET doc = EXCLUDED.doc",

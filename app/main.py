@@ -2,7 +2,9 @@ import os
 import random
 from datetime import datetime, timedelta, timezone
 
-from fastapi import FastAPI, HTTPException
+import secrets
+
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -36,6 +38,16 @@ class ExitReason(BaseModel):
     comment: str = Field(default="", max_length=300)
 
 
+class Inquiry(BaseModel):
+    org: str = Field(min_length=1, max_length=80)
+    name: str = Field(min_length=1, max_length=40)
+    contact: str = Field(min_length=3, max_length=80)
+    festival: str = Field(default="", max_length=80)
+    scale: str = Field(default="", max_length=40)
+    when: str = Field(default="", max_length=40)
+    message: str = Field(default="", max_length=1000)
+
+
 def _festival(fid):
     f = db.get_festival(fid)
     if not f:
@@ -67,6 +79,22 @@ def post_exit_reason(r: ExitReason):
 @app.get("/api/festival/{fid}")
 def get_festival(fid: str):
     return _festival(fid)
+
+
+# ---------- 도입 문의 ----------
+@app.post("/api/inquiry")
+def post_inquiry(q: Inquiry):
+    db.add_inquiry({**q.model_dump(), "ts": now().isoformat()})
+    return {"ok": True}
+
+
+@app.get("/api/inquiries")
+def list_inquiries(x_admin_key: str = Header(default="")):
+    """연락처가 들어 있으므로 ADMIN_KEY 헤더가 맞을 때만 보여준다."""
+    key = os.getenv("ADMIN_KEY", "")
+    if not key or not secrets.compare_digest(x_admin_key, key):
+        raise HTTPException(401, "관리자 키가 필요합니다")
+    return db.list_inquiries()
 
 
 # ---------- 관리자 API ----------
