@@ -10,13 +10,21 @@ import httpx
 MODEL = os.getenv("LLM_MODEL", "claude-haiku-4-5")
 
 
+def _nums(s):
+    # 50 과 50.0, 1,437 과 1437 을 같은 값으로 본다
+    return {round(float(n.replace(",", "")), 2) for n in re.findall(r"\d[\d,]*(?:\.\d+)?", s)}
+
+
 def _numbers_in(obj):
-    return set(re.findall(r"\d+(?:\.\d+)?", json.dumps(obj, ensure_ascii=False)))
+    return _nums(json.dumps(obj, ensure_ascii=False))
 
 
 def _grounded(text, data):
-    allowed = _numbers_in(data) | {str(i) for i in range(0, 11)}  # 서수·개수 같은 작은 수 허용
-    return all(n in allowed for n in re.findall(r"\d+(?:\.\d+)?", text))
+    allowed = _numbers_in(data) | set(range(0, 11))  # 서수·개수 같은 작은 수 허용
+    bad = _nums(text) - allowed
+    if bad:
+        print("LLM grounding rejected numbers:", sorted(bad)[:10])
+    return not bad
 
 
 GH_MODEL = os.getenv("GH_MODEL", "openai/gpt-4.1-mini")
@@ -58,7 +66,8 @@ def _call_llm(system, payload):
 
 
 REPORT_SYSTEM = (
-    "너는 지역축제 평가보고서 작성 보조다. 입력 JSON의 숫자만 사용하고 새 숫자를 만들지 마라. "
+    "너는 지역축제 평가보고서 작성 보조다. 입력 JSON의 숫자만 그대로 사용하고, 더하기·빼기·비율 계산으로 새 숫자를 만들지 마라. "
+    "변화량이 필요하면 changes에 있는 값만 쓴다. "
     "한국어 보고서체로 '1. 개요 2. 방문·완주 현황 3. 거점별 이탈 분석 4. 이탈 사유·설문 5. 이전 회차 대비 6. 시사점' 순서로 쓴다. "
     "이전 회차 비교(comparison)가 없으면 5번은 '비교할 이전 회차 없음'으로 쓴다. 설문 만족도·재방문 의사가 있으면 4번에 쓴다."
 )
@@ -103,6 +112,11 @@ def _template_design(design):
 
 def write_report(festival, stats, comparison=None):
     data = {"festival": festival["name"], "edition": festival.get("edition"), "stats": stats, "comparison": comparison}
+    if comparison:  # 모델이 직접 빼기를 하지 않도록 차이를 미리 계산해 넘긴다
+        diff = lambda a, b: round(b - a, 1) if a is not None and b is not None else None
+        data["changes"] = {k: diff(comparison.get(k + "_prev"), comparison.get(k + "_cur"))
+                           for k in ("visitors", "completion", "satisfaction", "revisit", "crowd")}
+        data["changes"]["checkpoints"] = {c["name"]: c["change"] for c in comparison["checkpoints"]}
     try:
         text = _call_llm(REPORT_SYSTEM, data)
         if text and _grounded(text, data):
