@@ -59,8 +59,8 @@ def _call_llm(system, payload):
 
 REPORT_SYSTEM = (
     "너는 지역축제 평가보고서 작성 보조다. 입력 JSON의 숫자만 사용하고 새 숫자를 만들지 마라. "
-    "한국어 보고서체로 '1. 개요 2. 방문·완주 현황 3. 거점별 이탈 분석 4. 이탈 사유 5. 시사점' 순서로 쓴다. "
-    "작년 비교(comparison)가 있으면 2번과 3번에 변화를 함께 쓴다."
+    "한국어 보고서체로 '1. 개요 2. 방문·완주 현황 3. 거점별 이탈 분석 4. 이탈 사유·설문 5. 이전 회차 대비 6. 시사점' 순서로 쓴다. "
+    "이전 회차 비교(comparison)가 없으면 5번은 '비교할 이전 회차 없음'으로 쓴다. 설문 만족도·재방문 의사가 있으면 4번에 쓴다."
 )
 
 DESIGN_SYSTEM = (
@@ -77,11 +77,23 @@ def _template_report(festival, stats, comparison):
     ]
     if worst:
         lines.append(f"3. 이탈: '{worst['name']}' 이후 이탈률 {worst['drop_rate']}%로 가장 높음.")
+    sv = stats.get("survey", {})
+    parts = []
     if stats["exit_reasons"]:
-        top = next(iter(stats["exit_reasons"]))
-        lines.append(f"4. 이탈 사유: '{top}' 응답이 가장 많음.")
+        parts.append(f"이탈 사유는 '{next(iter(stats['exit_reasons']))}' 응답이 가장 많음")
+    if sv.get("count"):
+        parts.append(f"설문 {sv['count']}건, 혼잡도 평균 {sv['crowd_avg']} / 5" +
+                     (f", 만족도 평균 {sv['satisfaction_avg']} / 5" if sv.get("satisfaction_avg") else ""))
+    if parts:
+        lines.append("4. 이탈 사유·설문: " + ", ".join(parts) + ".")
     if comparison:
-        lines.append(f"5. 작년 대비 완주율 {comparison['completion_prev']}% → {comparison['completion_cur']}%.")
+        line = (f"5. 이전 회차 대비: 참여 {comparison['visitors_prev']}명 → {comparison['visitors_cur']}명, "
+                f"완주율 {comparison['completion_prev']}% → {comparison['completion_cur']}%")
+        if comparison.get("satisfaction_prev") and comparison.get("satisfaction_cur"):
+            line += f", 만족도 {comparison['satisfaction_prev']} → {comparison['satisfaction_cur']}"
+        lines.append(line + ".")
+    else:
+        lines.append("5. 이전 회차 대비: 비교할 이전 회차 데이터 없음.")
     return "\n".join(lines)
 
 

@@ -38,10 +38,16 @@ document.getElementById('logout').onclick = e => { e.preventDefault(); Admin.log
 const E = Admin.esc;
 async function load() {
   const fs = await Admin.api('/api/admin/festivals');
-  document.getElementById('list').innerHTML = fs.length ? `<table><tr><th>행사</th><th>거점</th><th></th></tr>` + fs.map(f =>
-    `<tr><td><b>${E(f.name)}</b><br><span class="muted" style="font-size:12px">${E(f.date || '')} · ID ${E(f.id)}</span></td><td>${f.checkpoints.length}곳</td>
-     <td style="white-space:nowrap"><a class="btn line" href="/admin/qr?f=${E(f.id)}">QR 인쇄</a> <a class="btn" href="/admin/logs?f=${E(f.id)}">실시간 로그</a> <a class="btn line" href="/editor?f=${E(f.id)}">격자판</a> <a class="btn line" href="/admin?f=${E(f.id)}">분석</a></td></tr>`).join('') + '</table>'
+  document.getElementById('list').innerHTML = fs.length ? `<table><tr><th>행사</th><th>회차</th><th>거점</th><th></th></tr>` + fs.map(f =>
+    `<tr><td><b>${E(f.name)}</b><br><span class="muted" style="font-size:12px">${E(f.date || '')} · ID ${E(f.id)}</span></td><td>${f.edition || 1}회차</td><td>${f.checkpoints.length}곳</td>
+     <td style="white-space:nowrap"><a class="btn line" href="/admin/qr?f=${E(f.id)}">QR 인쇄</a> <a class="btn" href="/admin/logs?f=${E(f.id)}">실시간 로그</a> <a class="btn line" href="/editor?f=${E(f.id)}">격자판</a> <a class="btn line" href="/admin?f=${E(f.id)}">분석</a> <button class="btn line" data-next="${E(f.id)}" data-ed="${f.edition || 1}">다음 회차 시작</button></td></tr>`).join('') + '</table>'
     : '<p class="muted">아직 만든 행사가 없습니다. 오른쪽에서 만들어 주세요.</p>';
+  document.querySelectorAll('[data-next]').forEach(b => b.onclick = async () => {
+    const ed = +b.dataset.ed;
+    if (!confirm(`${ed}회차를 마치고 ${ed + 1}회차를 시작할까요?\n같은 QR을 그대로 쓰고, ${ed}회차 데이터는 회차 비교용으로 남습니다. 되돌릴 수 없습니다.`)) return;
+    try { const r = await Admin.api('/api/admin/festival/' + encodeURIComponent(b.dataset.next) + '/next-edition', { method: 'POST' }); alert(`${r.edition}회차를 시작했습니다.`); load(); }
+    catch (err) { alert(err.message); }
+  });
 }
 document.getElementById('newForm').onsubmit = async e => {
   e.preventDefault();
