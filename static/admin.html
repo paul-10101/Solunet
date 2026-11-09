@@ -23,7 +23,7 @@
 </head>
 <body>
 <header class="topbar"><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><a class="logo" href="/"><i></i>Solunet</a><span class="muted" id="evName"></span><span id="demoBadge"></span></div>
-  <nav class="nav"><a class="on" href="#">대시보드</a><a href="/admin/events">행사 관리</a><a id="logsLink" href="#">실시간 로그</a><a href="/editor">격자 편집기</a><a href="/sim">시뮬레이션</a></nav></header>
+  <nav class="nav" data-nav></nav></header>
 <main class="page">
   <div id="gate"></div>
   <div id="body" hidden>
@@ -42,10 +42,10 @@
   </div>
 </main>
 <script src="/admin.js"></script>
+<script>Admin.nav("dash");</script>
 <script>
 const fid = new URLSearchParams(location.search).get('f') || 'demo';
 const isDemo = fid === 'demo', E = Admin.esc, $ = id => document.getElementById(id);
-$('logsLink').href = '/admin/logs?f=' + encodeURIComponent(fid);
 const call = (url, opts = {}) => isDemo ? fetch(url, opts).then(r => r.ok ? r.json() : Promise.reject(new Error(r.status))) : Admin.api(url, opts);
 
 async function load() {
@@ -88,7 +88,7 @@ function renderCompare(d) {
   const m = d.comparison, f = d.festival;
   if (!m) {
     $('cmpNote').textContent = `현재 ${f.edition}회차`;
-    $('cmp').innerHTML = `<p class="muted" style="font-size:14px">아직 비교할 이전 회차가 없습니다. 행사가 끝난 뒤 <a href="/admin/events">행사 관리</a>에서 '다음 회차 시작'을 누르면, 같은 QR로 ${f.edition + 1}회차 데이터가 쌓이고 여기서 ${f.edition}회차와 나란히 비교됩니다.</p>`;
+    $('cmp').innerHTML = `<p class="muted" style="font-size:14px">아직 비교할 이전 회차가 없습니다. 행사가 끝난 뒤 <a href="${Admin.isOwner() ? '/my?f=' + encodeURIComponent(fid) : '/admin/events'}">${Admin.isOwner() ? '내 행사' : '행사 관리'}</a>에서 '다음 회차 시작'을 누르면, 같은 QR로 ${f.edition + 1}회차 데이터가 쌓이고 여기서 ${f.edition}회차와 나란히 비교됩니다.</p>`;
     return;
   }
   $('cmpNote').textContent = `${f.edition - 1}회차 → ${f.edition}회차 · 같은 거점 기준`;

@@ -26,7 +26,7 @@
 </head>
 <body>
 <header class="topbar noprint"><a class="logo" href="/"><i></i>Solunet</a>
-  <nav class="nav"><a href="/admin/events">행사 관리</a><a id="logsLink" href="#">실시간 로그</a></nav></header>
+  <nav class="nav" data-nav></nav></header>
 <main class="page">
   <div id="gate"></div>
   <div id="body" hidden>
@@ -34,8 +34,8 @@
       <div><h1 id="evName">QR 인쇄</h1><p class="muted" style="font-size:14px">A4 한 장에 4개씩 인쇄됩니다. 인쇄 전에 아래 "열어 보기"로 각 QR을 한 번씩 확인하세요.</p></div>
       <label>QR에 넣을 주소
         <select id="base">
-          <option value="https://solunet.onrender.com">https://solunet.onrender.com (권장: 가장 안정적)</option>
-          <option value="https://www.solunet.software">https://www.solunet.software</option>
+          <option value="https://www.solunet.software">https://www.solunet.software (권장)</option>
+          <option value="https://solunet.onrender.com">https://solunet.onrender.com (예비 주소)</option>
         </select>
       </label>
       <button class="btn" onclick="print()">인쇄</button>
@@ -44,11 +44,11 @@
   </div>
 </main>
 <script src="/admin.js"></script>
+<script>Admin.nav("qr");</script>
 <script src="/qrcode.js"></script>
 <script>
 const fid = new URLSearchParams(location.search).get('f');
 const E = Admin.esc;
-document.getElementById('logsLink').href = '/admin/logs?f=' + encodeURIComponent(fid || '');
 let fest = null;
 const sel = document.getElementById('base');
 try { const b = localStorage.getItem('solunet_qr_base'); if (b) sel.value = b; } catch (e) {}
