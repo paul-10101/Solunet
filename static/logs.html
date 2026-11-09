@@ -17,7 +17,7 @@
 </head>
 <body>
 <header class="topbar"><a class="logo" href="/"><i></i>Solunet</a>
-  <nav class="nav"><a href="/admin/events">행사 관리</a><a id="qrLink" href="#">QR 인쇄</a><a class="on" href="#">실시간 로그</a><a id="anaLink" href="#">분석</a></nav></header>
+  <nav class="nav" data-nav></nav></header>
 <main class="page">
   <div id="gate"></div>
   <div id="body" hidden>
@@ -39,11 +39,10 @@
   </div>
 </main>
 <script src="/admin.js"></script>
+<script>Admin.nav("logs");</script>
 <script>
 const fid = new URLSearchParams(location.search).get('f');
 const E = Admin.esc;
-document.getElementById('qrLink').href = '/admin/qr?f=' + encodeURIComponent(fid || '');
-document.getElementById('anaLink').href = '/admin?f=' + encodeURIComponent(fid || '');
 let data = null, timer = null, paused = false;
 const isTest = s => String(s.session || '').startsWith('test');
 

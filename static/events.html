@@ -7,7 +7,7 @@
 </head>
 <body>
 <header class="topbar"><a class="logo" href="/"><i></i>Solunet</a>
-  <nav class="nav"><a class="on" href="/admin/events">행사 관리</a><a href="/admin">대시보드</a><a href="#" id="logout">로그아웃</a></nav></header>
+  <nav class="nav" data-nav></nav></header>
 <main class="page" id="root">
   <div id="gate"></div>
   <div id="body" hidden>
@@ -33,6 +33,7 @@
   </div>
 </main>
 <script src="/admin.js"></script>
+<script>Admin.nav("events");</script>
 <script>
 document.getElementById('logout').onclick = e => { e.preventDefault(); Admin.logout(); };
 const E = Admin.esc;

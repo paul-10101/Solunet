@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
+<title>내 행사 · Solunet</title>
+<link rel="stylesheet" href="/ui.css">
+<script src="/qrcode.js"></script>
+<style>
+  .save { border:2px solid var(--route); background:var(--soft); }
+  .save .link { display:flex; gap:8px; margin:12px 0 6px; } .save .link input { font-size:13px; }
+  .steps { list-style:none; display:grid; gap:12px; counter-reset:s; }
+  .steps li { counter-increment:s; display:grid; grid-template-columns:44px 1fr auto; gap:14px; align-items:center; }
+  .steps li::before { content:counter(s); width:36px; height:36px; border-radius:50%; background:var(--route); color:#fff; font-weight:700; display:grid; place-items:center; }
+  .steps b { display:block; font-size:16px; } .steps p { font-size:14px; color:var(--muted); }
+  .mini { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .tq { display:grid; grid-template-columns:120px 1fr; gap:16px; align-items:center; }
+  .tq .qr svg { width:120px; height:120px; display:block; }
+  .evlist a { display:block; padding:14px 16px; border:1px solid var(--grid); border-radius:6px; background:#fff; margin-bottom:8px; text-decoration:none; }
+  @media (max-width:820px) { .mini { grid-template-columns:1fr 1fr; } .steps li { grid-template-columns:44px 1fr; } .steps li .btn { grid-column:2; justify-self:start; } }
+</style>
+</head>
+<body>
+<header class="topbar"><div style="display:flex;gap:14px;align-items:center"><a class="logo" href="/"><i></i>Solunet</a><span class="muted" id="evName"></span></div>
+  <nav class="nav" data-nav></nav></header>
+<main class="page">
+  <div id="gate"></div>
+  <div id="list" hidden></div>
+  <div id="body" hidden>
+    <section class="card save" id="saveBox" style="margin-bottom:12px">
+      <h2>관리 링크를 지금 저장하세요</h2>
+      <p class="muted" style="font-size:14px">이 링크가 있어야 다른 기기에서도 이 행사를 관리할 수 있습니다. 서버는 링크를 보관하지 않아, 잃어버리면 다시 찾아 드릴 수 없습니다.</p>
+      <div class="link"><input id="mgr" readonly><button class="btn" id="copy">복사</button></div>
+      <p class="note" id="copyMsg">북마크하거나 팀 메신저·메일에 보내 두세요. 링크를 아는 사람은 이 행사 데이터를 볼 수 있습니다.</p>
+    </section>
+
+    <div class="mini" id="mini" style="margin-bottom:12px"></div>
+
+    <section class="card" style="margin-bottom:12px">
+      <h2 style="margin-bottom:14px">행사까지 4단계</h2>
+      <ol class="steps">
+        <li><div><b>거점 QR 인쇄</b><p>A4 한 장에 4개. 거점마다 붙이면 준비 끝입니다.</p></div><a class="btn" id="goQr">QR 인쇄</a></li>
+        <li><div><b>휴대폰으로 한 번 찍어 보기</b><p>테스트 스캔은 통계에서 빠집니다. 참가자 화면을 직접 확인하세요.</p></div><a class="btn line" id="goTest" target="_blank" rel="noopener">테스트 화면 열기</a></li>
+        <li><div><b>행사 당일: 실시간 현황</b><p>거점별 스캔이 들어오는 것을 바로 봅니다. 기록은 CSV로 내려받을 수 있습니다.</p></div><a class="btn line" id="goLogs">실시간 현황</a></li>
+        <li><div><b>행사 후: 분석과 보고서 초안</b><p>참여·완주·이탈·설문을 집계하고, 같은 숫자로 결과보고서 초안을 만듭니다.</p></div><a class="btn line" id="goDash">분석·보고서</a></li>
+      </ol>
+    </section>
+
+    <div class="grid2" style="grid-template-columns:1fr 1fr">
+      <section class="card">
+        <h2 style="margin-bottom:10px">테스트용 QR</h2>
+        <div class="tq"><div class="qr" id="testQr"></div><p class="muted" style="font-size:14px">PC로 보고 있다면 휴대폰 카메라로 이 QR을 찍어 보세요. 첫 번째 거점의 참가자 화면이 열립니다(테스트로 기록).</p></div>
+      </section>
+      <section class="card">
+        <h2 style="margin-bottom:6px">다음 회차</h2>
+        <p class="muted" style="font-size:14px;margin-bottom:12px">행사가 끝나면 다음 회차를 시작하세요. 같은 QR을 그대로 쓰고, 이번 회차와 나란히 비교됩니다.</p>
+        <button class="btn line" id="nextEd">다음 회차 시작</button>
+        <p class="note" id="nextMsg"></p>
+      </section>
+    </div>
+  </div>
+</main>
+<script src="/admin.js"></script>
+<script>
+Admin.nav('my');
+const fid = Admin.fid, E = Admin.esc, $ = id => document.getElementById(id);
+const fresh = new URLSearchParams(location.search).has('new');
+
+async function myList() {
+  let ids = [];
+  try { ids = Object.keys(localStorage).filter(k => k.startsWith('solunet_ev_')).map(k => k.slice(11)); } catch (e) {}
+  const rows = [];
+  for (const id of ids) {
+    const r = await fetch('/api/admin/festival/' + encodeURIComponent(id), { headers: { 'x-event-key': Admin.evKey(id) } }).catch(() => null);
+    if (r && r.ok) { const f = await r.json(); rows.push(`<a href="/my?f=${encodeURIComponent(id)}"><b>${E(f.name)}</b> <span class="muted" style="font-size:13px">${E(f.date || '')} · ${f.edition}회차 · 거점 ${f.checkpoints.length}곳</span></a>`); }
+  }
+  $('list').hidden = false;
+  $('list').innerHTML = `<h1 style="margin-bottom:16px">내 행사</h1>` + (rows.length ? `<div class="evlist">${rows.join('')}</div><p class="note">이 브라우저에 저장된 행사입니다. 다른 기기에서는 관리 링크로 들어오세요.</p>`
+    : `<div class="card"><p style="margin-bottom:14px">이 브라우저에 저장된 행사가 없습니다. 관리 링크가 있다면 그 링크로 들어오세요.</p><a class="btn" href="/#start">무료로 행사 만들기</a></div>`);
+}
+
+async function main() {
+  const f = await Admin.api('/api/admin/festival/' + encodeURIComponent(fid));
+  $('evName').textContent = `${f.name} · ${f.edition}회차`;
+  document.title = f.name + ' · Solunet';
+  const q = '?f=' + encodeURIComponent(fid);
+  $('goQr').href = '/admin/qr' + q; $('goLogs').href = '/admin/logs' + q; $('goDash').href = '/admin' + q;
+  const testUrl = `${location.origin}/s/${encodeURIComponent(fid)}/${encodeURIComponent(f.checkpoints[0].token)}?test=1`;
+  $('goTest').href = testUrl;
+  const qr = qrcode(0, 'M'); qr.addData(testUrl); qr.make(); $('testQr').innerHTML = qr.createSvgTag({ cellSize: 4, margin: 8, scalable: true });
+
+  const key = Admin.evKey();
+  if (key) { $('mgr').value = `${location.origin}/my?f=${encodeURIComponent(fid)}#k=${key}`; }
+  else $('saveBox').hidden = true;  // 팀 관리자 키로 들어온 경우
+  if (!fresh && key) { $('saveBox').querySelector('h2').textContent = '관리 링크'; }
+  $('copy').onclick = async () => { try { await navigator.clipboard.writeText($('mgr').value); $('copyMsg').textContent = '복사했습니다. 안전한 곳에 붙여 넣어 두세요.'; } catch (e) { $('mgr').select(); } };
+
+  try {
+    const s = await Admin.api('/api/stats/' + encodeURIComponent(fid)), c = s.current;
+    $('mini').innerHTML = [['참여자', c.visitors + '명'], ['완주율', c.completion_rate + '%'], ['설문 응답', c.survey.count + '건'], ['거점', f.checkpoints.length + '곳']]
+      .map(([k, v]) => `<div class="card kpi"><span>${k}</span><b>${E(v)}</b></div>`).join('');
+  } catch (e) {}
+
+  $('nextEd').onclick = async () => {
+    if (!confirm(`${f.edition}회차를 마치고 ${f.edition + 1}회차를 시작할까요?\n같은 QR을 그대로 쓰고, ${f.edition}회차 데이터는 비교용으로 남습니다. 되돌릴 수 없습니다.`)) return;
+    try { const r = await Admin.api('/api/admin/festival/' + encodeURIComponent(fid) + '/next-edition', { method: 'POST' }); $('nextMsg').textContent = `${r.edition}회차를 시작했습니다.`; setTimeout(() => location.reload(), 800); }
+    catch (e) { $('nextMsg').textContent = e.message; }
+  };
+}
+
+if (!fid) myList();
+else Admin.ready($('gate')).then(() => { $('body').hidden = false; main().catch(e => { $('body').innerHTML = `<div class="card">${E(e.message)}</div>`; }); });
+</script>
+</body>
+</html>
