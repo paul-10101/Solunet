@@ -7,18 +7,18 @@
 <meta name="description" content="1회차는 무료로 운영하고, 그 데이터로 다음 회차의 부스 배치와 운영 인력 위치를 제안합니다. 지역축제·행사 담당자를 위한 회차 개선 서비스.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   /* 타입 스케일: 16px 기준, 비율 1.25 (16 · 20 · 25 · 31 · 39 · 49) */
   :root {
-    --paper:#F4F6F2; --card:#FFFFFF; --ink:#17212B; --grid:#D8DFD9; --route:#1F8F5F; --route-soft:#E3F1E9;
-    --sign:#F2C230; --sign-soft:#FCF1C7; --muted:#55606B;
-    --shadow:0 1px 2px rgba(23,33,43,.06), 0 12px 32px -12px rgba(23,33,43,.18);
-    --r:20px;
+    --paper:#F8FAFC; --card:#FFFFFF; --ink:#0F172A; --grid:#E2E8F0; --route:#2563EB; --route-soft:#DBEAFE; --route-dark:#1E40AF;
+    --sign:#38BDF8; --sign-soft:#E0F2FE; --warn:#F59E0B; --muted:#64748B;
+    --shadow:0 1px 2px rgba(15,23,42,.06), 0 10px 28px -14px rgba(15,23,42,.16);
+    --r:14px;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   html { scroll-behavior:smooth; scroll-padding-top:84px; }
-  body { font-family:"IBM Plex Sans KR",system-ui,sans-serif; color:var(--ink); background:var(--paper);
+  body { font-family:"Noto Sans KR",system-ui,sans-serif; color:var(--ink); background:var(--paper);
          line-height:1.65; font-size:17px; -webkit-font-smoothing:antialiased; word-break:keep-all; overflow-wrap:break-word; }
   a { color:inherit; }
   :focus-visible { outline:3px solid var(--sign); outline-offset:3px; }
@@ -30,35 +30,36 @@
   .logo { font-weight:700; font-size:20px; letter-spacing:-0.01em; text-decoration:none; display:flex; align-items:center; }
   .logo i { width:12px; height:12px; background:var(--route); border-radius:3px; margin-right:9px; }
   nav .links { display:flex; align-items:center; gap:6px; }
-  nav .links a { font-size:15px; text-decoration:none; color:var(--muted); padding:8px 14px; border-radius:999px; }
+  nav .links a { font-size:15px; text-decoration:none; color:var(--muted); padding:8px 14px; border-radius:10px; }
   nav .links a:hover { background:var(--card); color:var(--ink); }
-  nav .links a.req { background:var(--ink); color:#fff; font-weight:500; margin-left:6px; }
-  nav .links a.req:hover { background:#000; }
+  nav .links a.req { background:var(--route); color:#fff; font-weight:500; margin-left:6px; }
+  nav .links a.req:hover { background:var(--route-dark); }
 
-  .btn { display:inline-block; padding:15px 26px; font-size:16px; font-weight:500; text-decoration:none; border:2px solid var(--ink); border-radius:999px; cursor:pointer; font-family:inherit; transition:transform .15s, box-shadow .15s; }
-  .btn:hover { transform:translateY(-2px); box-shadow:0 8px 18px -8px rgba(23,33,43,.4); }
-  .btn.solid { background:var(--ink); color:#fff; }
+  .btn { display:inline-block; padding:15px 26px; font-size:16px; font-weight:500; text-decoration:none; border:2px solid var(--ink); border-radius:10px; cursor:pointer; font-family:inherit; transition:transform .15s, box-shadow .15s; }
+  .btn:hover { transform:translateY(-2px); box-shadow:0 8px 18px -8px rgba(15,23,42,.35); }
+  .btn.solid { background:var(--route); border-color:var(--route); color:#fff; }
+  .btn.solid:hover { background:var(--route-dark); border-color:var(--route-dark); }
   .btn.line { background:transparent; color:var(--ink); margin-left:8px; }
 
   /* 히어로 */
   .hero { display:grid; grid-template-columns:5fr 6fr; gap:56px; align-items:center; padding:64px 0 72px; }
-  .pill { display:inline-flex; align-items:center; gap:8px; font-size:14px; font-weight:500; background:var(--sign-soft); border:1px solid var(--sign); padding:5px 14px; border-radius:999px; margin-bottom:22px; }
+  .pill { display:inline-flex; align-items:center; gap:8px; font-size:14px; font-weight:500; background:var(--route-soft); border:1px solid #BFDBFE; color:var(--route-dark); padding:5px 14px; border-radius:10px; margin-bottom:22px; }
   .pill::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--route); }
   h1 { font-size:49px; line-height:1.18; letter-spacing:-0.035em; font-weight:700; margin-bottom:22px; }
-  h1 em { font-style:normal; background:linear-gradient(transparent 62%, var(--sign) 62%, var(--sign) 92%, transparent 92%); }
+  h1 em { font-style:normal; color:var(--route); }
   .hero p.lead { color:var(--muted); font-size:20px; max-width:28em; margin-bottom:32px; }
 
   .plan { background:var(--card); border-radius:var(--r); padding:22px; box-shadow:var(--shadow); }
   .plan-head { display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:14px; color:var(--muted); }
-  .toggle { display:inline-flex; background:var(--paper); border-radius:999px; padding:3px; }
-  .toggle button { white-space:nowrap; font-family:inherit; font-size:14px; padding:7px 16px; border:0; border-radius:999px; background:transparent; color:var(--ink); cursor:pointer; }
+  .toggle { display:inline-flex; background:var(--paper); border-radius:10px; padding:3px; }
+  .toggle button { white-space:nowrap; font-family:inherit; font-size:14px; padding:7px 16px; border:0; border-radius:10px; background:transparent; color:var(--ink); cursor:pointer; }
   .toggle button[aria-pressed="true"] { background:var(--ink); color:#fff; }
   .plan svg { width:100%; height:auto; display:block; border-radius:12px; }
   .plan-foot { display:flex; gap:28px; margin-top:14px; font-size:14px; color:var(--muted); flex-wrap:wrap; }
   .plan-foot b { color:var(--ink); font-size:25px; font-weight:700; margin-right:6px; font-variant-numeric:tabular-nums; }
   .legend { display:flex; gap:16px; font-size:13px; color:var(--muted); margin-top:8px; flex-wrap:wrap; }
   .legend span::before { content:""; display:inline-block; width:10px; height:10px; margin-right:6px; vertical-align:-1px; }
-  .lg-route::before { background:var(--route); } .lg-jam::before { background:var(--sign); border-radius:50%; } .lg-staff::before { background:var(--ink); transform:rotate(45deg); }
+  .lg-route::before { background:var(--route); } .lg-jam::before { background:var(--warn); border-radius:50%; } .lg-staff::before { background:var(--ink); transform:rotate(45deg); }
 
   /* 흐르는 한 줄 (고정 사실만) */
   .ticker { background:var(--ink); color:#F4F6F2; overflow:hidden; white-space:nowrap; padding:14px 0; }
@@ -89,14 +90,14 @@
 
   .steps { list-style:none; display:grid; grid-template-columns:repeat(5,1fr); gap:16px; counter-reset:s; }
   .steps li { counter-increment:s; background:var(--card); border-radius:var(--r); padding:22px 20px; box-shadow:var(--shadow); }
-  .steps li::before { content:"0" counter(s); display:inline-block; font-weight:700; font-size:14px; padding:3px 12px; border-radius:999px; background:var(--route-soft); color:var(--route); margin-bottom:14px; font-variant-numeric:tabular-nums; }
-  .steps li.free::before { background:var(--sign); color:var(--ink); }
+  .steps li::before { content:"0" counter(s); display:inline-block; font-weight:700; font-size:14px; padding:3px 12px; border-radius:10px; background:var(--route-soft); color:var(--route); margin-bottom:14px; font-variant-numeric:tabular-nums; }
+  .steps li.free::before { background:var(--route); color:#fff; }
   .steps b { display:block; margin-bottom:6px; font-size:17px; }
   .steps p { font-size:14px; color:var(--muted); line-height:1.6; }
 
   .price { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   .tier { background:var(--card); border-radius:var(--r); padding:32px; box-shadow:var(--shadow); }
-  .tier.first { outline:3px solid var(--sign); }
+  .tier.first { outline:3px solid var(--route); }
   .tier h3 { font-size:25px; margin-bottom:4px; }
   .tier .cost { font-size:16px; color:var(--route); font-weight:700; margin-bottom:16px; }
   .tier ul { padding-left:18px; font-size:15px; } .tier li { margin-bottom:6px; }
@@ -105,7 +106,7 @@
   .deliver > div { background:var(--card); border-radius:var(--r); padding:30px; box-shadow:var(--shadow); }
   .deliver h3 { font-size:20px; margin-bottom:8px; }
   .deliver p { font-size:15px; color:var(--muted); }
-  .deliver .when { display:inline-block; font-size:13px; color:var(--route); background:var(--route-soft); font-weight:700; padding:3px 12px; border-radius:999px; margin-bottom:14px; }
+  .deliver .when { display:inline-block; font-size:13px; color:var(--route); background:var(--route-soft); font-weight:700; padding:3px 12px; border-radius:10px; margin-bottom:14px; }
 
   .tablewrap { background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; overflow-x:auto; }
   table { width:100%; border-collapse:collapse; font-size:15px; min-width:640px; }
@@ -143,7 +144,7 @@
   .demos { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
   .demo { display:block; text-decoration:none; background:var(--card); padding:30px; border-radius:var(--r); box-shadow:var(--shadow); transition:transform .15s; }
   .demo:hover { transform:translateY(-4px); }
-  .demo .tag { display:inline-block; font-size:12px; font-weight:700; background:var(--sign); color:var(--ink); padding:3px 12px; border-radius:999px; margin-bottom:16px; }
+  .demo .tag { display:inline-block; font-size:12px; font-weight:700; background:var(--route-soft); color:var(--route-dark); padding:3px 12px; border-radius:10px; margin-bottom:16px; }
   .demo h3 { font-size:21px; margin-bottom:8px; }
   .demo p { font-size:15px; color:var(--muted); margin-bottom:18px; }
   .demo b { color:var(--route); font-size:15px; }
@@ -151,15 +152,15 @@
   .contact { display:grid; grid-template-columns:5fr 7fr; gap:48px; }
   form { background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); padding:32px; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   label { font-size:14px; color:var(--muted); display:block; }
-  input, textarea, select { width:100%; font-family:inherit; font-size:16px; padding:12px 14px; border:1px solid #B9C2BB; border-radius:12px; margin-top:6px; background:#fff; color:var(--ink); }
+  input, textarea, select { width:100%; font-family:inherit; font-size:16px; padding:12px 14px; border:1px solid #CBD5E1; border-radius:12px; margin-top:6px; background:#fff; color:var(--ink); }
   textarea { min-height:110px; resize:vertical; }
   .full { grid-column:1 / -1; }
   #formMsg { font-size:15px; margin-left:10px; }
-  .quote { font-size:20px; line-height:1.6; border-left:4px solid var(--sign); padding-left:20px; margin-top:28px; }
+  .quote { font-size:20px; line-height:1.6; border-left:4px solid var(--route); padding-left:20px; margin-top:28px; }
 
   footer { border-top:1px solid var(--grid); margin-top:96px; padding:32px 0 48px; font-size:14px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
 
-  .walker { fill:var(--route); } .jam { fill:var(--sign); }
+  .walker { fill:var(--route); } .jam { fill:var(--warn); }
   @media (prefers-reduced-motion: reduce) { .walker { display:none; } .btn, .demo { transition:none; } }
 
   @media (max-width:900px) {
@@ -209,13 +210,13 @@
       <svg viewBox="0 0 600 340" role="img" aria-labelledby="planTitle">
         <title id="planTitle">입구에서 전망대까지 다섯 거점과 동선. 1회차에는 메인 무대에서 대기가 몰렸고, 2회차 제안은 체험 부스를 옮기고 줄 관리 인력을 둡니다.</title>
         <defs>
-          <pattern id="g" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M12 0H0V12" fill="none" stroke="#D5DCD6" stroke-width="0.8"/></pattern>
+          <pattern id="g" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M12 0H0V12" fill="none" stroke="#E2E8F0" stroke-width="0.8"/></pattern>
         </defs>
         <rect width="600" height="340" fill="url(#g)"/>
-        <rect x="372" y="168" width="120" height="60" fill="#E4E8E4" stroke="#B9C2BB" stroke-dasharray="4 3"/>
-        <text x="432" y="202" text-anchor="middle" font-size="12" fill="#55606B">설치 불가 구역</text>
+        <rect x="372" y="168" width="120" height="60" fill="#F1F5F9" stroke="#CBD5E1" stroke-dasharray="4 3"/>
+        <text x="432" y="202" text-anchor="middle" font-size="12" fill="#64748B">설치 불가 구역</text>
 
-        <path id="route" d="" fill="none" stroke="#1F8F5F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path id="route" d="" fill="none" stroke="#2563EB" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
         <g id="nodes"></g>
         <g id="walkers"></g>
       </svg>
@@ -331,10 +332,10 @@
     <div class="phones" aria-label="방문객 화면 예시">
       <div><div class="phone" role="img" aria-label="스탬프 완료 화면 예시"><div class="ph"><small>예시 축제</small><b>'먹거리 장터' 스탬프 완료</b></div><div class="pb">
         <div style="display:flex;justify-content:space-between"><b>2 / 5 거점</b><span>완주까지 3곳</span></div><div class="meter"><u style="width:40%"></u></div>
-        <div class="row d"><i></i>입구 안내소</div><div class="row d h"><i></i>먹거리 장터 <small style="margin-left:auto;color:#1F8F5F">지금 여기</small></div><div class="row"><i></i>메인 무대</div><div class="row"><i></i>체험 부스</div><div class="row"><i></i>전망대</div>
+        <div class="row d"><i></i>입구 안내소</div><div class="row d h"><i></i>먹거리 장터 <small style="margin-left:auto;color:#2563EB">지금 여기</small></div><div class="row"><i></i>메인 무대</div><div class="row"><i></i>체험 부스</div><div class="row"><i></i>전망대</div>
       </div></div><p class="phonecap">① QR을 찍으면 진행 상황이 바로 보입니다</p></div>
       <div><div class="phone" role="img" aria-label="이탈 사유 선택 화면 예시"><div class="ph"><small>예시 축제</small><b>여기서 그만두시나요?</b></div><div class="pb">
-        <p style="margin-bottom:10px;color:#55606B">이유를 하나만 골라 주세요. 익명이며, 다음 행사 배치를 바꾸는 데 씁니다.</p>
+        <p style="margin-bottom:10px;color:#64748B">이유를 하나만 골라 주세요. 익명이며, 다음 행사 배치를 바꾸는 데 씁니다.</p>
         <div class="opt">대기 줄이 너무 김</div><div class="opt on">다음 장소가 멀다</div><div class="opt">화장실·쉴 곳이 없다</div><div class="opt">시간이 없다</div><div class="opt">기타</div>
       </div></div><p class="phonecap">② 그만두는 이유를 한 번 눌러 남깁니다</p></div>
       <div><div class="phone" role="img" aria-label="완주 설문 화면 예시"><div class="ph"><small>예시 축제</small><b>모든 스탬프를 모았어요</b></div><div class="pb">
@@ -405,11 +406,11 @@ function draw(key) {
   const g = document.getElementById('nodes'); g.innerHTML = '';
   p.nodes.forEach(n => {
     if (n.jam) g.appendChild(el('circle', { cx:n.x, cy:n.y, r:30, class:'jam', opacity:.55 }));
-    g.appendChild(el('rect', { x:n.x-9, y:n.y-9, width:18, height:18, fill: n.extra ? '#fff' : '#17212B', stroke:'#17212B', 'stroke-width':2 }));
-    const t = el('text', { x:n.x, y:n.y+30, 'text-anchor':'middle', 'font-size':13, fill:'#17212B', 'font-weight':500 });
+    g.appendChild(el('rect', { x:n.x-9, y:n.y-9, width:18, height:18, fill: n.extra ? '#fff' : '#0F172A', stroke:'#0F172A', 'stroke-width':2 }));
+    const t = el('text', { x:n.x, y:n.y+30, 'text-anchor':'middle', 'font-size':13, fill:'#0F172A', 'font-weight':500 });
     t.textContent = n.n; g.appendChild(t);
   });
-  p.staff.forEach(s => g.appendChild(el('rect', { x:s.x-6, y:s.y-6, width:12, height:12, fill:'#17212B', transform:`rotate(45 ${s.x} ${s.y})` })));
+  p.staff.forEach(s => g.appendChild(el('rect', { x:s.x-6, y:s.y-6, width:12, height:12, fill:'#0F172A', transform:`rotate(45 ${s.x} ${s.y})` })));
   document.getElementById('mDone').textContent = p.done;
   document.getElementById('mJam').textContent = p.jam;
   document.getElementById('tA').setAttribute('aria-pressed', key === 'A');
