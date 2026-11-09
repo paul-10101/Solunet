@@ -13,7 +13,7 @@
   .tool { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 10px; margin-bottom:6px; font:inherit; font-size:14px; background:#fff; border:1px solid var(--grid); border-radius:6px; cursor:pointer; color:var(--ink); }
   .tool[aria-pressed="true"] { border:2px solid var(--ink); font-weight:700; }
   .sym { width:14px; height:14px; flex:none; display:inline-block; }
-  .canvasWrap { overflow:auto; background:#E9ECE9; padding:16px; position:relative; }
+  .canvasWrap { overflow:auto; background:#F1F5F9; padding:16px; position:relative; }
   svg#map { background:#fff; display:block; touch-action:none; user-select:none; }
   .pending { list-style:none; } .pending li { font-size:13px; padding:6px 8px; border:1px dashed var(--line); border-radius:4px; margin-bottom:6px; cursor:pointer; }
   .pending li[aria-selected="true"] { border:2px solid var(--route); background:var(--soft); }
@@ -41,11 +41,11 @@
 <div class="work" id="work" hidden>
   <aside class="side">
     <h2>도구</h2>
-    <button class="tool" data-tool="select"><span class="sym" style="border:2px solid #17212B"></span>선택·이동</button>
-    <button class="tool" data-tool="place"><span class="sym" style="background:#17212B"></span>스탬프 거점 놓기</button>
-    <button class="tool" data-tool="facility"><span class="sym" style="border:2px solid #17212B;background:#fff"></span>화장실·휴게 놓기</button>
-    <button class="tool" data-tool="staff"><span class="sym" style="background:#17212B;transform:rotate(45deg) scale(.75)"></span>운영 인력 놓기</button>
-    <button class="tool" data-tool="block"><span class="sym" style="background:#E4E8E4;border:1px dashed #B9C2BB"></span>설치 불가 구역 그리기</button>
+    <button class="tool" data-tool="select"><span class="sym" style="border:2px solid #0F172A"></span>선택·이동</button>
+    <button class="tool" data-tool="place"><span class="sym" style="background:#0F172A"></span>스탬프 거점 놓기</button>
+    <button class="tool" data-tool="facility"><span class="sym" style="border:2px solid #0F172A;background:#fff"></span>화장실·휴게 놓기</button>
+    <button class="tool" data-tool="staff"><span class="sym" style="background:#0F172A;transform:rotate(45deg) scale(.75)"></span>운영 인력 놓기</button>
+    <button class="tool" data-tool="block"><span class="sym" style="background:#E2E8F0;border:1px dashed #CBD5E1"></span>설치 불가 구역 그리기</button>
     <button class="tool" data-tool="erase"><span class="sym" style="border:2px solid #B3261E"></span>지우기</button>
     <h2>아직 놓지 않은 거점</h2>
     <ul class="pending" id="pending"></ul>
@@ -140,23 +140,23 @@ function draw() {
   const { w, h } = L.grid, svg = $('map');
   svg.setAttribute('width', w * C); svg.setAttribute('height', h * C); svg.setAttribute('viewBox', `0 0 ${w * C} ${h * C}`);
   computePaths();
-  let s = `<defs><pattern id="g1" width="${C}" height="${C}" patternUnits="userSpaceOnUse"><path d="M${C} 0H0V${C}" fill="none" stroke="#E3E8E4" stroke-width="1"/></pattern>
-    <pattern id="g10" width="${C * 10}" height="${C * 10}" patternUnits="userSpaceOnUse"><rect width="${C * 10}" height="${C * 10}" fill="url(#g1)"/><path d="M${C * 10} 0H0V${C * 10}" fill="none" stroke="#C9D1CB" stroke-width="1"/></pattern></defs>
+  let s = `<defs><pattern id="g1" width="${C}" height="${C}" patternUnits="userSpaceOnUse"><path d="M${C} 0H0V${C}" fill="none" stroke="#E2E8F0" stroke-width="1"/></pattern>
+    <pattern id="g10" width="${C * 10}" height="${C * 10}" patternUnits="userSpaceOnUse"><rect width="${C * 10}" height="${C * 10}" fill="url(#g1)"/><path d="M${C * 10} 0H0V${C * 10}" fill="none" stroke="#CBD5E1" stroke-width="1"/></pattern></defs>
     <rect width="${w * C}" height="${h * C}" fill="url(#g10)" data-bg="1"/>`;
-  L.blocked.forEach((b, i) => s += `<rect data-kind="blocked" data-i="${i}" x="${b.x * C}" y="${b.y * C}" width="${b.w * C}" height="${b.h * C}" fill="#E4E8E4" stroke="${sel && sel.kind === 'blocked' && sel.i === i ? '#17212B' : '#B9C2BB'}" stroke-dasharray="5 4" stroke-width="${sel && sel.kind === 'blocked' && sel.i === i ? 2 : 1}"/>`);
-  paths.forEach(p => { if (p.pts) s += `<polyline points="${p.pts.map(([x, y]) => `${x * C + C / 2},${y * C + C / 2}`).join(' ')}" fill="none" stroke="#1F8F5F" stroke-width="3" stroke-linejoin="round" opacity=".9"/>`;
+  L.blocked.forEach((b, i) => s += `<rect data-kind="blocked" data-i="${i}" x="${b.x * C}" y="${b.y * C}" width="${b.w * C}" height="${b.h * C}" fill="#E2E8F0" stroke="${sel && sel.kind === 'blocked' && sel.i === i ? '#0F172A' : '#CBD5E1'}" stroke-dasharray="5 4" stroke-width="${sel && sel.kind === 'blocked' && sel.i === i ? 2 : 1}"/>`);
+  paths.forEach(p => { if (p.pts) s += `<polyline points="${p.pts.map(([x, y]) => `${x * C + C / 2},${y * C + C / 2}`).join(' ')}" fill="none" stroke="#2563EB" stroke-width="3" stroke-linejoin="round" opacity=".9"/>`;
     else s += `<line x1="${p.a.x * C + C / 2}" y1="${p.a.y * C + C / 2}" x2="${p.b.x * C + C / 2}" y2="${p.b.y * C + C / 2}" stroke="#B3261E" stroke-width="2" stroke-dasharray="6 4"/>`; });
   L.facilities.forEach((f, i) => { const on = sel && sel.kind === 'facility' && sel.i === i;
-    s += `<g data-kind="facility" data-i="${i}"><rect x="${f.x * C - 7}" y="${f.y * C - 7}" width="${C + 14}" height="${C + 14}" fill="#fff" stroke="${on ? '#F2C230' : '#17212B'}" stroke-width="${on ? 4 : 2}"/>
-          <text x="${f.x * C + C / 2}" y="${f.y * C + C + 22}" text-anchor="middle" font-size="12" fill="#17212B">${E(f.name)}</text></g>`; });
+    s += `<g data-kind="facility" data-i="${i}"><rect x="${f.x * C - 7}" y="${f.y * C - 7}" width="${C + 14}" height="${C + 14}" fill="#fff" stroke="${on ? '#F59E0B' : '#0F172A'}" stroke-width="${on ? 4 : 2}"/>
+          <text x="${f.x * C + C / 2}" y="${f.y * C + C + 22}" text-anchor="middle" font-size="12" fill="#0F172A">${E(f.name)}</text></g>`; });
   L.checkpoints.filter(c => c.x != null).forEach(c => { const on = sel && sel.kind === 'cp' && sel.id === c.id, n = L.route.indexOf(c.id) + 1;
-    s += `<g data-kind="cp" data-id="${E(c.id)}"><rect x="${c.x * C - 8}" y="${c.y * C - 8}" width="${C + 16}" height="${C + 16}" fill="#17212B" stroke="${on ? '#F2C230' : '#17212B'}" stroke-width="${on ? 4 : 0}"/>
+    s += `<g data-kind="cp" data-id="${E(c.id)}"><rect x="${c.x * C - 8}" y="${c.y * C - 8}" width="${C + 16}" height="${C + 16}" fill="#0F172A" stroke="${on ? '#F59E0B' : '#0F172A'}" stroke-width="${on ? 4 : 0}"/>
           <text x="${c.x * C + C / 2}" y="${c.y * C + C / 2 + 4}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">${n}</text>
-          <text x="${c.x * C + C / 2}" y="${c.y * C + C + 24}" text-anchor="middle" font-size="13" font-weight="${on ? 700 : 500}" fill="#17212B">${E(c.name)}</text></g>`; });
+          <text x="${c.x * C + C / 2}" y="${c.y * C + C + 24}" text-anchor="middle" font-size="13" font-weight="${on ? 700 : 500}" fill="#0F172A">${E(c.name)}</text></g>`; });
   L.staff.forEach((t, i) => { const on = sel && sel.kind === 'staff' && sel.i === i;
-    s += `<g data-kind="staff" data-i="${i}"><rect x="${t.x * C}" y="${t.y * C}" width="${C}" height="${C}" fill="#17212B" stroke="${on ? '#F2C230' : 'none'}" stroke-width="3" transform="rotate(45 ${t.x * C + C / 2} ${t.y * C + C / 2})"/></g>`; });
-  if (drag && drag.kind === 'newblock') { const r = rectOf(drag.a, drag.b); s += `<rect x="${r.x * C}" y="${r.y * C}" width="${r.w * C}" height="${r.h * C}" fill="#E4E8E4" opacity=".7" stroke="#17212B" stroke-dasharray="5 4"/>`; }
-  s += `<text x="8" y="${h * C - 8}" font-size="12" fill="#55606B">격자 1칸 = 1m · ${w} × ${h}m</text>`;
+    s += `<g data-kind="staff" data-i="${i}"><rect x="${t.x * C}" y="${t.y * C}" width="${C}" height="${C}" fill="#0F172A" stroke="${on ? '#F59E0B' : 'none'}" stroke-width="3" transform="rotate(45 ${t.x * C + C / 2} ${t.y * C + C / 2})"/></g>`; });
+  if (drag && drag.kind === 'newblock') { const r = rectOf(drag.a, drag.b); s += `<rect x="${r.x * C}" y="${r.y * C}" width="${r.w * C}" height="${r.h * C}" fill="#E2E8F0" opacity=".7" stroke="#0F172A" stroke-dasharray="5 4"/>`; }
+  s += `<text x="8" y="${h * C - 8}" font-size="12" fill="#64748B">격자 1칸 = 1m · ${w} × ${h}m</text>`;
   svg.innerHTML = s;
   drawSide();
 }
@@ -164,7 +164,7 @@ function drawSide() {
   const unplaced = L.checkpoints.filter(c => c.x == null);
   if (pendingPick && !unplaced.some(c => c.id === pendingPick)) pendingPick = unplaced[0] ? unplaced[0].id : null;
   if (!pendingPick && unplaced[0]) pendingPick = unplaced[0].id;
-  $('pending').innerHTML = unplaced.length ? unplaced.map(c => `<li data-id="${E(c.id)}" aria-selected="${c.id === pendingPick}">${E(c.name)}</li>`).join('') : '<li style="border:0;color:#1F8F5F">모든 거점을 놓았습니다</li>';
+  $('pending').innerHTML = unplaced.length ? unplaced.map(c => `<li data-id="${E(c.id)}" aria-selected="${c.id === pendingPick}">${E(c.name)}</li>`).join('') : '<li style="border:0;color:#2563EB">모든 거점을 놓았습니다</li>';
   $('pending').querySelectorAll('li[data-id]').forEach(li => li.onclick = () => { pendingPick = li.dataset.id; setTool('place'); drawSide(); });
   const byId = Object.fromEntries(L.checkpoints.map(c => [c.id, c]));
   $('route').innerHTML = L.route.map((id, i) => `<li><b>${i + 1}</b><span>${E(byId[id].name)}${byId[id].x == null ? ' <small class="muted">(미배치)</small>' : ''}</span>

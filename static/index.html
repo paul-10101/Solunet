@@ -82,6 +82,9 @@
   .intro { color:var(--muted); max-width:36em; margin-bottom:40px; font-size:18px; }
   .sub { font-size:25px; margin:64px 0 20px; letter-spacing:-0.02em; }
 
+  .st { display:inline-block; font-size:12px; font-weight:700; padding:2px 10px; border-radius:999px; white-space:nowrap; }
+  .st.s-done { background:var(--route); color:#fff; } .st.s-demo { background:var(--route-soft); color:var(--route); } .st.s-plan { background:#E2E8F0; color:var(--muted); }
+  .rfp td:first-child small { display:block; font-size:12px; color:var(--muted); font-weight:400; }
   .facts { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
   .fact { background:var(--card); border-radius:var(--r); padding:28px; box-shadow:var(--shadow); }
   .fact .n { color:var(--route); font-size:31px; font-weight:700; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; margin-bottom:8px; }
@@ -293,18 +296,38 @@
 
 <section class="block">
   <div class="wrap">
+    <h2>입찰 공고가 요구하는 일, 그대로 시스템이 됩니다</h2>
+    <p class="intro">행사 대행 용역 공고와 과업지시서에 적힌 과업을 기준으로 기능을 만들었습니다. 대행사는 별도 인력 없이 이 과업을 수행하고, 발주처는 같은 숫자로 결과를 받습니다.</p>
+    <div class="tablewrap"><table class="rfp">
+      <thead><tr><th>공고문이 요구하는 일</th><th>솔루넷 기능</th><th>어떻게 하나</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>스탬프투어 운영<small>양동통맥축제 · 관저동 야장축제</small></td><td>QR 체크포인트 스탬프</td><td>앱 설치 없이 QR로 찍으면 참여 기록이 남습니다</td><td><span class="st s-done">구현 완료</span></td></tr>
+        <tr><td>관람객 집계<small>울산공업축제</small></td><td>실시간 참여 집계</td><td>거점별 인원과 이탈을 행사 중에 바로 봅니다</td><td><span class="st s-demo">시연 가능</span></td></tr>
+        <tr><td>만족도 · 재방문률 조사<small>울산공업축제 · 안산 겨울 빛의 나라</small></td><td>모바일 설문</td><td>스탬프 완주 화면에서 바로 답해 종이 배포·입력이 없습니다</td><td><span class="st s-done">구현 완료</span></td></tr>
+        <tr><td>일일 매출 · 참여자 데이터 보고<small>양동통맥축제</small></td><td>집계 내보내기 (CSV)</td><td>기록을 내려받아 일자별 보고에 그대로 씁니다</td><td><span class="st s-done">구현 완료</span></td></tr>
+        <tr><td>결과보고서 제출<small>울산공업축제 · 안산 · 행정안전부</small></td><td>결과보고서 초안</td><td>집계 숫자로 초안을 만들고, 담당자가 검수한 뒤 제출합니다</td><td><span class="st s-demo">시연 가능</span></td></tr>
+        <tr><td>이전 회차와 비교<small>매년 반복 개최되는 행사</small></td><td>회차 비교</td><td>같은 QR로 다음 회차를 열면 참여·완주·이탈·만족도가 나란히 비교됩니다</td><td><span class="st s-demo">시연 가능</span></td></tr>
+        <tr><td>정산서 제출<small>태백산 눈축제</small></td><td>증빙 자료 정리</td><td>참여·설문 기록을 정산 증빙 형태로 묶습니다</td><td><span class="st s-plan">계획</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="tnote">공고문: 나라장터 행사 대행 용역 공고·과업지시서(2026). 상태는 2026-11 기준.</p>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
     <h2>스탬프 서비스와 무엇이 다른가요</h2>
     <p class="intro">QR 스탬프와 참여 통계는 이미 여러 서비스가 제공합니다. 솔루넷은 그 데이터로 다음 회차의 배치를 정하는 데 집중합니다.</p>
     <div class="tablewrap"><table>
       <thead><tr><th></th><th>기존 스탬프·통계 서비스</th><th>종이 설문 평가</th><th>솔루넷</th></tr></thead>
       <tbody>
-        <tr><td>참여·완주 통계</td><td>제공</td><td>설문 표본 기준</td><td>거점별 실측</td></tr>
+        <tr><td>참여·완주 통계</td><td>QR·웹앱 시스템 제공 (조사 7곳 중 4곳)</td><td>설문 표본 기준</td><td>거점별 실측</td></tr>
         <tr><td>동선·대기 파악</td><td>거점 방문 수 중심</td><td>응답자 기억에 의존</td><td>도착·대기·이용 시각으로 계산</td></tr>
         <tr class="us"><td>다음 회차 배치 제안</td><td>확인된 곳 없음</td><td>정성 의견</td><td>후보 배치를 시뮬레이션으로 비교</td></tr>
-        <tr><td>회차 간 비교</td><td>서비스마다 다름</td><td>매년 새로 조사</td><td>같은 축제 데이터를 누적해 비교</td></tr>
+        <tr class="us"><td>회차 간 비교</td><td>공개 자료로 확인된 곳 없음</td><td>매년 새로 조사</td><td>같은 QR로 회차를 쌓아 나란히 비교</td></tr>
       </tbody>
     </table></div>
-    <p class="tnote">기존 서비스는 공개된 소개 페이지를 기준으로 비교했습니다.</p>
+    <p class="tnote">행사 대행·스탬프·행사 SaaS 업체 10곳의 홈페이지·업계 DB·DART 공개 자료를 기준으로 비교했습니다(2026-11). 공개 자료에 없다고 해서 하지 않는다는 뜻은 아닙니다.</p>
   </div>
 </section>
 

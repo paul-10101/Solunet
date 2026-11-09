@@ -30,6 +30,8 @@ def compute_stats(festival, scans, responses):
     surveys = [r for r in responses if r.get("kind") == "survey"]
     reasons = Counter(r["reason"] for r in exits)
     avg = lambda k: round(sum(r[k] for r in surveys) / len(surveys), 2) if surveys else None
+    sat = [r["satisfaction"] for r in surveys if r.get("satisfaction")]  # v2 이전 응답은 이 키가 없다
+    revisit = Counter(r["revisit"] for r in surveys if r.get("revisit"))
     hours = Counter(s["ts"][11:13] for s in scans if isinstance(s.get("ts"), str))
 
     return {
@@ -39,7 +41,10 @@ def compute_stats(festival, scans, responses):
         "scans": len(scans),
         "responses": len(exits),
         "survey": {"count": len(surveys), "crowd_avg": avg("crowd"), "route_avg": avg("route"),
-                   "compare": dict(Counter(r.get("compare") or "무응답" for r in surveys))},
+                   "compare": dict(Counter(r.get("compare") or "무응답" for r in surveys)),
+                   "satisfaction_count": len(sat),
+                   "satisfaction_avg": round(sum(sat) / len(sat), 2) if sat else None,
+                   "revisit": dict(revisit.most_common())},
         "checkpoints": per_cp,
         "exit_reasons": dict(reasons.most_common()),
         "scans_by_hour": dict(sorted(hours.items())),
@@ -58,8 +63,14 @@ def compare(prev, cur):
             rows.append({"id": c["id"], "name": c["name"],
                          "drop_rate_prev": p["drop_rate"], "drop_rate_cur": c["drop_rate"],
                          "change": round(c["drop_rate"] - p["drop_rate"], 1)})
+    revisit_share = lambda s: (round(s["survey"]["revisit"].get("오고 싶다", 0) / sum(s["survey"]["revisit"].values()) * 100, 1)
+                               if s["survey"].get("revisit") else None)
     return {
         "visitors_prev": prev["visitors"], "visitors_cur": cur["visitors"],
         "completion_prev": prev["completion_rate"], "completion_cur": cur["completion_rate"],
+        "survey_prev": prev["survey"]["count"], "survey_cur": cur["survey"]["count"],
+        "satisfaction_prev": prev["survey"].get("satisfaction_avg"), "satisfaction_cur": cur["survey"].get("satisfaction_avg"),
+        "crowd_prev": prev["survey"]["crowd_avg"], "crowd_cur": cur["survey"]["crowd_avg"],
+        "revisit_prev": revisit_share(prev), "revisit_cur": revisit_share(cur),
         "checkpoints": rows,
     }

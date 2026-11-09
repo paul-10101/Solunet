@@ -44,6 +44,8 @@ class Survey(BaseModel):
     crowd: int = Field(ge=1, le=5)  # 혼잡도: 1 매우 한산 ~ 5 매우 혼잡
     route: int = Field(ge=1, le=5)  # 동선 편의: 1 매우 불편 ~ 5 매우 편함
     compare: str = Field(default="", max_length=20)  # 이전 행사와 비교: 더 나음 / 비슷 / 더 나쁨 / 처음
+    satisfaction: int | None = Field(default=None, ge=1, le=5)  # 전반 만족도 (v2, 선택): 1 매우 불만족 ~ 5 매우 만족
+    revisit: str = Field(default="", max_length=20)  # 재방문 의사 (v2, 선택): 있다 / 모르겠다 / 없다
     comment: str = Field(default="", max_length=300)
 
 
@@ -81,6 +83,7 @@ def _festival(fid):
 def _public(f):
     """방문객에게 보여 줄 정보. 토큰은 절대 내보내지 않는다."""
     return {"id": f["id"], "name": f["name"], "date": f.get("date", ""), "demo": f.get("demo", False),
+            "edition": f.get("edition", 1),
             "checkpoints": [{"id": c["id"], "name": c["name"]} for c in f["checkpoints"]]}
 
 
@@ -188,6 +191,19 @@ def admin_festivals():
 @app.get("/api/admin/festival/{fid}", dependencies=[Depends(require_admin)])
 def admin_festival(fid: str):
     return _festival(fid)
+
+
+@app.post("/api/admin/festival/{fid}/next-edition", dependencies=[Depends(require_admin)])
+def next_edition(fid: str):
+    """같은 거점·같은 QR로 다음 회차를 시작한다. 이전 회차 데이터는 그대로 남아 회차 비교에 쓰인다."""
+    f = _festival(fid)
+    if f.get("demo"):
+        raise HTTPException(400, "예시 행사는 회차를 바꿀 수 없습니다")
+    if not _real(db.scans_for(fid, f["edition"])):
+        raise HTTPException(400, "현재 회차에 기록된 스캔이 없습니다. 데이터가 쌓인 뒤 다음 회차를 시작하세요")
+    f["edition"] = f.get("edition", 1) + 1
+    db.upsert_festival(f)
+    return {"ok": True, "edition": f["edition"]}
 
 
 @app.get("/api/admin/logs/{fid}", dependencies=[Depends(require_admin)])
@@ -311,7 +327,8 @@ DEMO_LAYOUT = {
 }
 
 
-def _seed_edition(edition, keep_prob, reasons, n=320, seed=0):
+def _seed_edition(edition, keep_prob, reasons, survey, n=320, seed=0):
+    """survey: (응답 비율, 혼잡도 분포, 동선 분포, 만족도 분포, 재방문 분포) — 가중치 목록"""
     rnd = random.Random(seed)
     day = datetime(2025 + edition - 1, 10, 11, 10, tzinfo=timezone.utc)
     for i in range(n):
@@ -326,6 +343,14 @@ def _seed_edition(edition, keep_prob, reasons, n=320, seed=0):
             db.add_scan({"festival": DEMO_ID, "checkpoint": cp["id"], "session": sess, "event": "visit",
                          "edition": edition, "ts": t.isoformat()})
             t += timedelta(minutes=rnd.randint(3, 15))  # 이동 + 부스 이용 시간이 섞인 간격
+        else:  # 완주한 방문객 중 일부가 설문에 답한다
+            rate, crowd_w, route_w, sat_w, rev_w = survey
+            if rnd.random() < rate:
+                pick = lambda w: rnd.choices([1, 2, 3, 4, 5], weights=w)[0]
+                db.add_response({"kind": "survey", "festival": DEMO_ID, "session": sess, "crowd": pick(crowd_w),
+                                 "route": pick(route_w), "compare": "", "satisfaction": pick(sat_w),
+                                 "revisit": rnd.choices(["오고 싶다", "모르겠다", "아니다"], weights=rev_w)[0],
+                                 "comment": "", "edition": edition, "ts": t.isoformat()})
 
 
 @app.post("/api/demo/seed")
@@ -334,8 +359,10 @@ def seed_demo():
     db.upsert_festival({"id": DEMO_ID, "name": "예시 축제 (시연용 가상 데이터)", "edition": 2,
                         "demo": True, "checkpoints": DEMO_CPS, "layout": DEMO_LAYOUT})
     db.clear_festival(DEMO_ID)
-    _seed_edition(1, [0.9, 0.85, 0.55, 0.8], {"화장실·편의시설 부족": 5, "대기 줄이 김": 2, "다음 장소가 멀다": 3}, seed=1)
-    _seed_edition(2, [0.9, 0.87, 0.78, 0.82], {"대기 줄이 김": 4, "다음 장소가 멀다": 2, "화장실·편의시설 부족": 1}, seed=2)
+    _seed_edition(1, [0.9, 0.85, 0.55, 0.8], {"화장실·편의시설 부족": 5, "대기 줄이 김": 2, "다음 장소가 멀다": 3},
+                  (0.6, [1, 2, 3, 4, 3], [2, 4, 4, 3, 1], [1, 2, 4, 4, 2], [5, 4, 2]), seed=1)
+    _seed_edition(2, [0.9, 0.87, 0.78, 0.82], {"대기 줄이 김": 4, "다음 장소가 멀다": 2, "화장실·편의시설 부족": 1},
+                  (0.6, [1, 3, 4, 3, 1], [1, 2, 4, 4, 3], [1, 1, 3, 5, 4], [7, 3, 1]), seed=2)
     return {"ok": True, "festival": DEMO_ID}
 
 

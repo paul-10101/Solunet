@@ -68,6 +68,10 @@
       <div class="scale" data-k="route"></div><div class="ends"><span data-t="route1"></span><span data-t="route5"></span></div>
       <p style="font-weight:500;margin-bottom:6px" data-t="qCompare"></p>
       <div id="compare"></div>
+      <p style="font-weight:500" data-t="qSat"></p>
+      <div class="scale" data-k="satisfaction"></div><div class="ends"><span data-t="sat1"></span><span data-t="sat5"></span></div>
+      <p style="font-weight:500;margin-bottom:6px" data-t="qRevisit"></p>
+      <div id="revisit"></div>
       <button class="btn full" id="surveySend" disabled data-t="send" style="margin-top:8px"></button>
     </section>
     <p class="foot" data-t="privacy"></p>
@@ -80,20 +84,22 @@ const T = {
         count:(a,b)=>`${a} / ${b} 거점`, left:n=>n?`완주까지 ${n}곳`:'완주!', here:'지금 여기', quit:'여기서 그만두기',
         quitQ:'여기서 그만두시나요?', quitSub:'이유를 하나만 골라 주세요. 익명이며, 다음 행사 배치를 바꾸는 데 씁니다.', send:'보내기', thanks:'응답 감사합니다!',
         reasons:['대기 줄이 너무 김','다음 장소가 멀다','화장실·쉴 곳이 없다','시간이 없다','기타'],
-        doneTitle:'모든 스탬프를 모았어요', doneSub:'두 가지만 답해 주시면 다음 행사를 더 좋게 만드는 데 씁니다.',
+        doneTitle:'모든 스탬프를 모았어요', doneSub:'1분이면 끝나요. 답해 주시면 다음 행사를 더 좋게 만드는 데 씁니다.',
         qCrowd:'오늘 행사, 얼마나 붐볐나요?', crowd1:'한산', crowd5:'매우 혼잡', qRoute:'거점 사이 이동은 편했나요?', route1:'불편', route5:'편함',
         qCompare:'이전에 참여한 행사와 비교하면 혼잡·동선은?', compare:['더 나았다','비슷했다','더 나빴다','처음 참여'],
+        qSat:'오늘 행사, 전반적으로 만족하셨나요? (선택)', sat1:'불만족', sat5:'만족', qRevisit:'내년에도 오고 싶으신가요? (선택)', revisit:['오고 싶다','모르겠다','아니다'],
         privacy:'이름, 연락처, 위치는 기록하지 않습니다', notfound:'등록되지 않은 QR이에요. 행사 운영진에게 알려 주세요.', neterr:'연결이 불안정해요. 잠시 후 새로고침해 주세요.' },
   en: { loading:'Loading', wake:'The first visit can take up to a minute', stamped:n=>`Stamped: ${n}`, again:n=>`Already stamped: ${n}`,
         count:(a,b)=>`${a} / ${b} spots`, left:n=>n?`${n} to go`:'Complete!', here:'You are here', quit:'Stop here',
         quitQ:'Leaving here?', quitSub:'Pick one reason. It is anonymous and helps us improve the next event.', send:'Send', thanks:'Thank you!',
         reasons:['Lines too long','Next spot too far','No restroom or rest area','Out of time','Other'],
-        doneTitle:'You collected every stamp', doneSub:'Two quick questions to help us improve the next event.',
+        doneTitle:'You collected every stamp', doneSub:'A few quick questions to help us improve the next event.',
         qCrowd:'How crowded was the event?', crowd1:'Quiet', crowd5:'Very crowded', qRoute:'Was moving between spots easy?', route1:'Hard', route5:'Easy',
         qCompare:'Compared with previous events?', compare:['Better','About the same','Worse','First time'],
+        qSat:'Overall, were you satisfied? (optional)', sat1:'Not at all', sat5:'Very', qRevisit:'Would you come again next year? (optional)', revisit:['Yes','Not sure','No'],
         privacy:'We do not record names, contacts, or locations', notfound:'This QR is not registered. Please tell the staff.', neterr:'Connection problem. Please refresh in a moment.' },
 };
-const KO_VALUES = { reasons:T.ko.reasons, compare:T.ko.compare }; // 저장은 항상 한국어 값으로
+const KO_VALUES = { reasons:T.ko.reasons, compare:T.ko.compare, revisit:T.ko.revisit }; // 저장은 항상 한국어 값으로
 let L = (navigator.language || 'ko').startsWith('ko') ? 'ko' : 'en'; try { L = localStorage.getItem('solunet_lang') || L; } catch (e) {}
 const [, , fid, token] = location.pathname.split('/');
 const TEST = new URLSearchParams(location.search).has('test'); // 운영진 테스트: 통계에서 제외
@@ -102,7 +108,7 @@ if (TEST) session = 'test' + Math.random().toString(36).slice(2, 12);
 if (!session) { session = 'v' + (crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'').slice(0,16) : Math.random().toString(36).slice(2) + Date.now().toString(36)); try { localStorage.setItem('solunet_sid', session); } catch (e) {} }
 const post = (u, b) => fetch(u, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(b) });
 const $ = id => document.getElementById(id);
-let state = null, pick = { reason:null, crowd:null, route:null, compare:'' };
+let state = null, pick = { reason:null, crowd:null, route:null, compare:'', satisfaction:null, revisit:'' };
 
 function applyLang() {
   document.documentElement.lang = L;
@@ -130,6 +136,8 @@ function render() {
     s.querySelectorAll('button').forEach(b => b.onclick = () => { pick[k] = +b.dataset.n; render(); }); });
   $('compare').innerHTML = T[L].compare.map((t, i) => `<button class="opt" data-i="${i}" aria-pressed="${pick.compare === KO_VALUES.compare[i]}">${t}</button>`).join('');
   document.querySelectorAll('#compare .opt').forEach(b => b.onclick = () => { pick.compare = KO_VALUES.compare[+b.dataset.i]; render(); });
+  $('revisit').innerHTML = T[L].revisit.map((t, i) => `<button class="opt" data-i="${i}" aria-pressed="${pick.revisit === KO_VALUES.revisit[i]}">${t}</button>`).join('');
+  document.querySelectorAll('#revisit .opt').forEach(b => b.onclick = () => { pick.revisit = KO_VALUES.revisit[+b.dataset.i]; render(); });
   $('surveySend').disabled = !(pick.crowd && pick.route);
 }
 
@@ -151,7 +159,7 @@ async function main() {
     };
     $('surveySend').onclick = async () => {
       $('surveySend').disabled = true;
-      const ok = (await post('/api/survey', { festival: fid, session, crowd: pick.crowd, route: pick.route, compare: pick.compare }).catch(() => ({}))).ok;
+      const ok = (await post('/api/survey', { festival: fid, session, crowd: pick.crowd, route: pick.route, compare: pick.compare, satisfaction: pick.satisfaction, revisit: pick.revisit }).catch(() => ({}))).ok;
       state.surveyed = ok;
       $('surveyBox').innerHTML = `<div class="card"><b>${ok ? T[L].thanks : T[L].neterr}</b></div>`;
       $('surveyBox').classList.remove('hidden');
