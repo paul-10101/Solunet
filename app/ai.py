@@ -23,7 +23,7 @@ def _bad_numbers(text, data):
     allowed = _numbers_in(data) | set(range(0, 11))  # 서수·개수 같은 작은 수 허용
     bad = sorted(_nums(text) - allowed)
     if bad:
-        print("LLM grounding rejected numbers:", bad[:10])
+        print("LLM grounding rejected numbers:", bad[:10], flush=True)
     return bad
 
 
@@ -47,12 +47,32 @@ def _draft(system, data, template, use_llm=True):
                 return {"source": "llm", "text": text, "reason": None, "rejected": []}
             reason = "rejected" if text else "error"
         except Exception as e:  # 시연 중 API 장애가 나도 화면은 유지
-            print("LLM error:", e)
+            print("LLM error:", _describe(e), flush=True)
             reason = "error"
     return {"source": "template", "text": template(), "reason": reason, "rejected": rejected[:10]}
 
 
 GH_MODEL = os.getenv("GH_MODEL", "openai/gpt-4.1-mini")
+
+
+def _describe(e):
+    """오류를 로그·확인용으로 짧게 요약한다. 토큰 값은 절대 넣지 않는다."""
+    if isinstance(e, httpx.HTTPStatusError):
+        body = (e.response.text or "")[:300].replace("\n", " ")
+        return f"HTTP {e.response.status_code}: {body}"
+    return f"{type(e).__name__}: {str(e)[:300]}"
+
+
+def llm_check():
+    """아주 짧은 요청 하나로 AI 연결을 시험한다."""
+    p = llm_provider()
+    if not p:
+        return {"provider": None, "ok": False, "detail": "토큰 없음 (GITHUB_MODELS_TOKEN 또는 ANTHROPIC_API_KEY)"}
+    try:
+        text = _call_llm("한 단어로만 답하라.", {"q": "안녕"})
+        return {"provider": p, "model": GH_MODEL if p == "github" else MODEL, "ok": bool(text), "detail": (text or "")[:40]}
+    except Exception as e:
+        return {"provider": p, "model": GH_MODEL if p == "github" else MODEL, "ok": False, "detail": _describe(e)}
 
 
 def llm_provider():
@@ -172,7 +192,7 @@ def explain_design(design):
         if text and _grounded(text, design):
             return {"source": "llm", "text": text}
     except Exception as e:
-        print("LLM error:", e)
+        print("LLM error:", _describe(e), flush=True)
     return {"source": "template", "text": _template_design(design)}
 
 
