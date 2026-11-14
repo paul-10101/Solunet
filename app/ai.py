@@ -55,6 +55,21 @@ def _draft(system, data, template, use_llm=True):
 GH_MODEL = os.getenv("GH_MODEL", "openai/gpt-4.1-mini")
 
 
+def verify_trial():
+    """AI 없이 숫자 검증기만 시험한다. 문장은 우리가 만든 예시이고, 판정은 실제 검증기가 한다."""
+    data = {"participants": 320, "completed": 240, "completion_rate": 75.0, "top_dropoff": "먹거리 장터", "satisfaction": 4.2}
+    cases = [
+        ("집계값을 그대로 인용", "참여 320명 중 240명이 완주하여 완주율은 75.0%임. 이탈이 가장 많은 거점은 먹거리 장터임."),
+        ("없는 숫자를 지어냄", "참여 320명 중 240명이 완주하여 완주율은 82%임. 만족도는 4.8점으로 매우 높음."),
+        ("직접 계산한 값을 씀", "참여 320명 중 240명이 완주하여 80명이 이탈함. 전년 대비 15% 증가함."),
+    ]
+    out = []
+    for label, text in cases:
+        bad = _bad_numbers(text, data)
+        out.append({"label": label, "text": text, "ok": not bad, "bad": bad, "checked": len(_nums(text))})
+    return {"data": data, "cases": out}
+
+
 def _describe(e):
     """오류를 로그·확인용으로 짧게 요약한다. 토큰 값은 절대 넣지 않는다."""
     if isinstance(e, httpx.HTTPStatusError):
