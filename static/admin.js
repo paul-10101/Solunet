@@ -60,7 +60,7 @@ const Admin = (() => {
   // 행사 화면 공통 메뉴. 체험 대행사에게는 팀 전용 메뉴(행사 관리)를 숨긴다.
   function nav(active) {
     const q = fid ? '?f=' + encodeURIComponent(fid) : '';
-    const items = [['my', '/my' + q, '내 행사'], ['qr', '/admin/qr' + q, 'QR 인쇄'], ['logs', '/admin/logs' + q, '실시간 현황'], ['dash', '/admin' + q, '분석·보고서'], ['settings', '/admin/settings' + q, '설정']];
+    const items = [['my', '/my' + q, '내 행사'], ['qr', '/admin/qr' + q, 'QR 인쇄'], ['logs', '/admin/logs' + q, '실시간 현황'], ['dash', '/admin' + q, '분석·보고서'], ['sim', '/sim' + q, '시뮬레이션'], ['settings', '/admin/settings' + q, '설정']];
     let list = fid ? items : [['my', '/my', '내 행사']];
     if (get()) list = list.concat([['events', '/admin/events', '행사 관리']]);  // 팀 관리자에게만
     document.querySelectorAll('[data-nav]').forEach(n => n.innerHTML = list
