@@ -99,7 +99,10 @@ def _call_llm(system, payload):
             return r.json()["choices"][0]["message"]["content"]
         except Exception:
             ct = r.headers.get("content-type", "")
-            raise RuntimeError(f"HTTP {r.status_code} 응답이 JSON 아님 ({ct}, {len(r.content)}바이트): {(r.text or '')[:200]!r}")
+            hist = [h.status_code for h in r.history]
+            keep = {k: v for k, v in r.headers.items() if k.lower() in ("server", "via", "x-github-request-id", "x-served-by", "location")}
+            proxy = bool(os.getenv("HTTPS_PROXY") or os.getenv("https_proxy") or os.getenv("ALL_PROXY"))
+            raise RuntimeError(f"HTTP {r.status_code} 응답이 JSON 아님 ({ct}, {len(r.content)}바이트): {(r.text or '')[:200]!r} | url={r.url} 리다이렉트={hist} 헤더={keep} 프록시환경변수={proxy}")
     if provider != "anthropic":
         return None
     key = os.getenv("ANTHROPIC_API_KEY")
