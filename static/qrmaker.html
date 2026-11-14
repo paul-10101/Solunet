@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR 생성기 · Solunet</title>
+<meta name="description" content="링크, 위치, 계좌 안내, 와이파이 QR을 바로 만들어 인쇄합니다. 가입 없이 무료.">
+<link rel="stylesheet" href="/ui.css">
+<script src="/qrcode.js"></script>
+<style>
+  button { font-family:inherit; }
+  .lay { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:24px; align-items:start; }
+  .types { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:18px; }
+  .types button { padding:14px 8px 12px; border:1.5px solid var(--grid); border-radius:12px; background:#fff; cursor:pointer; text-align:center; color:var(--ink); }
+  .types button svg { width:24px; height:24px; display:block; margin:0 auto 6px; stroke:var(--muted); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .types button b { font-size:14px; display:block; } .types button span { font-size:11.5px; color:var(--muted); }
+  .types button[aria-pressed="true"] { border-color:var(--route); background:var(--soft); } .types button[aria-pressed="true"] svg { stroke:var(--route); }
+  .card { border-radius:14px; padding:22px; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; } .three { display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:12px; }
+  .seg { display:flex; gap:6px; margin:6px 0 12px; flex-wrap:wrap; }
+  .seg button { padding:7px 14px; font-size:13px; border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--muted); cursor:pointer; }
+  .seg button[aria-pressed="true"] { background:var(--ink); border-color:var(--ink); color:#fff; }
+  .tip { font-size:12.5px; color:var(--muted); background:#F1F5F9; border-radius:8px; padding:10px 12px; margin-bottom:12px; }
+  .tip.warn { background:#FEF3C7; color:#92400E; }
+  hr { border:0; border-top:1px solid var(--grid); margin:18px 0; }
+  .pv { position:sticky; top:20px; }
+  .qcard { background:#fff; border:2px solid var(--ink); border-radius:14px; padding:22px 20px; text-align:center; }
+  .qcard .ttl { font-size:22px; font-weight:700; letter-spacing:-0.02em; line-height:1.3; min-height:4px; }
+  .qcard .qr { width:230px; height:230px; margin:12px auto; display:grid; place-items:center; }
+  .qcard .qr svg { width:100%; height:100%; display:block; }
+  .qcard .capt { font-size:14px; color:var(--ink); white-space:pre-wrap; } .qcard .raw { font-size:10px; color:var(--muted); word-break:break-all; margin-top:8px; }
+  .qcard.empty .qr { border:2px dashed var(--line); border-radius:12px; color:var(--muted); font-size:13px; }
+  .acts { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; } .acts .btn { text-align:center; border-radius:10px; } .acts .wide { grid-column:1/-1; }
+  .sheet-h { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin:36px 0 14px; }
+  .sheet { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .sheet .qcard { padding:14px 12px; position:relative; break-inside:avoid; } .sheet .qcard .ttl { font-size:16px; } .sheet .qcard .qr { width:100%; height:auto; aspect-ratio:1; margin:8px auto; } .sheet .qcard .capt { font-size:12px; }
+  .sheet .x { position:absolute; right:6px; top:6px; width:26px; height:26px; border-radius:50%; border:0; background:#F1F5F9; color:var(--muted); cursor:pointer; font-size:15px; }
+  .none { grid-column:1/-1; text-align:center; padding:28px; color:var(--muted); border:1.5px dashed var(--line); border-radius:12px; font-size:14px; }
+  @media (max-width:980px) { .lay { grid-template-columns:1fr; } .pv { position:static; max-width:380px; margin:0 auto; width:100%; } .types { grid-template-columns:repeat(3,1fr); } .sheet { grid-template-columns:1fr 1fr; } .two, .three { grid-template-columns:1fr; } }
+  @media print {
+    @page { size:A4; margin:10mm; }
+    .topbar, .lay, .sheet-h, .x, .intro { display:none !important; } main.page { padding:0; max-width:none; }
+    .sheet { grid-template-columns:1fr 1fr; gap:8mm; } .sheet .qcard { padding:8mm 6mm; border-width:1.5px; } .sheet .qcard .ttl { font-size:22px; } .sheet .qcard .qr { width:66mm; } .sheet .qcard .capt { font-size:14px; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar"><a class="logo" href="/"><i></i>Solunet</a>
+  <nav class="nav"><a href="/demo">시연</a><a class="on" href="/qr-maker">QR 생성기</a><a href="/my">내 행사</a></nav></header>
+<main class="page">
+  <div class="intro" style="margin-bottom:20px"><h1>QR 생성기</h1><p class="muted">점포 위치, 계좌 안내, 와이파이, 안내 링크. 행사장에 붙일 QR을 원하는 형식으로 만들어 인쇄합니다. 입력한 내용은 서버로 보내지 않고 이 브라우저 안에서만 처리합니다.</p></div>
+
+  <div class="lay">
+    <section>
+      <div class="types" role="group" aria-label="QR 종류">
+        <button data-type="link"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><b>링크</b><span>안내 페이지</span></button>
+        <button data-type="place"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><b>위치</b><span>점포·거점 지도</span></button>
+        <button data-type="bank"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg><b>계좌 안내</b><span>점포별 계좌·송금</span></button>
+        <button data-type="wifi"><svg viewBox="0 0 24 24"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".8"/></svg><b>와이파이</b><span>찍으면 바로 연결</span></button>
+        <button data-type="text"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 11h14M5 16h9"/></svg><b>글자</b><span>공지·안내 문구</span></button>
+      </div>
+
+      <div class="card">
+        <div id="f-link" class="f"><label>열릴 주소<input id="linkUrl" placeholder="https://" inputmode="url"></label></div>
+
+        <div id="f-place" class="f" hidden>
+          <label>장소 이름 또는 주소<input id="placeQ" placeholder="예: 안동 월영교 주차장, 경북 안동시 상아동 569"></label>
+          <span style="font-size:13px;color:var(--muted)">열릴 지도</span>
+          <div class="seg" id="mapSeg"><button data-v="naver">네이버 지도</button><button data-v="kakao">카카오맵</button><button data-v="google">Google 지도</button><button data-v="paste">지도 링크 붙여넣기</button></div>
+          <label id="placeUrlBox" hidden>지도 공유 링크<input id="placeUrl" placeholder="지도 앱의 '공유'에서 복사한 링크"></label>
+          <p class="tip">검색어로 지도를 여는 방식입니다. 정확한 지점이 필요하면 지도 앱에서 '공유' 링크를 복사해 붙여넣으세요.</p>
+        </div>
+
+        <div id="f-bank" class="f" hidden>
+          <div class="seg" id="bankSeg"><button data-v="text">계좌 정보 보여 주기</button><button data-v="link">송금 링크 사용</button></div>
+          <div id="bankText"><div class="three"><label>은행<input id="bankName" placeholder="예: 농협"></label><label>계좌번호<input id="bankNo" placeholder="- 없이 또는 포함" inputmode="numeric"></label><label>예금주<input id="bankOwner"></label></div>
+            <label>금액 안내 (선택)<input id="bankAmt" placeholder="예: 1인 5,000원"></label></div>
+          <label id="bankLink" hidden>송금 링크<input id="bankUrl" placeholder="토스·카카오페이 등에서 만든 송금 링크 (https://)"></label>
+          <p class="tip warn">솔루넷은 결제를 처리하거나 보관하지 않습니다. 이 QR은 점포의 계좌 정보(또는 점포가 직접 만든 송금 링크)를 보여 주기만 합니다. 인쇄 전에 계좌번호를 한 번 더 확인하세요.</p>
+        </div>
+
+        <div id="f-wifi" class="f" hidden>
+          <div class="two"><label>와이파이 이름 (SSID)<input id="wifiS"></label><label>비밀번호<input id="wifiP"></label></div>
+          <div class="seg" id="wifiSeg"><button data-v="WPA">WPA/WPA2</button><button data-v="nopass">비밀번호 없음</button></div>
+        </div>
+
+        <div id="f-text" class="f" hidden><label>보여 줄 글<textarea id="textV" rows="4" maxlength="500" placeholder="예: 분실물은 입구 안내소로 가져다주세요."></textarea></label></div>
+
+        <hr>
+        <div class="two"><label>카드 제목<input id="ttl" maxlength="30" placeholder="예: 3번 점포 · 떡볶이"></label><label>안내 문구<input id="capt" maxlength="60" placeholder="예: 카메라로 찍어 주세요"></label></div>
+        <span style="font-size:13px;color:var(--muted)">QR 색</span>
+        <div class="seg" id="colorSeg"><button data-v="#0F172A">검정</button><button data-v="#1E40AF">파랑</button><button data-v="#14532D">초록</button></div>
+      </div>
+    </section>
+
+    <aside class="pv">
+      <div class="qcard empty" id="pv"><div class="ttl" id="pvT"></div><div class="qr" id="pvQ">내용을 입력하면 QR이 나타납니다</div><div class="capt" id="pvC"></div><div class="raw" id="pvR"></div></div>
+      <div class="acts">
+        <button class="btn" id="dlPng" disabled>PNG 내려받기</button><button class="btn line" id="dlSvg" disabled>SVG 내려받기</button>
+        <button class="btn line wide" id="add" disabled>인쇄 목록에 추가 (점포별로 여러 장)</button>
+      </div>
+      <p class="note" id="msg" style="text-align:center;min-height:18px"></p>
+    </aside>
+  </div>
+
+  <div class="sheet-h"><div><h2>인쇄 목록 <span class="muted" id="cnt" style="font-weight:400;font-size:14px"></span></h2><p class="muted" style="font-size:13px">A4 한 장에 4개씩 인쇄됩니다. 목록은 이 브라우저에만 저장됩니다.</p></div>
+    <div><button class="btn line" id="clear">모두 지우기</button> <button class="btn" id="print">인쇄</button></div></div>
+  <div class="sheet" id="sheet"></div>
+</main>
+
+<script>
+qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];   // 한글이 깨지지 않게
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const S = { type:'link', map:'naver', bank:'text', wifi:'WPA', color:'#0F172A' };
+const DEF_CAPT = { link:'카메라로 찍어 주세요', place:'찍으면 지도가 열립니다', bank:'찍으면 계좌 정보가 보입니다', wifi:'찍으면 와이파이에 연결됩니다', text:'카메라로 찍어 주세요' };
+const okUrl = u => /^https?:\/\/[^\s]+\.[^\s]+/i.test(u);
+const wesc = s => s.replace(/([\\;,:"])/g, '\\$1');
+
+function seg(id, key) { const el = $(id); el.querySelectorAll('button').forEach(b => { b.setAttribute('aria-pressed', b.dataset.v === S[key]); b.onclick = () => { S[key] = b.dataset.v; seg(id, key); update(); }; }); }
+document.querySelectorAll('.types button').forEach(b => b.onclick = () => { S.type = b.dataset.type; update(); });
+document.querySelectorAll('input, textarea').forEach(i => i.oninput = update);
+
+/* 입력 → QR에 넣을 문자열. 아직 못 만들면 [null, 이유] */
+function payload() {
+  const v = id => $(id).value.trim();
+  if (S.type === 'link') { let u = v('linkUrl'); if (!u) return [null, '']; if (!/^https?:\/\//i.test(u)) u = 'https://' + u; return okUrl(u) ? [u] : [null, '주소 형식을 확인해 주세요']; }
+  if (S.type === 'place') {
+    if (S.map === 'paste') { const u = v('placeUrl'); return !u ? [null, ''] : okUrl(u) ? [u] : [null, 'https:// 로 시작하는 지도 링크를 붙여넣어 주세요']; }
+    const q = v('placeQ'); if (!q) return [null, ''];
+    const e = encodeURIComponent(q);
+    return [{ naver:'https://map.naver.com/p/search/' + e, kakao:'https://map.kakao.com/?q=' + e, google:'https://www.google.com/maps/search/?api=1&query=' + e }[S.map]];
+  }
+  if (S.type === 'bank') {
+    if (S.bank === 'link') { const u = v('bankUrl'); return !u ? [null, ''] : okUrl(u) ? [u] : [null, 'https:// 로 시작하는 송금 링크를 붙여넣어 주세요']; }
+    const b = v('bankName'), n = v('bankNo'), o = v('bankOwner'), a = v('bankAmt');
+    if (!b && !n && !o) return [null, '']; if (!b || !n || !o) return [null, '은행, 계좌번호, 예금주를 모두 입력해 주세요'];
+    if (!/^[\d\s-]{6,30}$/.test(n)) return [null, '계좌번호는 숫자와 - 만 입력해 주세요'];
+    return [`${b} ${n}\n예금주 ${o}` + (a ? `\n${a}` : '')];
+  }
+  if (S.type === 'wifi') { const s = v('wifiS'), p = $('wifiP').value; if (!s) return [null, '']; if (S.wifi === 'WPA' && p.length < 8) return [null, '비밀번호는 8자 이상입니다'];
+    return [`WIFI:T:${S.wifi};S:${wesc(s)};${S.wifi === 'WPA' ? 'P:' + wesc(p) + ';' : ''};`]; }
+  const t = v('textV'); return t ? [t] : [null, ''];
+}
+function make(text) { const q = qrcode(0, 'Q'); q.addData(text); q.make(); return q; }
+function svg(text, color) { return make(text).createSvgTag({ cellSize:4, margin:16, scalable:true }).replace(/fill="black"/g, `fill="${color}"`); }
+
+let cur = null;
+function update() {
+  document.querySelectorAll('.types button').forEach(b => b.setAttribute('aria-pressed', b.dataset.type === S.type));
+  document.querySelectorAll('.f').forEach(f => f.hidden = f.id !== 'f-' + S.type);
+  $('placeUrlBox').hidden = S.map !== 'paste'; $('placeQ').parentNode.hidden = S.map === 'paste';
+  $('bankText').hidden = S.bank !== 'text'; $('bankLink').hidden = S.bank !== 'link';
+  $('wifiP').parentNode.style.visibility = S.wifi === 'WPA' ? '' : 'hidden';
+  $('capt').placeholder = '예: ' + DEF_CAPT[S.type];
+  const [text, why] = payload(), title = $('ttl').value.trim(), capt = $('capt').value.trim() || DEF_CAPT[S.type];
+  let svgTag = null; if (text) { try { svgTag = svg(text, S.color); } catch (e) { svgTag = null; } }
+  cur = svgTag ? { text, title, capt, color:S.color, type:S.type } : null;
+  $('pv').classList.toggle('empty', !cur);
+  $('pvT').textContent = title; $('pvC').textContent = cur ? capt : '';
+  $('pvQ').innerHTML = cur ? svgTag : (text ? '내용이 너무 깁니다. 줄여 주세요.' : '내용을 입력하면 QR이 나타납니다');
+  $('pvR').textContent = cur ? (S.type === 'wifi' ? `와이파이: ${$('wifiS').value.trim()}` : text) : '';
+  $('msg').textContent = why || ''; $('msg').style.color = why ? '#B3261E' : '';
+  ['dlPng', 'dlSvg', 'add'].forEach(id => $(id).disabled = !cur);
+}
+
+function save(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
+const fname = ext => ((cur.title || 'solunet-qr').replace(/[\\/:*?"<>|\s]+/g, '_')) + '.' + ext;
+$('dlSvg').onclick = () => save(new Blob([svg(cur.text, cur.color)], { type:'image/svg+xml' }), fname('svg'));
+$('dlPng').onclick = () => {   // 제목 + QR + 안내 문구를 한 장으로
+  const q = make(cur.text), n = q.getModuleCount(), W = 1000, pad = 70, cell = Math.floor((W - pad * 2) / (n + 8)), qs = cell * (n + 8);
+  const lines = cur.capt.split('\n'), th = cur.title ? 110 : 0, H = pad + th + qs + 40 + lines.length * 48 + pad;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.textAlign = 'center'; g.fillStyle = '#0F172A';
+  if (cur.title) { g.font = '700 58px "Noto Sans KR", sans-serif'; g.fillText(cur.title, W / 2, pad + 60, W - pad * 2); }
+  const x0 = (W - qs) / 2 + cell * 4, y0 = pad + th + cell * 4; g.fillStyle = cur.color;
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) g.fillRect(x0 + c * cell, y0 + r * cell, cell, cell);
+  g.fillStyle = '#0F172A'; g.font = '500 36px "Noto Sans KR", sans-serif';
+  lines.forEach((l, i) => g.fillText(l, W / 2, pad + th + qs + 60 + i * 48, W - pad * 2));
+  cv.toBlob(b => save(b, fname('png')), 'image/png');
+};
+
+/* 인쇄 목록 */
+const KEY = 'solunet_qr_sheet';
+let list = []; try { list = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
+const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} };
+function drawSheet() {
+  $('cnt').textContent = list.length ? `${list.length}개` : '';
+  $('sheet').innerHTML = list.length ? list.map((x, i) => { let s = ''; try { s = svg(x.text, x.color); } catch (e) {}
+    return `<div class="qcard"><button class="x" data-i="${i}" aria-label="삭제">×</button><div class="ttl">${esc(x.title)}</div><div class="qr">${s}</div><div class="capt">${esc(x.capt)}</div></div>`; }).join('')
+    : '<div class="none">아직 없습니다. 위에서 QR을 만들고 "인쇄 목록에 추가"를 누르면 점포별 QR을 한 번에 인쇄할 수 있습니다.</div>';
+  $('sheet').querySelectorAll('.x').forEach(b => b.onclick = () => { list.splice(+b.dataset.i, 1); keep(); drawSheet(); });
+  $('print').disabled = !list.length; $('clear').disabled = !list.length;
+}
+$('add').onclick = () => { if (list.length >= 60) { $('msg').textContent = '목록은 60개까지 담을 수 있습니다'; return; } list.push(cur); keep(); drawSheet(); $('msg').textContent = '인쇄 목록에 추가했습니다'; $('msg').style.color = ''; };
+$('print').onclick = () => print();
+let armT; $('clear').onclick = () => { const b = $('clear');
+  if (!b.classList.contains('arm')) { b.classList.add('arm'); b.textContent = '한 번 더 누르면 지웁니다'; armT = setTimeout(() => { b.classList.remove('arm'); b.textContent = '모두 지우기'; }, 3000); return; }
+  clearTimeout(armT); b.classList.remove('arm'); b.textContent = '모두 지우기'; list = []; keep(); drawSheet(); };
+
+seg('mapSeg', 'map'); seg('bankSeg', 'bank'); seg('wifiSeg', 'wifi'); seg('colorSeg', 'color'); update(); drawSheet();
+</script>
+</body>
+</html>

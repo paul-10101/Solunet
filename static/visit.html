@@ -34,12 +34,22 @@
   .lang button { font-family:inherit; font-size:12px; padding:3px 10px; border-radius:999px; border:1px solid var(--grid); background:#fff; color:var(--muted); cursor:pointer; }
   .lang button[aria-pressed="true"] { border-color:var(--ink); color:var(--ink); }
   .foot { font-size:12px; color:var(--muted); text-align:center; margin-top:16px; }
+  .list .pl { display:block; font-size:12px; color:var(--muted); }
+  .list a.map { margin-left:auto; font-size:12px; color:var(--route); white-space:nowrap; }
+  .coupon { background:#fff; border:2px dashed var(--route); border-radius:14px; padding:22px 18px; text-align:center; position:relative; overflow:hidden; margin-bottom:12px; }
+  .coupon .lab { font-size:12px; color:var(--muted); } .coupon h2 { font-size:22px; margin:2px 0 12px; }
+  .coupon .code { font-size:30px; font-weight:700; letter-spacing:.16em; }
+  .coupon p { font-size:13px; color:var(--muted); margin-top:10px; }
+  .coupon.used { border-style:solid; border-color:var(--line); } .coupon.used .code { color:var(--line); text-decoration:line-through; }
+  .coupon .stampd { position:absolute; right:12px; top:14px; transform:rotate(12deg); border:3px solid #15803D; color:#15803D; font-weight:700; font-size:15px; padding:4px 14px; border-radius:8px; background:rgba(255,255,255,.9); }
+  .btn.dark { background:var(--ink); border-color:var(--ink); } .btn.arm { background:#B3261E; border-color:#B3261E; }
+  .skip { display:block; margin:12px auto 0; background:none; border:0; font-family:inherit; font-size:13px; color:var(--muted); text-decoration:underline; cursor:pointer; }
   .hidden { display:none; }
   .err { padding:40px 20px; text-align:center; }
 </style>
 </head>
 <body>
-<div class="lang" role="group" aria-label="언어"><button data-l="ko" aria-pressed="true">한국어</button><button data-l="en" aria-pressed="false">English</button></div>
+<div class="lang" role="group" aria-label="언어"><button data-l="ko" aria-pressed="true">한국어</button><button data-l="en" aria-pressed="false">English</button><button data-l="ja" aria-pressed="false">日本語</button><button data-l="zh" aria-pressed="false">中文</button></div>
 <div id="app"><div class="err"><p data-t="loading"></p><p class="muted" style="font-size:13px;margin-top:6px" data-t="wake"></p></div></div>
 
 <template id="tpl">
@@ -73,7 +83,10 @@
       <p style="font-weight:500;margin-bottom:6px" data-t="qRevisit"></p>
       <div id="revisit"></div>
       <button class="btn full" id="surveySend" disabled data-t="send" style="margin-top:8px"></button>
+      <button class="skip hidden" id="prizeSkip" data-t="skip"></button>
     </section>
+    <!-- 경품 교환권 -->
+    <section id="prizeBox" class="hidden"></section>
     <p class="foot" data-t="privacy"></p>
   </div>
 </template>
@@ -88,7 +101,7 @@ const T = {
         qCrowd:'오늘 행사, 얼마나 붐볐나요?', crowd1:'한산', crowd5:'매우 혼잡', qRoute:'거점 사이 이동은 편했나요?', route1:'불편', route5:'편함',
         qCompare:'이전에 참여한 행사와 비교하면 혼잡·동선은?', compare:['더 나았다','비슷했다','더 나빴다','처음 참여'],
         qSat:'오늘 행사, 전반적으로 만족하셨나요? (선택)', sat1:'불만족', sat5:'만족', qRevisit:'내년에도 오고 싶으신가요? (선택)', revisit:['오고 싶다','모르겠다','아니다'],
-        privacy:'이름, 연락처, 위치는 기록하지 않습니다', notfound:'등록되지 않은 QR이에요. 행사 운영진에게 알려 주세요.', neterr:'연결이 불안정해요. 잠시 후 새로고침해 주세요.' },
+        privacy:'이름, 연락처, 위치는 기록하지 않습니다', map:'위치 보기', coupon:'경품 교환권', couponSub:'교환처에서 이 화면을 보여 주세요', staff:'지급 완료 (스태프가 누릅니다)', staffArm:'한 번 더 누르면 지급 처리됩니다', used:'지급 완료', usedAt:t=>`${t} 지급 · 다시 사용할 수 없습니다`, skip:'설문 없이 교환권만 받기', sendPrize:'보내고 경품 받기', notfound:'등록되지 않은 QR이에요. 행사 운영진에게 알려 주세요.', neterr:'연결이 불안정해요. 잠시 후 새로고침해 주세요.' },
   en: { loading:'Loading', wake:'The first visit can take up to a minute', stamped:n=>`Stamped: ${n}`, again:n=>`Already stamped: ${n}`,
         count:(a,b)=>`${a} / ${b} spots`, left:n=>n?`${n} to go`:'Complete!', here:'You are here', quit:'Stop here',
         quitQ:'Leaving here?', quitSub:'Pick one reason. It is anonymous and helps us improve the next event.', send:'Send', thanks:'Thank you!',
@@ -97,10 +110,30 @@ const T = {
         qCrowd:'How crowded was the event?', crowd1:'Quiet', crowd5:'Very crowded', qRoute:'Was moving between spots easy?', route1:'Hard', route5:'Easy',
         qCompare:'Compared with previous events?', compare:['Better','About the same','Worse','First time'],
         qSat:'Overall, were you satisfied? (optional)', sat1:'Not at all', sat5:'Very', qRevisit:'Would you come again next year? (optional)', revisit:['Yes','Not sure','No'],
-        privacy:'We do not record names, contacts, or locations', notfound:'This QR is not registered. Please tell the staff.', neterr:'Connection problem. Please refresh in a moment.' },
+        privacy:'We do not record names, contacts, or locations', map:'Map', coupon:'Prize voucher', couponSub:'Show this screen at the prize desk', staff:'Mark as handed out (staff only)', staffArm:'Tap again to confirm', used:'Handed out', usedAt:t=>`Handed out at ${t} · cannot be used again`, skip:'Skip the survey and get my voucher', sendPrize:'Send and get my prize', notfound:'This QR is not registered. Please tell the staff.', neterr:'Connection problem. Please refresh in a moment.' },
+  ja: { loading:'読み込み中', wake:'初回は最大1分ほどかかる場合があります', stamped:n=>`「${n}」スタンプ完了`, again:n=>`「${n}」は取得済みです`,
+        count:(a,b)=>`${a} / ${b} スポット`, left:n=>n?`あと${n}か所`:'コンプリート！', here:'現在地', quit:'ここでやめる',
+        quitQ:'ここでやめますか？', quitSub:'理由を一つ選んでください。匿名で、次回の配置改善に使います。', send:'送信', thanks:'ご回答ありがとうございます！',
+        reasons:['待ち列が長い','次のスポットが遠い','トイレ・休憩所がない','時間がない','その他'],
+        doneTitle:'すべてのスタンプを集めました', doneSub:'1分で終わります。次回の改善に役立てます。',
+        qCrowd:'今日の混雑はいかがでしたか？', crowd1:'空いていた', crowd5:'とても混雑', qRoute:'スポット間の移動は楽でしたか？', route1:'不便', route5:'快適',
+        qCompare:'以前のイベントと比べて混雑・動線は？', compare:['良かった','同じくらい','悪かった','初めて'],
+        qSat:'全体的に満足しましたか？（任意）', sat1:'不満', sat5:'満足', qRevisit:'来年も来たいですか？（任意）', revisit:['来たい','わからない','いいえ'],
+        privacy:'氏名・連絡先・位置情報は記録しません', map:'場所を見る', coupon:'景品引換券', couponSub:'引換所でこの画面を見せてください', staff:'お渡し完了（スタッフが押します）', staffArm:'もう一度押すと確定します', used:'お渡し済み', usedAt:t=>`${t} お渡し済み · 再利用できません`, skip:'アンケートなしで引換券を受け取る', sendPrize:'送信して景品を受け取る',
+        notfound:'登録されていないQRです。スタッフにお知らせください。', neterr:'接続が不安定です。しばらくして再読み込みしてください。' },
+  zh: { loading:'加载中', wake:'首次访问最多可能需要1分钟', stamped:n=>`“${n}”盖章完成`, again:n=>`“${n}”已盖过章`,
+        count:(a,b)=>`${a} / ${b} 个站点`, left:n=>n?`还差 ${n} 处`:'全部完成！', here:'当前位置', quit:'在这里结束',
+        quitQ:'要在这里结束吗？', quitSub:'请选择一个原因。匿名收集，用于改进下次活动的布局。', send:'提交', thanks:'感谢您的回答！',
+        reasons:['排队太长','下一站太远','没有洗手间或休息处','没有时间','其他'],
+        doneTitle:'您已集齐所有印章', doneSub:'只需1分钟，您的回答将用于改进下次活动。',
+        qCrowd:'今天的活动拥挤吗？', crowd1:'很空', crowd5:'非常拥挤', qRoute:'站点之间移动方便吗？', route1:'不方便', route5:'方便',
+        qCompare:'与以前参加的活动相比，拥挤和动线如何？', compare:['更好','差不多','更差','第一次参加'],
+        qSat:'总体上满意吗？（选填）', sat1:'不满意', sat5:'满意', qRevisit:'明年还想来吗？（选填）', revisit:['想来','不确定','不想'],
+        privacy:'不记录姓名、联系方式和位置', map:'查看位置', coupon:'奖品兑换券', couponSub:'请在兑换处出示此画面', staff:'发放完成（由工作人员点击）', staffArm:'再点一次确认发放', used:'已发放', usedAt:t=>`${t} 已发放 · 无法再次使用`, skip:'不填问卷直接领取兑换券', sendPrize:'提交并领取奖品',
+        notfound:'此二维码未登记，请告知工作人员。', neterr:'连接不稳定，请稍后刷新。' },
 };
 const KO_VALUES = { reasons:T.ko.reasons, compare:T.ko.compare, revisit:T.ko.revisit }; // 저장은 항상 한국어 값으로
-let L = (navigator.language || 'ko').startsWith('ko') ? 'ko' : 'en'; try { L = localStorage.getItem('solunet_lang') || L; } catch (e) {}
+const NL = (navigator.language || 'ko').toLowerCase(); let L = NL.startsWith('ko') ? 'ko' : NL.startsWith('ja') ? 'ja' : NL.startsWith('zh') ? 'zh' : 'en'; try { L = localStorage.getItem('solunet_lang') || L; } catch (e) {} if (!T[L]) L = 'ko';
 const [, , fid, token] = location.pathname.split('/');
 const TEST = new URLSearchParams(location.search).has('test'); // 운영진 테스트: 통계에서 제외
 let session; try { if (!TEST) session = localStorage.getItem('solunet_sid'); } catch (e) {}
@@ -121,14 +154,18 @@ document.querySelectorAll('.lang button').forEach(b => b.onclick = () => { L = b
 function render() {
   const { f, r } = state, total = f.checkpoints.length, done = new Set(r.done);
   $('evName').textContent = f.name;
-  $('title').textContent = r.duplicate ? T[L].again(r.checkpoint.name) : T[L].stamped(r.checkpoint.name);
+  const nm = c => (L !== 'ko' && c.name_en) ? c.name_en : c.name, hereCp = f.checkpoints.find(c => c.id === r.checkpoint.id) || r.checkpoint;
+  const safe = x => String(x || '').replace(/[&<>"]/g, '');
+  $('title').textContent = r.duplicate ? T[L].again(nm(hereCp)) : T[L].stamped(nm(hereCp));
   $('count').textContent = T[L].count(done.size, total);
   $('left').textContent = T[L].left(total - done.size);
   $('barFill').style.width = (done.size / total * 100) + '%';
-  $('list').innerHTML = f.checkpoints.map(c => `<li class="${done.has(c.id) ? 'done' : ''} ${c.id === r.checkpoint.id ? 'here' : ''}"><span class="mk"></span><span class="t">${c.name.replace(/[&<>]/g, '')}</span>${c.id === r.checkpoint.id ? `<small>${T[L].here}</small>` : ''}</li>`).join('');
+  $('list').innerHTML = f.checkpoints.map(c => `<li class="${done.has(c.id) ? 'done' : ''} ${c.id === r.checkpoint.id ? 'here' : ''}"><span class="mk"></span><span class="t">${safe(nm(c))}${L === 'ko' && c.place ? `<span class="pl">${safe(c.place)}</span>` : ''}</span>${c.id === r.checkpoint.id ? `<small>${T[L].here}</small>` : (!done.has(c.id) && /^https?:\/\//i.test(c.map_url || '') ? `<a class="map" href="${safe(c.map_url)}" target="_blank" rel="noopener">${T[L].map}</a>` : '')}</li>`).join('');
   const complete = done.size === total;
   $('exitBox').classList.toggle('hidden', complete);
-  $('surveyBox').classList.toggle('hidden', !complete);
+  $('surveyBox').classList.toggle('hidden', !complete || !!state.prize);
+  drawPrize();
+  if (complete && f.prize_name && !state.surveyed && $('surveySend')) { $('surveySend').textContent = T[L].sendPrize; $('prizeSkip').classList.remove('hidden'); $('prizeSkip').textContent = T[L].skip; $('prizeSkip').onclick = getPrize; }
   if ($('reasons')) $('reasons').innerHTML = T[L].reasons.map((t, i) => `<button class="opt" data-i="${i}" aria-pressed="${pick.reason === i}">${t}</button>`).join('');
   document.querySelectorAll('#reasons .opt').forEach(b => b.onclick = () => { pick.reason = +b.dataset.i; $('exitSend').disabled = false; render(); });
   if (state.surveyed || !$('compare')) return;
@@ -139,6 +176,28 @@ function render() {
   $('revisit').innerHTML = T[L].revisit.map((t, i) => `<button class="opt" data-i="${i}" aria-pressed="${pick.revisit === KO_VALUES.revisit[i]}">${t}</button>`).join('');
   document.querySelectorAll('#revisit .opt').forEach(b => b.onclick = () => { pick.revisit = KO_VALUES.revisit[+b.dataset.i]; render(); });
   $('surveySend').disabled = !(pick.crowd && pick.route);
+}
+
+const hhmm = t => new Date(t).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+async function getPrize() {
+  const r = await post('/api/prize/issue', { festival: fid, session }).catch(() => null);
+  if (!r || !r.ok) return;
+  state.prize = await r.json(); try { localStorage.setItem('solunet_prize_' + fid, '1'); } catch (e) {} render();
+}
+function drawPrize() {
+  const box = $('prizeBox'), p = state.prize; if (!box) return;
+  box.classList.toggle('hidden', !p); if (!p) return;
+  const used = !!p.redeemed_at, esc = x => String(x).replace(/[&<>"]/g, '');
+  box.innerHTML = `<div class="coupon ${used ? 'used' : ''}">${used ? `<span class="stampd">${T[L].used}</span>` : ''}<div class="lab">${T[L].coupon}</div><h2>${esc(p.prize)}</h2><div class="code">${esc(p.code)}</div>
+    <p>${used ? T[L].usedAt(hhmm(p.redeemed_at)) : T[L].couponSub}</p></div>` + (used ? '' : `<button class="btn dark full" id="redeem">${T[L].staff}</button>`);
+  if (used) return;
+  const b = $('redeem'); let armed = false, tm;
+  b.onclick = async () => {   // 실수로 누르지 않도록 두 번 눌러야 지급 처리
+    if (!armed) { armed = true; b.classList.add('arm'); b.textContent = T[L].staffArm; tm = setTimeout(() => { armed = false; b.classList.remove('arm'); b.textContent = T[L].staff; }, 3000); return; }
+    clearTimeout(tm); b.disabled = true;
+    const r = await post('/api/prize/redeem', { festival: fid, session }).catch(() => null);
+    if (r && r.ok) { state.prize.redeemed_at = (await r.json()).redeemed_at; render(); } else { b.disabled = false; b.textContent = T[L].neterr; }
+  };
 }
 
 async function main() {
@@ -163,8 +222,11 @@ async function main() {
       state.surveyed = ok;
       $('surveyBox').innerHTML = `<div class="card"><b>${ok ? T[L].thanks : T[L].neterr}</b></div>`;
       $('surveyBox').classList.remove('hidden');
+      if (ok && state.f.prize_name) getPrize();
     };
     applyLang();
+    let had; try { had = localStorage.getItem('solunet_prize_' + fid); } catch (e) {}
+    if (had && f.prize_name && state.r.done.length === f.checkpoints.length) getPrize();  // 이미 받은 교환권은 다시 열어도 바로 보인다
   } catch (e) {
     $('app').innerHTML = `<div class="err"><p>${e === 404 ? T[L].notfound : T[L].neterr}</p></div>`;
   }

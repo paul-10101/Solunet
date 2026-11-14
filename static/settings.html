@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex">
+<title>행사 설정 · Solunet</title>
+<link rel="stylesheet" href="/ui.css">
+<style>
+  .card { border-radius:12px; margin-bottom:12px; } .card h2 { margin-bottom:4px; } .card > p { font-size:14px; color:var(--muted); margin-bottom:14px; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:520px; }
+  .cp { display:grid; grid-template-columns:150px 1fr 1.3fr 1fr; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid var(--grid); }
+  .cp.h { font-size:13px; color:var(--muted); } .cp b { font-size:15px; } .cp input { font-size:14px; padding:8px 10px; }
+  .savebar { display:flex; gap:14px; align-items:center; position:sticky; bottom:0; background:var(--paper); padding:14px 0; }
+  @media (max-width:820px) { .cp { grid-template-columns:1fr; gap:6px; padding:14px 0; } .cp.h { display:none; } .two { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header class="topbar"><div style="display:flex;gap:14px;align-items:center"><a class="logo" href="/"><i></i>Solunet</a><span class="muted" id="evName"></span></div>
+  <nav class="nav" data-nav></nav></header>
+<main class="page">
+  <div id="gate"></div>
+  <form id="body" hidden>
+    <h1 style="margin-bottom:16px">행사 설정</h1>
+    <section class="card"><h2>경품 교환권</h2><p>이름을 넣으면, 모든 거점을 찍은 참가자에게 교환권이 한 장 발급됩니다. 스태프가 참가자 화면에서 '지급 완료'를 누르면 다시 쓸 수 없습니다. 비워 두면 경품을 운영하지 않습니다.</p>
+      <label style="max-width:520px">경품 이름<input id="prize" maxlength="40" placeholder="예: 완주 기념품, 지역화폐 5천 원"></label></section>
+    <section class="card"><h2>혼잡 경고</h2><p>한 거점에서 아래 시간 동안 찍은 사람이 기준을 넘으면 분석 화면에 경고가 뜹니다. 거점 크기에 맞게 정하세요.</p>
+      <div class="two"><label>기준 인원 (명)<input id="th" type="number" min="1" required></label><label>집계 시간 (분)<input id="win" type="number" min="1" max="120" required></label></div></section>
+    <section class="card"><h2>거점 위치와 외국어 이름</h2><p>위치 설명과 지도 링크는 참가자 화면의 아직 가지 않은 거점에 표시됩니다. 외국어 이름은 영어·일본어·중국어 화면에서 쓰입니다.</p>
+      <div class="cp h"><span>거점</span><span>위치 설명</span><span>지도 링크</span><span>외국어 이름</span></div><div id="cps"></div>
+      <p class="note">지도 링크는 지도 앱의 '공유'에서 복사하거나 <a href="/qr-maker" target="_blank" rel="noopener">QR 생성기</a>의 위치 항목을 참고하세요.</p></section>
+    <div class="savebar"><button class="btn" type="submit" id="save">저장</button><span id="msg" style="font-size:14px"></span></div>
+  </form>
+</main>
+<script src="/admin.js"></script>
+<script>Admin.nav("settings");</script>
+<script>
+const fid = Admin.fid, E = Admin.esc, $ = id => document.getElementById(id);
+function fill(f) {
+  $('evName').textContent = f.name; $('prize').value = f.prize_name || ''; $('th').value = f.crowd_threshold || 30; $('win').value = f.crowd_window_min || 10;
+  $('cps').innerHTML = f.checkpoints.map((c, i) => `<div class="cp" data-id="${E(c.id)}"><b>${i + 1}. ${E(c.name)}</b>
+    <input data-k="place" maxlength="80" placeholder="예: 정문 오른쪽 3번 부스" value="${E(c.place || '')}" aria-label="${E(c.name)} 위치 설명">
+    <input data-k="map_url" maxlength="300" placeholder="https://" value="${E(c.map_url || '')}" aria-label="${E(c.name)} 지도 링크">
+    <input data-k="name_en" maxlength="60" placeholder="예: Main Stage" value="${E(c.name_en || '')}" aria-label="${E(c.name)} 외국어 이름"></div>`).join('');
+}
+Admin.ready($('gate')).then(async () => {
+  if (!fid) { $('gate').innerHTML = '<p>내 행사에서 행사를 선택해 주세요.</p>'; return; }
+  try { fill(await Admin.api('/api/admin/festival/' + encodeURIComponent(fid))); $('body').hidden = false; } catch (e) { $('gate').innerHTML = `<p>${E(e.message)}</p>`; }
+});
+$('body').onsubmit = async e => {
+  e.preventDefault(); $('save').disabled = true; $('msg').textContent = '저장 중'; $('msg').style.color = '';
+  const body = { prize_name:$('prize').value, crowd_threshold:+$('th').value, crowd_window_min:+$('win').value,
+    checkpoints:[...document.querySelectorAll('#cps .cp')].map(r => ({ id:r.dataset.id, ...Object.fromEntries([...r.querySelectorAll('input')].map(i => [i.dataset.k, i.value])) })) };
+  try { fill(await Admin.api('/api/admin/festival/' + encodeURIComponent(fid) + '/settings', { method:'PUT', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(body) })); $('msg').textContent = '저장했습니다'; $('msg').style.color = '#15803D'; }
+  catch (err) { $('msg').textContent = err.message; $('msg').style.color = '#B3261E'; }
+  $('save').disabled = false;
+};
+</script>
+</body>
+</html>

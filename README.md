@@ -1,9 +1,11 @@
 # Solunet
 
-축제 회차 개선 플랫폼 — 작년 데이터로 올해 축제를 다시 설계하고, 성과를 숫자로 보고합니다.
+행사 대행사의 현장 확인·집계·보고를 QR 하나로 자동화하는 도구.
 
 ## 구조
-- `/` 소개 페이지 · `/admin` 관리자 대시보드 · `/s/{축제}/{거점}` 방문객 QR 페이지
+- `/` 소개 페이지 · `/demo` 발표용 시연(참가자 휴대폰 + 운영자 화면) · `/admin` 분석·보고서 · `/s/{행사}/{거점}` 참가자 QR 페이지
+- `/qr-maker` QR 생성기(링크·위치·계좌 안내·와이파이, 브라우저 안에서만 처리) · `/admin/settings` 경품·혼잡 경고 기준·거점 위치 설정
+- 경품 교환권 `/api/prize/*` · 혼잡 경고 `/api/crowd/{id}` · 제안서 초안 `/api/proposal/{id}` (숫자는 `app/design.py`가 정하고 AI는 문장만)
 - `app/stats.py` 집계(코드 계산) · `app/design.py` 규칙 기반 설계안 · `app/ai.py` LLM 문장 작성(숫자 대조 검증)
 - 저장소: `DATABASE_URL` 있으면 PostgreSQL, `MONGODB_URI` 있으면 MongoDB, 둘 다 없으면 메모리
 

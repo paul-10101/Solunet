@@ -72,6 +72,31 @@ class Trial(BaseModel):
     agree: bool = False
 
 
+class PrizeReq(BaseModel):
+    festival: str = Field(max_length=40)
+    session: str = Field(min_length=6, max_length=64)
+
+
+class CpMeta(BaseModel):
+    id: str = Field(max_length=40)
+    place: str = Field(default="", max_length=80)      # 위치 설명 (예: 정문 오른쪽 부스 3번)
+    map_url: str = Field(default="", max_length=300)   # 지도 링크
+    name_en: str = Field(default="", max_length=60)    # 외국어 화면에 보여 줄 이름
+
+
+class Settings(BaseModel):
+    crowd_threshold: int = Field(default=30, ge=1, le=100000)  # 최근 구간 방문자가 이 수 이상이면 경고
+    crowd_window_min: int = Field(default=10, ge=1, le=120)
+    prize_name: str = Field(default="", max_length=40)         # 비우면 경품 기능을 쓰지 않는다
+    checkpoints: list[CpMeta] = Field(default_factory=list, max_length=40)
+
+
+class ProposalReq(BaseModel):
+    title: str = Field(default="", max_length=80)          # 내년 행사(제안) 이름
+    expected_visitors: int | None = Field(default=None, ge=1, le=10_000_000)
+    days: int | None = Field(default=None, ge=1, le=60)
+
+
 class NewFestival(BaseModel):
     name: str = Field(min_length=1, max_length=60)
     date: str = Field(default="", max_length=20)
@@ -122,8 +147,9 @@ def _festival(fid):
 def _public(f):
     """방문객에게 보여 줄 정보. 토큰은 절대 내보내지 않는다."""
     return {"id": f["id"], "name": f["name"], "date": f.get("date", ""), "demo": f.get("demo", False),
-            "edition": f.get("edition", 1),
-            "checkpoints": [{"id": c["id"], "name": c["name"]} for c in f["checkpoints"]]}
+            "edition": f.get("edition", 1), "prize_name": f.get("prize_name", ""),
+            "checkpoints": [{"id": c["id"], "name": c["name"], "place": c.get("place", ""), "map_url": c.get("map_url", ""),
+                             "name_en": c.get("name_en", "")} for c in f["checkpoints"]]}
 
 
 def _checkpoint_by_token(f, token):
@@ -144,7 +170,34 @@ def _real(rows):
 
 
 def _stats(f, edition):
-    return stats.compute_stats(f, _real(db.scans_for(f["id"], edition)), _real(db.responses_for(f["id"], edition)))
+    resp = [r for r in _real(db.responses_for(f["id"], edition)) if r.get("kind") not in ("prize", "prize_redeem")]
+    return stats.compute_stats(f, _real(db.scans_for(f["id"], edition)), resp)
+
+
+def _prizes(f, edition):
+    rows = _real(db.responses_for(f["id"], edition))
+    issued = {r["session"] for r in rows if r.get("kind") == "prize"}
+    redeemed = {r["session"] for r in rows if r.get("kind") == "prize_redeem"}
+    return {"name": f.get("prize_name", ""), "issued": len(issued), "redeemed": len(redeemed & issued)}
+
+
+def _crowd(f):
+    """거점별로 최근 N분 동안 찍은 사람 수를 세고, 기준을 넘으면 경고한다. 스캔 기록만 쓴다."""
+    win, th = f.get("crowd_window_min", 10), f.get("crowd_threshold", 30)
+    since = now() - timedelta(minutes=win)
+    recent = defaultdict(set)
+    for s in _real(db.scans_for(f["id"], f["edition"])):
+        try:
+            if datetime.fromisoformat(s["ts"]) >= since:
+                recent[s["checkpoint"]].add(s["session"])
+        except (ValueError, TypeError, KeyError):
+            continue
+    rows = []
+    for c in f["checkpoints"]:
+        n = len(recent[c["id"]])
+        rows.append({"id": c["id"], "name": c["name"], "recent": n,
+                     "level": "alert" if n >= th else ("watch" if n >= th * 0.7 else "ok")})
+    return {"window_min": win, "threshold": th, "checkpoints": rows, "alerts": [r for r in rows if r["level"] == "alert"]}
 
 
 def _session_done(f, session):
@@ -188,6 +241,45 @@ def post_survey(v: Survey):
     db.add_response({"kind": "survey", **v.model_dump(), "festival": f["id"], "edition": f["edition"],
                      "ts": now().isoformat()})
     return {"ok": True}
+
+
+# ---------- 경품 교환권 ----------
+def _prize_state(f, session):
+    rows = [r for r in db.responses_for(f["id"], f["edition"]) if r.get("session") == session]
+    issued = next((r for r in rows if r.get("kind") == "prize"), None)
+    used = next((r for r in rows if r.get("kind") == "prize_redeem"), None)
+    return issued, used
+
+
+@app.post("/api/prize/issue")
+def prize_issue(q: PrizeReq):
+    """모든 거점을 찍은 참가자에게만 교환권을 준다. 한 참가자에게 한 장."""
+    f = _festival(q.festival)
+    if not f.get("prize_name"):
+        raise HTTPException(404, "이 행사는 경품을 운영하지 않습니다")
+    if set(_session_done(f, q.session)) < {c["id"] for c in f["checkpoints"]}:
+        raise HTTPException(400, "모든 거점을 찍어야 받을 수 있습니다")
+    issued, used = _prize_state(f, q.session)
+    if not issued:
+        issued = {"kind": "prize", "festival": f["id"], "session": q.session, "edition": f["edition"],
+                  "code": secrets.token_hex(3).upper(), "ts": now().isoformat()}
+        db.add_response(issued)
+    return {"prize": f["prize_name"], "code": issued["code"], "redeemed_at": used["ts"] if used else None}
+
+
+@app.post("/api/prize/redeem")
+def prize_redeem(q: PrizeReq):
+    """스태프가 참가자 화면에서 '지급 완료'를 누른다. 한 번 지급하면 다시 쓸 수 없다."""
+    f = _festival(q.festival)
+    issued, used = _prize_state(f, q.session)
+    if not issued:
+        raise HTTPException(404, "발급된 교환권이 없습니다")
+    if used:
+        return {"ok": True, "already": True, "redeemed_at": used["ts"], "code": issued["code"]}
+    t = now().isoformat()
+    db.add_response({"kind": "prize_redeem", "festival": f["id"], "session": q.session, "edition": f["edition"],
+                     "code": issued["code"], "ts": t})
+    return {"ok": True, "already": False, "redeemed_at": t, "code": issued["code"]}
 
 
 # ---------- 도입 문의 ----------
@@ -269,6 +361,24 @@ def admin_festival(fid: str, x_admin_key: str = Header(default=""), x_event_key:
     return _private(f)
 
 
+@app.put("/api/admin/festival/{fid}/settings")
+def put_settings(fid: str, q: Settings, x_admin_key: str = Header(default=""), x_event_key: str = Header(default="")):
+    """혼잡 경고 기준, 경품 이름, 거점 위치·외국어 이름."""
+    f = _festival(fid)
+    _require_manage(f, x_admin_key, x_event_key)
+    f["crowd_threshold"], f["crowd_window_min"], f["prize_name"] = q.crowd_threshold, q.crowd_window_min, q.prize_name.strip()
+    meta = {m.id: m for m in q.checkpoints}
+    for c in f["checkpoints"]:
+        m = meta.get(c["id"])
+        if m:
+            url = m.map_url.strip()
+            if url and not url.lower().startswith(("https://", "http://")):
+                raise HTTPException(400, "지도 링크는 http(s):// 로 시작해야 합니다")
+            c["place"], c["map_url"], c["name_en"] = m.place.strip(), url, m.name_en.strip()
+    db.upsert_festival(f)
+    return _private(f)
+
+
 @app.post("/api/admin/festival/{fid}/next-edition")
 def next_edition(fid: str, x_admin_key: str = Header(default=""), x_event_key: str = Header(default="")):
     """같은 거점·같은 QR로 다음 회차를 시작한다. 이전 회차 데이터는 그대로 남아 회차 비교에 쓰인다."""
@@ -310,13 +420,33 @@ def get_stats(fid: str, x_admin_key: str = Header(default=""), x_event_key: str 
     prev = _stats(f, f["edition"] - 1) if f["edition"] > 1 else None
     if prev and prev["visitors"] == 0:
         prev = None
-    return {"festival": _public(f), "current": cur, "previous": prev, "comparison": stats.compare(prev, cur)}
+    return {"festival": _public(f), "current": cur, "previous": prev, "comparison": stats.compare(prev, cur),
+            "prizes": _prizes(f, f["edition"]), "crowd": _crowd(f)}
 
 
 @app.post("/api/report/{fid}")
-def make_report(fid: str, x_admin_key: str = Header(default=""), x_event_key: str = Header(default="")):
+def make_report(fid: str, mode: str = "", x_admin_key: str = Header(default=""), x_event_key: str = Header(default="")):
+    """mode=template 이면 AI를 부르지 않고 숫자 기반 문장만 쓴다 (AI가 느릴 때의 예비 경로)."""
     d = get_stats(fid, x_admin_key, x_event_key)
-    return ai.write_report(d["festival"], d["current"], d["comparison"])
+    return ai.write_report(d["festival"], d["current"], d["comparison"], use_llm=mode != "template")
+
+
+@app.get("/api/crowd/{fid}")
+def get_crowd(fid: str, x_admin_key: str = Header(default=""), x_event_key: str = Header(default="")):
+    f = _festival(fid)
+    _guard(f, x_admin_key, x_event_key)
+    return _crowd(f)
+
+
+@app.post("/api/proposal/{fid}")
+def make_proposal(fid: str, q: ProposalReq, mode: str = "", x_admin_key: str = Header(default=""),
+                  x_event_key: str = Header(default="")):
+    """이번 회차 실측치를 근거로 다음 행사 제안서 초안(목차 4항목)을 쓴다. 금액은 넣지 않는다."""
+    d = get_stats(fid, x_admin_key, x_event_key)
+    if not d["current"]["visitors"]:
+        raise HTTPException(400, "근거로 쓸 참여 기록이 아직 없습니다")
+    basis = design.proposal_basis(d["festival"], d["current"], d["comparison"], q.model_dump())
+    return {"basis": basis, **ai.write_proposal(basis, use_llm=mode != "template")}
 
 
 @app.post("/api/design/{fid}")
@@ -381,12 +511,13 @@ def health():
 # ---------- 시연용 예시 데이터 ----------
 DEMO_ID = "demo"
 DEMO_CPS = [
-    {"id": "gate", "name": "입구 안내소", "x": 10, "y": 80},
-    {"id": "market", "name": "먹거리 장터", "x": 30, "y": 55},
-    {"id": "stage", "name": "메인 무대", "x": 55, "y": 70},
-    {"id": "craft", "name": "체험 부스", "x": 75, "y": 35},
-    {"id": "view", "name": "전망대", "x": 90, "y": 12},
+    {"id": "gate", "name": "입구 안내소", "x": 10, "y": 80, "name_en": "Entrance Info", "place": "정문 들어와서 오른쪽"},
+    {"id": "market", "name": "먹거리 장터", "x": 30, "y": 55, "name_en": "Food Market", "place": "중앙 광장 서쪽"},
+    {"id": "stage", "name": "메인 무대", "x": 55, "y": 70, "name_en": "Main Stage", "place": "중앙 광장"},
+    {"id": "craft", "name": "체험 부스", "x": 75, "y": 35, "name_en": "Craft Booths", "place": "강변 산책로 입구"},
+    {"id": "view", "name": "전망대", "x": 90, "y": 12, "name_en": "Observatory", "place": "언덕 위, 체험 부스에서 도보 5분"},
 ]
+DEMO_PRIZE = "완주 기념품"
 
 # 격자 1칸 = 1m. capacity·service_sec는 운영자 추정값(실측 전)
 DEMO_LAYOUT = {
@@ -435,13 +566,30 @@ def _seed_edition(edition, keep_prob, reasons, survey, n=320, seed=0):
 def seed_demo():
     """예시 데이터(실측 아님). 작년(1회차)과 올해(2회차)를 만든다."""
     db.upsert_festival({"id": DEMO_ID, "name": "예시 축제 (시연용 가상 데이터)", "edition": 2,
-                        "demo": True, "checkpoints": DEMO_CPS, "layout": DEMO_LAYOUT})
+                        "demo": True, "checkpoints": DEMO_CPS, "layout": DEMO_LAYOUT,
+                        "prize_name": DEMO_PRIZE, "crowd_threshold": 30, "crowd_window_min": 10})
     db.clear_festival(DEMO_ID)
     _seed_edition(1, [0.9, 0.85, 0.55, 0.8], {"화장실·편의시설 부족": 5, "대기 줄이 김": 2, "다음 장소가 멀다": 3},
                   (0.6, [1, 2, 3, 4, 3], [2, 4, 4, 3, 1], [1, 2, 4, 4, 2], [5, 4, 2]), seed=1)
     _seed_edition(2, [0.9, 0.87, 0.78, 0.82], {"대기 줄이 김": 4, "다음 장소가 멀다": 2, "화장실·편의시설 부족": 1},
                   (0.6, [1, 3, 4, 3, 1], [1, 2, 4, 4, 3], [1, 1, 3, 5, 4], [7, 3, 1]), seed=2)
     return {"ok": True, "festival": DEMO_ID}
+
+
+@app.post("/api/demo/crowd")
+def demo_crowd(cp: str = "stage", n: int = 36):
+    """시연용: 예시 행사의 한 거점에 '방금' 사람이 몰린 상황을 재현한다.
+    이미 그 거점을 찍은 예시 참가자의 재방문으로 넣기 때문에 참여자·완주율 집계는 바뀌지 않는다."""
+    f = _festival(DEMO_ID)
+    if cp not in {c["id"] for c in f["checkpoints"]}:
+        raise HTTPException(404, "없는 거점입니다")
+    seen = sorted({s["session"] for s in db.scans_for(DEMO_ID, f["edition"])
+                   if s["checkpoint"] == cp and s["session"].startswith("demo")})
+    t = now().isoformat()
+    for sess in seen[:max(1, min(n, 200))]:
+        db.add_scan({"festival": DEMO_ID, "checkpoint": cp, "session": sess, "event": "visit",
+                     "edition": f["edition"], "ts": t, "replay": True})
+    return {"ok": True, **_crowd(f)}
 
 
 # ---------- 화면 ----------
@@ -459,9 +607,19 @@ def my_page():
     return _page("my.html")
 
 
-@app.get("/sim")
-def sim_page():
-    return _page("sim.html")
+@app.get("/demo")
+def demo_page():
+    return _page("demo.html")
+
+
+@app.get("/qr-maker")
+def qr_maker_page():
+    return _page("qrmaker.html")
+
+
+@app.get("/admin/settings")
+def settings_page():
+    return _page("settings.html")
 
 
 @app.get("/editor")
