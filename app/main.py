@@ -505,6 +505,17 @@ def get_intervals(fid: str, x_admin_key: str = Header(default=""), x_event_key: 
     return out
 
 
+_llm_last = {"t": 0.0, "r": None}
+
+
+@app.get("/api/llm-check")
+def llm_check():
+    """AI 연결 확인. 사용량을 아끼려고 결과를 60초 동안 재사용한다."""
+    if time.time() - _llm_last["t"] > 60 or _llm_last["r"] is None:
+        _llm_last["r"], _llm_last["t"] = ai.llm_check(), time.time()
+    return _llm_last["r"]
+
+
 @app.get("/api/health")
 def health():
     p = ai.llm_provider()
