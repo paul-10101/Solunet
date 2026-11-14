@@ -110,7 +110,7 @@ def _template_design(design):
     return "\n".join(f"- {c['checkpoint']}: {c['action']} (근거: {c['evidence']})" for c in design["changes"])
 
 
-def write_report(festival, stats, comparison=None):
+def write_report(festival, stats, comparison=None, use_llm=True):
     data = {"festival": festival["name"], "edition": festival.get("edition"), "stats": stats, "comparison": comparison}
     if comparison:  # 모델이 직접 빼기를 하지 않도록 차이를 미리 계산해 넘긴다
         diff = lambda a, b: round(b - a, 1) if a is not None and b is not None else None
@@ -118,7 +118,7 @@ def write_report(festival, stats, comparison=None):
                            for k in ("visitors", "completion", "satisfaction", "revisit", "crowd")}
         data["changes"]["checkpoints"] = {c["name"]: c["change"] for c in comparison["checkpoints"]}
     try:
-        text = _call_llm(REPORT_SYSTEM, data)
+        text = _call_llm(REPORT_SYSTEM, data) if use_llm else None
         if text and _grounded(text, data):
             return {"source": "llm", "text": text}
     except Exception as e:  # 시연 중 API 장애가 나도 화면은 유지
@@ -134,3 +134,44 @@ def explain_design(design):
     except Exception as e:
         print("LLM error:", e)
     return {"source": "template", "text": _template_design(design)}
+
+
+PROPOSAL_SYSTEM = (
+    "너는 행사 대행사의 입찰 제안서 작성 보조다. 입력 JSON(basis)의 숫자만 그대로 쓰고 새 숫자를 계산하거나 지어내지 마라. "
+    "금액·예산·인건비는 쓰지 마라. 한국어 제안서체로 '1. 과업 이해 2. 운영 계획 3. 성과 지표와 목표 4. 결과 보고 계획' 순서로, "
+    "항목마다 2~3문장으로 쓴다. 3번에는 measured(지난 회차 실측)와 targets(목표)를 나란히 쓴다. "
+    "bottleneck이 있으면 2번에서 그 거점의 인력·안내 보강을 제안한다."
+)
+
+
+def _template_proposal(b):
+    m, t = b["measured"], b["targets"]
+    src = f"{b['based_on']['festival']} {b['based_on']['edition']}회차"
+    scale = "".join([f" 예상 참가 {b['expected_visitors']}명," if b.get("expected_visitors") else "",
+                     f" 행사 기간 {b['days']}일," if b.get("days") else ""])
+    lines = [
+        f"1. 과업 이해: 본 제안은 「{b['title']}」의 참가 확인, 관람객 집계, 만족도 조사, 결과 보고를 QR 기반으로 수행하는 방안이다."
+        f"{scale} 거점 {b['checkpoint_count']}곳 운영을 기준으로 하며, {src} QR 기록을 근거로 삼는다.",
+        f"2. 운영 계획: 거점({', '.join(b['checkpoint_names'])})마다 QR을 설치하고, 참가자는 앱 설치 없이 카메라로 찍어 참여한다. "
+        "거점별 방문자는 운영자 화면에서 실시간으로 확인하고, 기준 인원을 넘으면 혼잡 경고로 인력을 재배치한다."
+        + (f" 지난 회차에 '{b['bottleneck']['name']}' 이후 이탈률이 {b['bottleneck']['drop_rate']}%로 가장 높았으므로, 이 구간에 안내 인력과 이동 안내를 보강한다."
+           if b.get("bottleneck") else ""),
+        f"3. 성과 지표와 목표: 지난 회차 기록은 참여 {m['visitors']}명, 완주 {m['completed']}명(완주율 {m['completion_rate']}%)"
+        + (f", 만족도 평균 {m['satisfaction_avg']} / 5" if m.get("satisfaction_avg") else "")
+        + (f", 설문 응답 {m['survey_count']}건" if m.get("survey_count") else "")
+        + f"이다. 이번 목표는 완주율 {t['completion_rate']}%"
+        + (f", 만족도 {t['satisfaction_avg']} / 5" if t.get("satisfaction_avg") else "") + "로 둔다.",
+        "4. 결과 보고 계획: 행사 종료 후 참여·완주·거점별 이탈·설문 결과를 같은 집계 기준으로 정리한 결과보고서 초안을 제출하고, "
+        "지난 회차와 같은 지표로 비교한 표를 함께 낸다. 원자료(CSV)도 함께 제출한다.",
+    ]
+    return "\n".join(lines)
+
+
+def write_proposal(basis, use_llm=True):
+    try:
+        text = _call_llm(PROPOSAL_SYSTEM, {"basis": basis}) if use_llm else None
+        if text and _grounded(text, basis):
+            return {"source": "llm", "text": text}
+    except Exception as e:
+        print("LLM error:", e)
+    return {"source": "template", "text": _template_proposal(basis)}

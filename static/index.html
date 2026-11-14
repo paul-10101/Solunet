@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solunet — 스탬프투어부터 결과보고서까지, QR 하나로 | 행사 대행사용</title>
+<title>Solunet — 행사 대행사의 현장 확인·집계·보고를 QR 하나로</title>
 <meta name="description" content="행사 대행사를 위한 현장 데이터 도구. 공고문이 요구하는 관람객 집계·만족도 조사·결과보고서를 행사 중에 자동으로 모읍니다. 1회차 무료, 앱 설치·참가자 가입 없음.">
-<meta property="og:title" content="Solunet — 스탬프투어부터 결과보고서까지, QR 하나로">
+<meta property="og:title" content="Solunet — 행사 대행사의 현장 확인·집계·보고를 QR 하나로">
 <meta property="og:description" content="공고문이 요구하는 집계·설문·결과보고서를 행사 중에 자동으로. 1회차 무료.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -110,6 +110,7 @@
   .try { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   .tc { background:var(--card); border-radius:var(--r); padding:30px; box-shadow:var(--shadow); display:grid; grid-template-columns:1fr 132px; gap:20px; align-items:center; text-decoration:none; transition:transform .15s; }
   a.tc:hover { transform:translateY(-3px); }
+  .tc.feat { border:2px solid var(--route); margin-bottom:20px; }
   .tc .who { font-size:13px; font-weight:700; color:var(--route); } .tc h3 { margin:4px 0 8px; } .tc p { font-size:15px; color:var(--muted); margin-bottom:14px; }
   .tc .qr svg { width:132px; height:132px; display:block; }
   .tc .big { font-size:44px; font-weight:700; color:var(--route); text-align:center; line-height:1.1; } .tc .big small { display:block; font-size:12px; color:var(--muted); font-weight:400; }
@@ -127,6 +128,13 @@
   .points li::before { content:"✓"; position:absolute; left:0; color:var(--good); font-weight:700; }
 
   /* 8. 가격 */
+  .plans { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  .plan { background:var(--card); border-radius:var(--r); padding:24px; box-shadow:var(--shadow); border:2px solid transparent; }
+  .plan.on { border-color:var(--route); }
+  .plan .lab { font-size:14px; font-weight:700; color:var(--route); } .plan .lab i { font-style:normal; font-size:11px; background:var(--route); color:#fff; padding:2px 8px; border-radius:999px; margin-left:4px; white-space:nowrap; }
+  .plan .cost { font-size:40px; font-weight:700; letter-spacing:-0.03em; margin:4px 0 6px; } .plan .cost small { font-size:16px; color:var(--muted); font-weight:400; margin-left:3px; }
+  .plan p { font-size:15px; font-weight:500; } .plan span { font-size:14px; color:var(--muted); }
+  .planmeta { font-size:14px; color:var(--muted); margin:16px 0 28px; }
   .price { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   .tier { background:var(--card); border-radius:var(--r); padding:32px; box-shadow:var(--shadow); border:2px solid transparent; }
   .tier.first { border-color:var(--route); }
@@ -168,7 +176,7 @@
   @media (max-width:900px) {
     h1 { font-size:36px; } h2 { font-size:28px; } section.block { padding:64px 0; }
     .hero, .cmp, .start { grid-template-columns:1fr; gap:40px; }
-    .pains, .steps, .try, .price, .faq { grid-template-columns:1fr; }
+    .pains, .steps, .try, .price, .faq { grid-template-columns:1fr; } .plans { grid-template-columns:1fr 1fr; }
     .mock { display:flex; justify-content:center; padding-bottom:20px; } .dash { position:static; margin-left:-60px; margin-top:120px; width:230px; }
     nav .links a:not(.cta) { display:none; }
     .tc { grid-template-columns:1fr 100px; } .tc .qr svg { width:100px; height:100px; }
@@ -182,19 +190,19 @@
 
 <div class="bar"><div class="wrap"><nav aria-label="주 메뉴">
   <a class="logo" href="/"><i></i>Solunet</a>
-  <div class="links"><a href="#how">사용 방법</a><a href="#try">눌러 보기</a><a href="#price">가격</a><a href="#faq">자주 묻는 질문</a><a href="/my">내 행사</a><a class="cta" href="#start">무료로 행사 만들기</a></div>
+  <div class="links"><a href="/demo">시연</a><a href="#how">사용 방법</a><a href="/qr-maker">QR 생성기</a><a href="#price">가격</a><a href="#faq">자주 묻는 질문</a><a href="/my">내 행사</a><a class="cta" href="#start">무료로 행사 만들기</a></div>
 </nav></div></div>
 
 <main>
 <!-- 1. 5초 안에: 누구를 위한, 무엇을, 왜 지금 -->
 <div class="wrap"><header class="hero">
   <div>
-    <p class="eyebrow">행사 대행사를 위한 현장 데이터 도구</p>
-    <h1>스탬프투어부터 결과보고서까지,<br><em>QR 하나로</em> 끝냅니다</h1>
+    <p class="eyebrow">QR 하나로 행사 전체에 관여하는 서비스</p>
+    <h1>행사 대행사의<br>현장 확인·집계·보고를<br><em>QR 하나로</em> 자동화합니다</h1>
     <p class="lead">공고문이 요구하는 관람객 집계·만족도 조사·결과보고서를 행사 중에 자동으로 모읍니다. 참가자는 앱 설치도, 가입도 없이 카메라로 찍기만 하면 됩니다.</p>
     <div class="act">
-      <a class="btn solid" href="#start">무료로 행사 만들기 <small>· 3분</small></a>
-      <a class="tlink" href="#try">먼저 화면부터 볼게요 →</a>
+      <a class="btn solid" href="/demo">시연 보기 <small>· 1분</small></a>
+      <a class="tlink" href="#start">무료로 행사 만들기 →</a>
     </div>
     <div class="checks"><span>1회차 무료</span><span>카드 등록 없음</span><span>참가자 개인정보 수집 없음</span></div>
   </div>
@@ -261,6 +269,11 @@
         <tr><td>만족도 · 재방문률 조사<small>울산공업축제 · 안산 겨울 빛의 나라</small></td><td class="f">모바일 설문</td><td>스탬프를 다 모으면 바로 설문이 열려 종이 배포·입력이 없습니다</td><td><span class="st s-done">구현 완료</span></td></tr>
         <tr><td>일일 매출 · 참여자 데이터 보고<small>양동통맥축제</small></td><td class="f">기록 내려받기 (CSV)</td><td>스캔·설문 기록을 내려받아 보고 양식에 그대로 붙입니다</td><td><span class="st s-done">구현 완료</span></td></tr>
         <tr><td>결과보고서 제출<small>울산공업축제 · 안산 · 행정안전부</small></td><td class="f">결과보고서 초안</td><td>집계 숫자로 초안을 만들고, 담당자가 검수한 뒤 제출합니다</td><td><span class="st s-demo">시연 가능</span></td></tr>
+        <tr><td>입찰 제안서 작성<small>기술 배점이 수주를 가르는 공고</small></td><td class="f">다음 제안서 초안</td><td>지난 회차 기록을 근거로 과업 이해·운영 계획·성과 목표를 씁니다. 금액은 넣지 않습니다</td><td><span class="st s-demo">시연 가능</span></td></tr>
+        <tr><td>안전 관리 · 인력 배치<small>다중 운집 행사</small></td><td class="f">혼잡 경고</td><td>한 거점에 정한 시간 동안 기준 인원 이상이 찍으면 운영자 화면에 경고가 뜹니다</td><td><span class="st s-done">구현 완료</span></td></tr>
+        <tr><td>경품 · 기념품 지급<small>스탬프투어 완주 경품</small></td><td class="f">경품 교환권</td><td>완주자에게 교환권이 한 장 발급되고, 지급하면 다시 쓸 수 없습니다. 명단 대조가 없습니다</td><td><span class="st s-done">구현 완료</span></td></tr>
+        <tr><td>외국인 관람객 안내<small>관광 축제</small></td><td class="f">다국어 참가자 화면</td><td>한국어·영어·일본어·중국어 화면을 휴대폰 언어에 맞춰 엽니다</td><td><span class="st s-done">구현 완료</span></td></tr>
+        <tr><td>점포 · 부스 안내<small>먹거리 장터, 플리마켓</small></td><td class="f"><a href="/qr-maker">QR 생성기</a></td><td>점포 위치, 계좌 안내, 와이파이 QR을 만들어 한 번에 인쇄합니다. 결제는 처리하지 않습니다</td><td><span class="st s-done">구현 완료</span></td></tr>
         <tr><td>정산서 제출<small>태백산 눈축제</small></td><td class="f">증빙 자료 정리</td><td>참여·설문 기록을 정산 증빙 형태로 묶습니다</td><td><span class="st s-plan">계획</span></td></tr>
       </tbody>
     </table></div>
@@ -274,6 +287,10 @@
     <p class="eyebrow">가입 없이 지금</p>
     <h2>직접 눌러 보세요</h2>
     <p class="intro">참가자가 보는 화면과, 대행사가 받는 분석 화면을 그대로 열어 볼 수 있습니다. 예시 행사이며 실제 데이터가 아닙니다.</p>
+    <a class="tc feat" href="/demo">
+      <div><div class="who">한 화면 시연</div><h3>참가자 휴대폰과 운영자 화면을 나란히</h3><p>왼쪽에서 QR을 찍으면 오른쪽 집계가 바로 바뀝니다. 설문, 경품 교환권, 혼잡 경고, 결과보고서 초안, 회차 비교, 제안서 초안까지 한 번에 눌러 볼 수 있습니다.</p><span class="tlink">시연 열기 →</span></div>
+      <div class="big">1<small>분이면 봅니다</small></div>
+    </a>
     <div class="try">
       <a class="tc" href="/s/demo/gate?test=1" target="_blank" rel="noopener">
         <div><div class="who">참가자 화면</div><h3>휴대폰으로 QR 찍어 보기</h3><p>오른쪽 QR을 휴대폰 카메라로 찍거나, 이 카드를 누르세요. 스탬프를 다 모으면 설문이 열립니다.</p><span class="tlink">참가자 화면 열기 →</span></div>
@@ -315,24 +332,31 @@
 <section class="block alt" id="price">
   <div class="wrap">
     <p class="eyebrow">가격</p>
-    <h2>첫 행사는 <em>무료</em>로 돌려 보세요</h2>
+    <h2>행사 한 건에 <em>70만 원부터</em>, 첫 행사는 무료</h2>
     <p class="intro">써 보고 숫자가 맞는지 확인한 뒤에 결정하시면 됩니다.</p>
+    <div class="plans">
+      <div class="plan"><div class="lab">라이트</div><div class="cost">70<small>만 원</small></div><p>동시 접속 500명</p><span>대학 축제, 소규모 투어</span></div>
+      <div class="plan on"><div class="lab">스탠다드 <i>첫 행사 무료</i></div><div class="cost">90<small>만 원</small></div><p>동시 접속 1,000명</p><span>지역 축제, 스탬프투어</span></div>
+      <div class="plan"><div class="lab">프로</div><div class="cost">220<small>만 원</small></div><p>동시 접속 5,000명</p><span>시·군 대표 축제</span></div>
+      <div class="plan"><div class="lab">페스티벌</div><div class="cost">350<small>만 원</small></div><p>동시 접속 10,000명</p><span>광역 축제, 대형 박람회</span></div>
+    </div>
+    <p class="planmeta">행사 1건 · 30일 · 스탬프 30개까지 · 부가세 포함. 모든 플랜 공통: QR 스탬프, 실시간 집계, 설문, 결과보고서 초안, 회차 비교. 현장 지원은 하루 70만 원 추가.</p>
     <div class="price">
-      <div class="tier first">
-        <div class="lab">1회차 체험</div>
-        <div class="cost">무료</div>
-        <p style="color:var(--muted);font-size:15px">지금 바로 만들어 쓸 수 있습니다</p>
-        <ul><li>거점 QR 생성·인쇄</li><li>QR 스탬프와 모바일 설문</li><li>실시간 현황과 CSV 내려받기</li><li>분석과 결과보고서 초안</li></ul>
-      </div>
       <div class="tier">
-        <div class="lab">2회차부터 · 원격형</div>
-        <div class="cost">150만 원<small> / 행사부터</small></div>
-        <p style="color:var(--muted);font-size:15px">현장 지원이 필요하면 하루 70만 원 추가</p>
-        <ul><li>1회차 체험의 모든 기능</li><li>회차 비교와 데이터 누적</li><li>결과보고서 초안 작성 지원</li></ul>
+        <div class="lab">에이전시 베이직 · 연간 구독</div>
+        <div class="cost">330만 원<small> / 연</small></div>
+        <p style="color:var(--muted);font-size:15px">행사당 82.5만 원</p>
+        <ul><li>스탠다드 행사 연 4건</li><li>다음 제안서 초안</li></ul>
+      </div>
+      <div class="tier first">
+        <div class="lab">에이전시 프로 · 연간 구독</div>
+        <div class="cost">800만 원<small> / 연</small></div>
+        <p style="color:var(--muted);font-size:15px">행사당 80만 원</p>
+        <ul><li>스탠다드 행사 연 10건</li><li>다음 제안서 초안</li><li>연간 회차 리포트</li></ul>
         <div class="anchor">참고: 결과자료집을 따로 계약하면 <b>640만~1,680만 원</b>이 들었습니다 (경북문화재단 2025~2026).</div>
       </div>
     </div>
-    <p class="src">부가세, 이용 기간 등 세부 조건은 상담 후 확정합니다.</p>
+    <p class="src">가격은 2026년 11월 기준 계획이며, 세부 조건은 상담 후 확정합니다.</p>
   </div>
 </section>
 

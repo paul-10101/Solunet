@@ -19,6 +19,10 @@
   .cpb { display:grid; grid-template-columns:150px 1fr 60px; gap:10px; align-items:center; font-size:14px; margin-bottom:8px; }
   .cpb .track { height:14px; background:var(--grid); border-radius:3px; overflow:hidden; } .cpb .track i { display:block; height:100%; background:var(--sign); }
   tr.hot { background:#FFF8E1; }
+  .crowd { display:flex; gap:12px; align-items:center; padding:12px 16px; border-radius:8px; background:#FEF2F2; border:1.5px solid #FCA5A5; color:#7F1D1D; margin-bottom:12px; font-size:14px; }
+  .crowd b { font-size:15px; } .crowd i { width:28px; height:28px; flex:none; border-radius:50%; background:#B3261E; color:#fff; display:grid; place-items:center; font-style:normal; font-weight:700; }
+  .pform { display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; align-items:end; margin-bottom:12px; } .pform label { margin:0; }
+  @media (max-width:820px) { .pform { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -28,7 +32,9 @@
   <div id="gate"></div>
   <div id="body" hidden>
     <div class="head"><div id="seedBox"></div></div>
+    <div id="crowdBox"></div>
     <div class="kpis" style="margin-bottom:12px" id="kpis"></div>
+    <p class="note" style="margin:-4px 0 12px" id="opsNote"></p>
     <div class="grid2" style="margin-bottom:12px">
       <section class="card"><div class="head" style="margin-bottom:10px"><h2>거점별 이탈</h2><span class="note" style="margin:0" id="mapNote"></span></div><div id="map"></div></section>
       <section class="card"><h2 style="margin-bottom:10px">거점별 현황</h2><div id="table"></div></section>
@@ -39,6 +45,9 @@
       <section class="card"><div class="head" style="margin-bottom:10px"><h2>성과 평가보고서 초안</h2><button class="btn" id="btnReport">보고서 생성</button></div><div id="report"></div></section>
       <section class="card"><div class="head" style="margin-bottom:10px"><h2>다음 회차 배치·인력 제안</h2><button class="btn line" id="btnDesign">제안 생성</button></div><div id="design"></div></section>
     </div>
+    <section class="card" style="margin-top:12px"><div class="head" style="margin-bottom:10px"><div><h2>다음 행사 제안서 초안</h2><p class="note" style="margin:2px 0 0">이번 회차 기록을 근거로 과업 이해·운영 계획·성과 목표·결과 보고 계획을 씁니다. 금액은 넣지 않습니다.</p></div></div>
+      <form class="pform" id="propForm"><label>제안할 행사 이름<input id="pTitle" maxlength="80"></label><label>예상 참가 (명)<input id="pVis" type="number" min="1"></label><label>기간 (일)<input id="pDays" type="number" min="1" max="60"></label><button class="btn line" type="submit">초안 생성</button></form>
+      <div id="proposal"></div></section>
   </div>
 </main>
 <script src="/admin.js"></script>
@@ -82,6 +91,10 @@ async function load() {
     c.checkpoints.map(x => `<tr class="${worst && x.id === worst.id ? 'hot' : ''}"><td>${E(x.name)}</td><td>${x.visitors}</td><td>${x.dropped_after ? x.drop_rate + '%' : '-'}</td>${p ? `<td>${prevCp[x.id] && prevCp[x.id].dropped_after ? prevCp[x.id].drop_rate + '%' : '-'}</td>` : ''}</tr>`).join('') + '</table>' +
     (Object.keys(c.exit_reasons).length ? `<p class="note">이탈 사유: ${Object.entries(c.exit_reasons).map(([k, v]) => `${E(k)} ${v}`).join(' · ')}</p>` : '') +
     (c.survey.count ? `<p class="note">설문 ${c.survey.count}건 · 혼잡도 ${c.survey.crowd_avg} / 5 · 동선 편의 ${c.survey.route_avg} / 5${c.survey.satisfaction_avg ? ` · 만족도 ${c.survey.satisfaction_avg} / 5` : ''}${Object.keys(c.survey.revisit || {}).length ? ` · 재방문 의사 ${Object.entries(c.survey.revisit).map(([k, v]) => `${E(k)} ${v}`).join(', ')}` : ''}</p>` : '');
+  const cr = d.crowd, pz = d.prizes;
+  $('crowdBox').innerHTML = cr.alerts.length ? `<div class="crowd" role="alert"><i>!</i><div><b>혼잡 경고 · ${cr.alerts.map(a => E(a.name)).join(', ')}</b><br>최근 ${cr.window_min}분 동안 ${cr.alerts.map(a => a.recent + '명').join(', ')}이 찍었습니다 (기준 ${cr.threshold}명).</div></div>` : '';
+  $('opsNote').innerHTML = `혼잡 경고 기준: 최근 ${cr.window_min}분 ${cr.threshold}명 이상` + (pz.name ? ` · 경품(${E(pz.name)}) 교환권 발급 ${pz.issued}건, 지급 완료 ${pz.redeemed}건` : ' · 경품 미운영') + (isDemo ? '' : ` · <a href="/admin/settings?f=${encodeURIComponent(fid)}">설정 바꾸기</a>`);
+  if (!$('pTitle').value) $('pTitle').value = f.name.replace(/\s*\(.*\)$/, '') + ' 다음 회차';
   renderCompare(d);
 }
 function renderCompare(d) {
@@ -117,6 +130,12 @@ $('btnDesign').onclick = async () => { $('design').textContent = '작성 중';
   try { const d = await call('/api/design/' + encodeURIComponent(fid), { method: 'POST' });
         $('design').innerHTML = DRAFT + d.plan.changes.map(c => `<div class="chg"><b>${E(c.checkpoint)}</b> ${E(c.action)}<small>근거: ${E(c.evidence)}</small></div>`).join('') + `<pre style="margin-top:8px">${E(d.explanation.text)}</pre><p class="note">${srcLabel(d.explanation.source)}</p>`; }
   catch (e) { $('design').textContent = '생성하지 못했습니다. 잠시 후 다시 눌러 주세요.'; } };
+
+$('propForm').onsubmit = async e => { e.preventDefault(); $('proposal').textContent = '작성 중';
+  try { const d = await call('/api/proposal/' + encodeURIComponent(fid), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: $('pTitle').value, expected_visitors: +$('pVis').value || null, days: +$('pDays').value || null }) });
+        $('proposal').innerHTML = `${DRAFT}<pre>${E(d.text)}</pre><p class="note">${srcLabel(d.source)} · 목표 규칙: ${E(d.basis.target_rule)}</p>`; }
+  catch (e) { $('proposal').textContent = e.message && isNaN(e.message) ? e.message : '생성하지 못했습니다. 잠시 후 다시 눌러 주세요.'; } };
+setInterval(() => { if (!document.hidden) load(); }, 15000);  // 혼잡 경고가 제때 뜨도록 주기적으로 갱신
 
 (isDemo ? Promise.resolve() : Admin.ready($('gate'))).then(() => {
   $('body').hidden = false;
