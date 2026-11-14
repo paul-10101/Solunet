@@ -140,6 +140,19 @@
   .doc h3 { font-size:20px; letter-spacing:-0.02em; margin:8px 0 2px; } .doc .meta { font-size:12.5px; color:var(--muted); margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--grid); }
   .doc .sec { margin-bottom:12px; } .doc .sec h4 { font-size:15px; margin-bottom:2px; } .doc .sec p { font-size:15px; line-height:1.8; white-space:pre-wrap; }
   .num { background:#DBEAFE; color:#1E3A8A; font-weight:700; border-radius:4px; padding:0 3px; font-variant-numeric:tabular-nums; }
+  .doc .dt { text-align:center; font-size:22px; margin:10px 0 14px; }
+  .doc table { font-size:14px; margin:8px 0 2px; } .doc th, .doc td { border:1px solid var(--grid); padding:7px 10px; }
+  .doc th { background:#F8FAFC; color:var(--ink); font-size:13px; font-weight:500; white-space:nowrap; } .doc td { font-variant-numeric:tabular-nums; }
+  .doc .dh { margin-bottom:18px; } .doc .dh th { width:16%; } .doc .dh td { width:34%; }
+  .doc .fill { color:#94A3B8; font-size:13px; }
+  .doc .sec.man { border:1.5px dashed var(--line); border-radius:8px; padding:10px 14px; background:#FAFBFC; } .doc .sec.man h4 { color:var(--muted); } .doc .sec.man p { font-size:13.5px; color:var(--muted); line-height:1.6; }
+  .doc .sec h4 em { font-style:normal; font-size:11.5px; font-weight:700; background:#E2E8F0; color:var(--muted); border-radius:999px; padding:1px 9px; margin-left:8px; vertical-align:1px; }
+  .doc .up { color:var(--good); font-weight:700; } .doc .down { color:var(--bad); font-weight:700; }
+  .frame { margin-top:18px; border:1px solid var(--grid); border-radius:12px; overflow:hidden; background:#fff; }
+  .frame .fh { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid var(--grid); font-size:14px; font-weight:500; }
+  .frame iframe { display:block; width:100%; height:820px; border:0; }
+  .ai { font-size:12.5px; font-weight:500; padding:5px 10px; border-radius:999px; background:#F1F5F9; color:var(--muted); white-space:nowrap; }
+  .ai.on { background:#DCFCE7; color:var(--good); } .ai.off { background:var(--warn-soft); color:var(--warn-ink); }
   .doc .src { font-size:12px; color:var(--muted); margin-top:14px; padding-top:12px; border-top:1px dashed var(--line); }
   .srcT { font-size:14px; } .srcT th { width:52%; } .srcT td { font-weight:700; font-variant-numeric:tabular-nums; color:#1E3A8A; } .srcT .t td { color:var(--route); }
   .side h2 { font-size:16px; margin-bottom:8px; } .side .note { line-height:1.7; }
@@ -196,7 +209,7 @@
     .pipe { grid-template-columns:1fr; } .pa { display:none; } .simT { font-size:13px; } .simT .wb { grid-template-columns:1fr; } .simT .wb i { display:none; }
   }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
-  @media print { .top, .steps, .say, .more, .noprint, #step-1 { display:none !important; } .wrapx { padding:0; } .panel { border:0; padding:0; } }
+  @media print { .top, .steps, .say, .more, .noprint, .frame, .side, .pipe, #step-1 { display:none !important; } .cols { display:block !important; } .wrapx { padding:0; } .panel { border:0; padding:0; } }
 </style>
 </head>
 <body>
@@ -205,6 +218,7 @@
   <span class="ev" id="evName">시연</span>
   <span class="badge demo">예시 데이터</span>
   <span class="sp"></span>
+  <span class="ai" id="aiState" title="결과보고서와 제안서 문장을 쓰는 AI 연결 상태">AI 확인 중</span>
   <button class="timer" id="timer" title="첫 동작부터 잽니다. 누르면 0으로 돌아갑니다">0:00</button>
   <span class="live" id="live"><i></i><span>실시간 연결</span></span>
   <button class="ghost" id="reset" title="예시 데이터를 처음 상태로 되돌립니다">처음 상태로</button>
@@ -264,7 +278,7 @@
       <div class="cols" style="grid-template-columns:minmax(0,5fr) minmax(0,2fr)">
         <div id="reportOut"><div class="empty"><b>행사가 끝났다면, 버튼 하나면 됩니다</b>지금까지 쌓인 기록으로 초안을 씁니다.</div></div>
         <div class="side"><h2>코드가 계산한 값</h2><table class="srcT" id="srcT"></table>
-          <p class="note">문서의 <span class="num">파란 숫자</span>는 모두 이 집계에서 온 값입니다. AI가 쓴 문장에 집계에 없는 숫자가 하나라도 있으면 그 문장을 버립니다.</p>
+          <p class="note">문서의 <span class="num">파란 숫자</span>는 모두 이 집계에서 온 값입니다. AI가 쓴 문장에 집계에 없는 숫자가 하나라도 있으면 그 문장을 버립니다. 표는 코드가 직접 채우고, 기록에 없는 항목은 '담당자 작성' 칸으로 남깁니다.</p>
           <div class="noprint" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="big" id="reportBtn">보고서 초안 만들기</button><button class="big line" id="reportPrint" hidden onclick="print()">인쇄</button></div></div>
       </div>
     </div>
@@ -290,8 +304,9 @@
   <section id="step-5" hidden>
     <div class="panel">
       <div class="ph"><div><h2>인원을 늘리면 어디가 막히나</h2><p>이번 회차의 거점 배치와 QR 기록의 이탈률로 계산합니다</p></div>
-        <div class="noprint" style="display:flex;gap:8px"><button class="big" id="simBtn">인원별로 돌려 보기</button><a class="big line" href="/sim" target="_blank" rel="noopener" style="text-decoration:none">지도에서 직접 돌려 보기 ↗</a></div></div>
+        <div class="noprint" style="display:flex;gap:8px"><button class="big" id="simBtn">인원별로 돌려 보기</button><button class="big line" id="simMapBtn">지도에서 직접 돌려 보기</button></div></div>
       <div id="simOut"><div class="empty"><b>같은 조건에서 인원만 바꿔 다섯 번 돌립니다</b>지난 회차 인원의 1·2·3·5·8배에서 대기 줄과 대기 시간을 비교합니다.</div></div>
+      <div class="frame noprint" id="simFrame" hidden><div class="fh"><span>지도 시뮬레이션 · 인원과 거점 조건을 바꿔 직접 돌려 봅니다</span><button class="ghost" data-close="simFrame">닫기</button></div><iframe title="혼잡 시뮬레이션" loading="lazy"></iframe></div>
     </div>
   </section>
 
@@ -301,9 +316,10 @@
       <button class="mc" id="mCrowd"><b>혼잡 경고</b><span>한 거점에 최근 10분 동안 기준 인원 이상이 찍으면 경고가 뜹니다.</span><i>메인 무대 혼잡 재현 (시연용)</i></button>
       <button class="mc" id="mPrize"><b>경품 교환권</b><span>완주자에게 한 장 발급되고, 스태프가 지급 완료를 누르면 다시 쓸 수 없습니다.</span><i>휴대폰 화면에서 보기</i></button>
       <button class="mc" id="mLang"><b>다국어 참가자 화면</b><span>한국어·영어·일본어·중국어. 휴대폰 언어에 맞춰 열립니다.</span><i>일본어로 바꿔 보기</i></button>
-      <a class="mc" href="/qr-maker" target="_blank" rel="noopener"><b>QR 생성기</b><span>점포 위치, 계좌 안내, 와이파이 QR을 만들어 한 번에 인쇄합니다.</span><i>새 창으로 열기 ↗</i></a>
-      <a class="mc" href="/sim" target="_blank" rel="noopener"><b>실시간 현황 지도</b><span>거점별 최근 방문자와 혼잡 경고를 지도에서 봅니다.</span><i>새 창으로 열기 ↗</i></a>
+      <button class="mc" id="mQr"><b>QR 생성기</b><span>점포 위치, 계좌 안내, 와이파이 QR을 만들어 한 번에 인쇄합니다.</span><i>이 화면에서 열기</i></button>
+      <button class="mc" id="mLive"><b>실시간 현황 지도</b><span>거점별 최근 방문자와 혼잡 경고를 지도에서 봅니다.</span><i>이 화면에서 열기</i></button>
     </div>
+    <div class="frame noprint" id="moreFrame" hidden style="margin:0 20px 20px"><div class="fh"><span id="moreTitle"></span><button class="ghost" data-close="moreFrame">닫기</button></div><iframe title="추가 기능" loading="lazy"></iframe></div>
   </details>
 </div>
 
@@ -502,13 +518,41 @@ function drawCompare(d) {
 }
 
 /* ---------- 문서: 숫자에 색을 입히고, 어떻게 만들어졌는지 보여 준다 ---------- */
-const NUM = /\d+(?:,\d{3})*(?:\.\d+)?/g;
-function docHtml(title, meta, d) {
-  const clean = d.text.replace(/\*\*/g, '').replace(/^#+\s*/gm, '').trim(); let n = 0;
-  const mark = s => esc(s).replace(NUM, m => { n++; return `<span class="num">${m}</span>`; });
-  const parts = clean.split(/\n(?=\s*\d+\.\s)/).map(s => s.trim()).filter(Boolean);
-  const secs = parts.map(s => { const m = s.match(/^(\d+\.\s*[^:\n]{1,30})[:\n]\s*([\s\S]*)$/); return m ? `<div class="sec"><h4>${esc(m[1].trim())}</h4><p>${mark(m[2].trim())}</p></div>` : `<div class="sec"><p>${mark(s)}</p></div>`; }).join('');
-  return { n, html:`<div class="doc"><span class="draft">담당자 검수 전 초안</span><h3>${esc(title)}</h3><p class="meta">${esc(meta)}</p>${secs}<p class="src">${why(d)}</p></div>` };
+const NUM = /\d+(?:,\d{3})*(?:\.\d+)?/g, ROMAN = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ'];
+const FILL = '<span class="fill">담당자 입력</span>';
+const tbl = (head, rows) => `<table><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${c ?? '-'}</td>`).join('')}</tr>`).join('')}</table>`;
+const dsign = (a, b, u = '', better = true) => { const v = diff(a, b); return v == null ? '-' : `<span class="${v === 0 ? '' : (v > 0) === better ? 'up' : 'down'}">${sign(v, u)}</span>`; };
+/* 문서 틀: 머리표 + 번호 항목(문장은 AI 또는 문장 틀, 표는 코드) + 기록에 없는 항목은 '담당자 작성' 칸 */
+function docHtml(o) {
+  const d = o.d, clean = d.text.replace(/\*\*/g, '').replace(/^#+\s*/gm, '').trim(), body = {}; let n = 0;
+  clean.split(/\n(?=\s*\d+\.\s)/).forEach(s => { const m = s.trim().match(/^(\d+)\.\s*[^:\n]{0,30}[:\n]\s*([\s\S]*)$/); if (m) body[+m[1]] = m[2].trim(); });
+  if (!Object.keys(body).length) body[1] = clean;
+  const mark = t => esc(t).replace(NUM, m => { n++; return `<span class="num">${m}</span>`; });
+  const secs = o.sections.map((t, i) => `<div class="sec"><h4>${ROMAN[i]}. ${esc(t)}</h4><p>${body[i + 1] ? mark(body[i + 1]) : '<span class="fill">작성된 내용 없음</span>'}</p>${(o.tables && o.tables[i + 1]) || ''}</div>`).join('');
+  const man = o.manual.map(([t, why], i) => `<div class="sec man"><h4>${ROMAN[o.sections.length + i]}. ${esc(t)}<em>담당자 작성</em></h4><p>${esc(why)}</p></div>`).join('');
+  return { n, html: `<div class="doc"><span class="draft">담당자 검수 전 초안</span><h3 class="dt">${esc(o.title)}</h3>
+    <table class="dh">${o.head.map(r => `<tr>${r.map(([k, v]) => `<th>${k}</th><td>${v}</td>`).join('')}</tr>`).join('')}</table>${secs}${man}<p class="src">${why(d)}</p></div>` };
+}
+function reportDoc(st, d) {
+  const c = st.current, m = st.comparison, f = st.festival, sv = c.survey, rv = Object.entries(sv.revisit || {});
+  return docHtml({ d, title: `${f.name} ${f.edition}회차 결과보고서`, sections: d.sections || ['행사 개요', '방문객 집계 결과', '만족도 조사 결과', '전 회차 대비 성과', '문제점 및 개선 방안'],
+    head: [[['행사명', esc(f.name)], ['회차', f.edition + '회차']], [['행사 일시', FILL], ['장소', FILL]], [['주최·주관', FILL], ['수행 업체', FILL]], [['집계 방식', `거점 QR ${c.checkpoints.length}곳`], ['집계 기준', `${hhmm(Date.now())} · 스캔 ${c.scans.toLocaleString()}건`]]],
+    tables: {
+      2: tbl(['거점', '방문 인원', '다음 거점으로 가지 않은 인원', '이탈률'], c.checkpoints.map((x, i) => [`${i + 1}. ${esc(x.name)}`, x.visitors + '명', i < c.checkpoints.length - 1 ? x.dropped_after + '명' : '-', i < c.checkpoints.length - 1 ? x.drop_rate + '%' : '-'])),
+      3: sv.count ? tbl(['문항', '결과', '비고'], [['전반 만족도', sv.satisfaction_avg != null ? sv.satisfaction_avg + '점' : '-', `5점 척도 · 응답 ${sv.satisfaction_count}건`], ['혼잡도', sv.crowd_avg + '점', '5점 척도 · 낮을수록 한산'], ['거점 간 이동 편의', sv.route_avg + '점', '5점 척도'],
+        ...(rv.length ? [['재방문 의사', rv.map(([k, v]) => `${esc(k)} ${v}건`).join(' · '), '']] : [])]) : '',
+      4: m ? tbl(['지표', `${f.edition - 1}회차`, `${f.edition}회차`, '증감'], [['참여 인원', m.visitors_prev + '명', m.visitors_cur + '명', dsign(m.visitors_prev, m.visitors_cur, '명')], ['완주율', m.completion_prev + '%', m.completion_cur + '%', dsign(m.completion_prev, m.completion_cur, '%p')],
+        ['만족도 평균', m.satisfaction_prev, m.satisfaction_cur, dsign(m.satisfaction_prev, m.satisfaction_cur)], ['재방문 의사', m.revisit_prev != null ? m.revisit_prev + '%' : '-', m.revisit_cur != null ? m.revisit_cur + '%' : '-', dsign(m.revisit_prev, m.revisit_cur, '%p')],
+        ['혼잡도 평균', m.crowd_prev, m.crowd_cur, dsign(m.crowd_prev, m.crowd_cur, '', false)]]) : '' },
+    manual: [['예산 집행(정산) 내역', '세부 집행 내역과 증빙은 QR 기록에 없습니다. 정산 담당자가 작성합니다.'], ['홍보 실적 및 현장 사진', '보도·SNS 실적과 현장 사진은 담당자가 첨부합니다.'], ['붙임: 원자료', '스캔·설문 기록(CSV)은 실시간 현황 화면에서 내려받아 첨부합니다.']] });
+}
+function proposalDoc(d) {
+  const s = d.basis, m = s.measured, t = s.targets;
+  return docHtml({ d, title: `${s.title} 제안서 (기술 부문)`, sections: d.sections || ['제안 개요', '행사 운영 계획', '인력 및 안전관리 계획', '성과 지표 및 목표', '결과 보고 및 사후 관리 계획'],
+    head: [[['사업명', esc(s.title)], ['제안 범위', '참가 확인 · 집계 · 만족도 조사 · 결과 보고']], [['행사 기간', s.days ? s.days + '일' : FILL], ['예상 참가', s.expected_visitors ? s.expected_visitors.toLocaleString() + '명' : FILL]], [['근거 자료', `${esc(s.based_on.festival)} ${s.based_on.edition}회차 QR 기록`], ['운영 거점', s.checkpoint_count + '곳']]],
+    tables: { 4: tbl(['성과 지표', '지난 회차 기록', '이번 목표', '측정 방법'], [['완주율', m.completion_rate + '%', `<b>${t.completion_rate}%</b>`, 'QR 스캔 집계'], ['만족도 평균', m.satisfaction_avg != null ? m.satisfaction_avg + '점' : '-', t.satisfaction_avg != null ? `<b>${t.satisfaction_avg}점</b>` : '-', '완주자 모바일 설문 (5점 척도)'],
+      ['설문 응답', m.survey_count + '건', '지난 회차 이상', '모바일 설문 응답 수'], ...(s.bottleneck ? [[`'${esc(s.bottleneck.name)}' 이후 이탈률`, s.bottleneck.drop_rate + '%', '지난 회차보다 낮게', '거점별 QR 스캔 집계']] : [])]) },
+    manual: [['제안업체 일반 현황', '회사 개요, 조직·인력, 유사 용역 수행 실적은 업체가 작성합니다.'], ['세부 프로그램 및 홍보 계획', '공연·체험 프로그램 구성과 홍보 계획은 제안요청서에 맞춰 업체가 작성합니다.'], ['추진 일정 및 투입 인력', '공정표와 인력 투입 계획은 업체가 작성합니다.'], ['가격 제안서', '금액은 이 초안에 넣지 않습니다. 가격 제안서로 따로 제출합니다.']] });
 }
 const why = d => d.source === 'llm' ? 'AI가 쓴 문장입니다. 문장 속 숫자를 집계값과 대조해 모두 통과했습니다.'
   : d.reason === 'rejected' ? `AI가 쓴 문장에 집계에 없는 숫자(${(d.rejected || []).join(', ')})가 있어 버리고, 집계 숫자를 문장 틀에 넣어 썼습니다.`
@@ -535,7 +579,7 @@ async function makeReport() {
   const b = $('reportBtn'); if (b.disabled || !last) return; startTimer(); made.report = true; b.disabled = true; b.textContent = '작성 중'; $('reportOut').innerHTML = skeleton;
   const st = last; drawPipe(st, { pending:true }, 0, 3);
   try { const d = await draftCall('/api/report/' + FID), c = st.current;
-    const doc = docHtml(`${st.festival.name} ${st.festival.edition}회차 결과보고서`, `집계 기준 ${hhmm(Date.now())} · 참여 ${c.visitors}명 · 스캔 ${c.scans.toLocaleString()}건 · 설문 ${c.survey.count}건`, d);
+    const doc = reportDoc(st, d);
     $('reportOut').innerHTML = doc.html; drawPipe(st, d, doc.n, 3); await wait(400); drawPipe(st, d, doc.n, 4);
     $('reportPrint').hidden = false; b.textContent = '다시 만들기';
   } catch (e) { made.report = false; $('reportOut').innerHTML = '<div class="empty"><b>만들지 못했습니다</b>잠시 후 다시 눌러 주세요.</div>'; b.textContent = '보고서 초안 만들기'; }
@@ -547,11 +591,11 @@ async function makeProposal() {
   const b = $('propBtn'); if (b.disabled || !last) return; startTimer(); made.prop = true; b.disabled = true; b.textContent = '작성 중'; $('propOut').innerHTML = skeleton;
   try { const d = await draftCall('/api/proposal/' + FID, { title:$('pTitle').value, expected_visitors:+$('pVis').value || null, days:+$('pDays').value || null }), s = d.basis, m = s.measured, t = s.targets;
     const row = (k, v, cls) => v == null ? '' : `<tr class="${cls || ''}"><th>${k}</th><td>${v}</td></tr>`;
-    const doc = docHtml(s.title + ' 제안서', `근거: ${s.based_on.festival} ${s.based_on.edition}회차 기록 · 거점 ${s.checkpoint_count}곳`, d);
+    const doc = proposalDoc(d);
     $('propOut').innerHTML = `<div class="cols" style="grid-template-columns:minmax(0,5fr) minmax(0,2fr)">${doc.html}
       <div class="side"><h2>지난 회차에서 가져온 값</h2><table class="srcT">${row('참여자', m.visitors + '명')}${row('완주율', m.completion_rate + '%')}${row('만족도', m.satisfaction_avg && m.satisfaction_avg + ' / 5')}${row('설문 응답', m.survey_count + '건')}
       ${row('가장 많이 빠진 거점', s.bottleneck && `${esc(s.bottleneck.name)} (${s.bottleneck.drop_rate}%)`)}${row('목표 완주율', t.completion_rate + '%', 't')}${row('목표 만족도', t.satisfaction_avg && t.satisfaction_avg + ' / 5', 't')}</table>
-      <p class="note">문장 속 숫자 ${doc.n}개가 모두 이 값에서 왔습니다. 목표 규칙: ${esc(s.target_rule)}. 금액은 넣지 않습니다.</p></div></div>`;
+      <p class="note">문장 속 숫자 ${doc.n}개가 모두 이 값에서 왔습니다. 목표 규칙: ${esc(s.target_rule)}. 금액은 넣지 않습니다. 양식은 공고마다 다르므로, 제안요청서의 목차에 맞춰 옮겨 씁니다.</p></div></div>`;
     b.textContent = '다시 만들기';
   } catch (e) { made.prop = false; $('propOut').innerHTML = '<div class="empty"><b>만들지 못했습니다</b>잠시 후 다시 눌러 주세요.</div>'; b.textContent = '제안서 초안 만들기'; }
   b.disabled = false;
@@ -582,8 +626,15 @@ async function runSim() {
 }
 $('simBtn').onclick = runSim;
 
+/* ---------- 같은 화면 안에서 여는 창 ---------- */
+function openFrame(id, src, title) { const box = $(id), fr = box.querySelector('iframe'); if (fr.getAttribute('src') !== src) fr.setAttribute('src', src); if (title) $('moreTitle').textContent = title; box.hidden = false; box.scrollIntoView({ behavior:'smooth', block:'start' }); }
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { $(b.dataset.close).hidden = true; });
+$('simMapBtn').onclick = () => openFrame('simFrame', '/sim?embed=1');
+$('mQr').onclick = () => openFrame('moreFrame', '/qr-maker?embed=1', 'QR 생성기');
+$('mLive').onclick = () => openFrame('moreFrame', '/sim?embed=1&mode=live', '실시간 현황 지도');
+
 /* ---------- 더 보기 ---------- */
-$('mCrowd').onclick = async () => { show(1); await post('/api/demo/crowd').catch(() => {}); feed('메인 무대에 방문 집중', '시연용 재현'); refresh(); };
+$('mCrowd').onclick = async () => { $('moreFrame').hidden = true; show(1); await post('/api/demo/crowd').catch(() => {}); feed('메인 무대에 방문 집중', '시연용 재현'); refresh(); };
 $('mPrize').onclick = () => { show(1); if (ph.stage !== 'prize') feed('휴대폰에서 완주하고 설문을 보내면 교환권이 나옵니다'); };
 $('mLang').onclick = () => { show(1); L = L === 'ja' ? 'ko' : 'ja'; drawPhone(); };
 
@@ -606,7 +657,8 @@ async function boot() {
     let r = await fetch('/api/festival/' + FID).catch(() => null), f = r && r.ok ? await r.json() : null;
     let s = f ? await fetch('/api/stats/' + FID).then(x => x.ok ? x.json() : null).catch(() => null) : null;
     if (!f || !f.prize_name || !s || !s.current.visitors) { await seed(); f = await (await fetch('/api/festival/' + FID)).json(); }
-    fest = f; resetPhone(); await refresh(); show(1); $('cover').hidden = true;
+    fest = f; resetPhone(); await refresh(); show(+new URLSearchParams(location.search).get('step') || 1); $('cover').hidden = true;
+    fetch('/api/health').then(r => r.json()).then(h => { const a = $('aiState'); a.textContent = h.llm ? 'AI 연결됨' : 'AI 미연결'; a.className = 'ai ' + (h.llm ? 'on' : 'off'); }).catch(() => {});
     setInterval(() => { if (!document.hidden) refresh(); }, 2000);
   } catch (e) { $('coverMsg').textContent = '서버에 연결하지 못했습니다. 새로고침해 주세요.'; }
 }

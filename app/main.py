@@ -428,7 +428,8 @@ def get_stats(fid: str, x_admin_key: str = Header(default=""), x_event_key: str 
 def make_report(fid: str, mode: str = "", x_admin_key: str = Header(default=""), x_event_key: str = Header(default="")):
     """mode=template 이면 AI를 부르지 않고 숫자 기반 문장만 쓴다 (AI가 느릴 때의 예비 경로)."""
     d = get_stats(fid, x_admin_key, x_event_key)
-    return ai.write_report(d["festival"], d["current"], d["comparison"], use_llm=mode != "template")
+    return {**ai.write_report(d["festival"], d["current"], d["comparison"], use_llm=mode != "template",
+                              improvements=design.propose(d["current"])["changes"]), "sections": ai.REPORT_SECTIONS}
 
 
 @app.get("/api/crowd/{fid}")
@@ -446,7 +447,8 @@ def make_proposal(fid: str, q: ProposalReq, mode: str = "", x_admin_key: str = H
     if not d["current"]["visitors"]:
         raise HTTPException(400, "근거로 쓸 참여 기록이 아직 없습니다")
     basis = design.proposal_basis(d["festival"], d["current"], d["comparison"], q.model_dump())
-    return {"basis": basis, **ai.write_proposal(basis, use_llm=mode != "template")}
+    basis["crowd"] = {"window_min": d["crowd"]["window_min"], "threshold": d["crowd"]["threshold"]}
+    return {"basis": basis, **ai.write_proposal(basis, use_llm=mode != "template"), "sections": ai.PROPOSAL_SECTIONS}
 
 
 @app.post("/api/design/{fid}")
