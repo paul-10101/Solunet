@@ -507,7 +507,8 @@ def get_intervals(fid: str, x_admin_key: str = Header(default=""), x_event_key: 
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "store": db.kind, "llm": ai.llm_provider()}
+    p = ai.llm_provider()
+    return {"ok": True, "store": db.kind, "llm": p, "model": ai.GH_MODEL if p == "github" else (ai.MODEL if p else None)}
 
 
 # ---------- 시연용 예시 데이터 ----------
