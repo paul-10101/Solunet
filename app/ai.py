@@ -90,11 +90,18 @@ def _call_llm(system, payload):
     return r.json()["content"][0]["text"]
 
 
+# 결과보고서 목차: 공공 행사 대행 용역의 결과보고 요구(행사 개요, 관람객 집계, 만족도 조사, 전년 대비, 개선 방안)를 따른다.
+# 정산 내역·사진·홍보 실적처럼 QR 기록에 없는 항목은 화면에서 '담당자 작성' 칸으로 남긴다.
+REPORT_SECTIONS = ["행사 개요", "방문객 집계 결과", "만족도 조사 결과", "전 회차 대비 성과", "문제점 및 개선 방안"]
 REPORT_SYSTEM = (
-    "너는 지역축제 평가보고서 작성 보조다. 입력 JSON의 숫자만 그대로 사용하고, 더하기·빼기·비율 계산으로 새 숫자를 만들지 마라. "
-    "변화량이 필요하면 changes에 있는 값만 쓴다. "
-    "한국어 보고서체로 '1. 개요 2. 방문·완주 현황 3. 거점별 이탈 분석 4. 이탈 사유·설문 5. 이전 회차 대비 6. 시사점' 순서로 쓴다. "
-    "이전 회차 비교(comparison)가 없으면 5번은 '비교할 이전 회차 없음'으로 쓴다. 설문 만족도·재방문 의사가 있으면 4번에 쓴다."
+    "너는 공공 행사 대행 용역의 결과보고서 작성 보조다. 입력 JSON의 숫자만 그대로 사용하고, 더하기·빼기·비율 계산으로 새 숫자를 만들지 마라. "
+    "변화량이 필요하면 changes에 있는 값만 쓴다. 금액·예산은 쓰지 마라. "
+    "한국어 공문서체(~함, ~임)로 아래 다섯 항목을 번호와 제목 그대로, 항목마다 2~3문장으로 쓴다. 표·기호·마크다운은 쓰지 않는다.\n"
+    "1. 행사 개요: 행사명과 회차, QR 기반으로 참가를 확인·집계했다는 점.\n"
+    "2. 방문객 집계 결과: 참여, 완주, 완주율, 이탈률이 가장 높은 거점.\n"
+    "3. 만족도 조사 결과: 설문 응답 수, 만족도·혼잡도·동선 편의 평균, 재방문 의사. 설문이 없으면 '조사 결과 없음'.\n"
+    "4. 전 회차 대비 성과: comparison과 changes의 값. comparison이 없으면 '비교할 이전 회차 없음'.\n"
+    "5. 문제점 및 개선 방안: improvements의 각 항목(거점, 조치, 근거)을 문장으로."
 )
 
 DESIGN_SYSTEM = (
@@ -103,31 +110,44 @@ DESIGN_SYSTEM = (
 )
 
 
-def _template_report(festival, stats, comparison):
-    worst = max(stats["checkpoints"], key=lambda c: c["drop_rate"], default=None)
-    lines = [
-        f"1. 개요: {festival['name']} {festival.get('edition', '')}회차 QR 데이터 기반 평가.",
-        f"2. 방문·완주: 참여 {stats['visitors']}명, 완주 {stats['completed']}명 (완주율 {stats['completion_rate']}%).",
-    ]
-    if worst:
-        lines.append(f"3. 이탈: '{worst['name']}' 이후 이탈률 {worst['drop_rate']}%로 가장 높음.")
+def _template_report(festival, stats, comparison, improvements=None):
+    worst = max((c for c in stats["checkpoints"] if c["dropped_after"] > 0), key=lambda c: c["drop_rate"], default=None)
     sv = stats.get("survey", {})
-    parts = []
-    if stats["exit_reasons"]:
-        parts.append(f"이탈 사유는 '{next(iter(stats['exit_reasons']))}' 응답이 가장 많음")
+    lines = [
+        f"1. 행사 개요: 본 보고서는 「{festival['name']}」 {festival.get('edition', 1)}회차의 운영 결과를 정리한 것임. "
+        f"참가 확인과 관람객 집계는 거점 {len(stats['checkpoints'])}곳에 설치한 QR로 수행하였으며, 수집한 스캔 기록은 {stats['scans']}건임.",
+        f"2. 방문객 집계 결과: 참여 인원은 {stats['visitors']}명, 전 거점 완주 인원은 {stats['completed']}명(완주율 {stats['completion_rate']}%)임."
+        + (f" 거점별로는 '{worst['name']}' 이후 이탈률이 {worst['drop_rate']}%로 가장 높게 나타남." if worst else ""),
+    ]
     if sv.get("count"):
-        parts.append(f"설문 {sv['count']}건, 혼잡도 평균 {sv['crowd_avg']} / 5" +
-                     (f", 만족도 평균 {sv['satisfaction_avg']} / 5" if sv.get("satisfaction_avg") else ""))
-    if parts:
-        lines.append("4. 이탈 사유·설문: " + ", ".join(parts) + ".")
-    if comparison:
-        line = (f"5. 이전 회차 대비: 참여 {comparison['visitors_prev']}명 → {comparison['visitors_cur']}명, "
-                f"완주율 {comparison['completion_prev']}% → {comparison['completion_cur']}%")
-        if comparison.get("satisfaction_prev") and comparison.get("satisfaction_cur"):
-            line += f", 만족도 {comparison['satisfaction_prev']} → {comparison['satisfaction_cur']}"
-        lines.append(line + ".")
+        t = f"3. 만족도 조사 결과: 완주자 대상 모바일 설문에 {sv['count']}건이 응답함."
+        parts = [f"전반 만족도 평균 {sv['satisfaction_avg']}점" if sv.get("satisfaction_avg") else "",
+                 f"혼잡도 평균 {sv['crowd_avg']}점" if sv.get("crowd_avg") else "", f"동선 편의 평균 {sv['route_avg']}점" if sv.get("route_avg") else ""]
+        parts = [x for x in parts if x]
+        if parts:
+            t += " " + ", ".join(parts) + "(5점 척도)임."
+        rv = sv.get("revisit") or {}
+        if rv:
+            k = next(iter(rv))
+            t += f" 재방문 의사는 '{k}' 응답이 {rv[k]}건으로 가장 많음."
+        lines.append(t)
     else:
-        lines.append("5. 이전 회차 대비: 비교할 이전 회차 데이터 없음.")
+        lines.append("3. 만족도 조사 결과: 조사 결과 없음.")
+    if comparison:
+        t = (f"4. 전 회차 대비 성과: 참여 인원은 {comparison['visitors_prev']}명에서 {comparison['visitors_cur']}명으로, "
+             f"완주율은 {comparison['completion_prev']}%에서 {comparison['completion_cur']}%로 변동함.")
+        if comparison.get("satisfaction_prev") and comparison.get("satisfaction_cur"):
+            t += f" 만족도 평균은 {comparison['satisfaction_prev']}점에서 {comparison['satisfaction_cur']}점으로 변동함."
+        lines.append(t)
+    else:
+        lines.append("4. 전 회차 대비 성과: 비교할 이전 회차 없음.")
+    imp = improvements or []
+    if stats["exit_reasons"]:
+        k = next(iter(stats["exit_reasons"]))
+        head = f"중도 이탈 사유는 '{k}' 응답이 {stats['exit_reasons'][k]}건으로 가장 많음. "
+    else:
+        head = ""
+    lines.append("5. 문제점 및 개선 방안: " + head + " ".join(f"[{c['checkpoint']}] {c['evidence']}. 개선 방안: {c['action']}." for c in imp))
     return "\n".join(lines)
 
 
@@ -135,14 +155,15 @@ def _template_design(design):
     return "\n".join(f"- {c['checkpoint']}: {c['action']} (근거: {c['evidence']})" for c in design["changes"])
 
 
-def write_report(festival, stats, comparison=None, use_llm=True):
-    data = {"festival": festival["name"], "edition": festival.get("edition"), "stats": stats, "comparison": comparison}
+def write_report(festival, stats, comparison=None, use_llm=True, improvements=None):
+    data = {"festival": festival["name"], "edition": festival.get("edition"), "stats": stats, "comparison": comparison,
+            "improvements": improvements or []}
     if comparison:  # 모델이 직접 빼기를 하지 않도록 차이를 미리 계산해 넘긴다
         diff = lambda a, b: round(b - a, 1) if a is not None and b is not None else None
         data["changes"] = {k: diff(comparison.get(k + "_prev"), comparison.get(k + "_cur"))
                            for k in ("visitors", "completion", "satisfaction", "revisit", "crowd")}
         data["changes"]["checkpoints"] = {c["name"]: c["change"] for c in comparison["checkpoints"]}
-    return _draft(REPORT_SYSTEM, data, lambda: _template_report(festival, stats, comparison), use_llm)
+    return _draft(REPORT_SYSTEM, data, lambda: _template_report(festival, stats, comparison, improvements), use_llm)
 
 
 def explain_design(design):
@@ -155,33 +176,43 @@ def explain_design(design):
     return {"source": "template", "text": _template_design(design)}
 
 
+# 제안서 목차: 협상에 의한 계약의 기술 제안서 가운데 기록으로 쓸 수 있는 부분만 쓴다.
+# 제안업체 일반 현황, 세부 프로그램·홍보 계획, 추진 일정, 가격 제안서는 화면에서 '담당자 작성' 칸으로 남긴다.
+PROPOSAL_SECTIONS = ["제안 개요", "행사 운영 계획", "인력 및 안전관리 계획", "성과 지표 및 목표", "결과 보고 및 사후 관리 계획"]
 PROPOSAL_SYSTEM = (
-    "너는 행사 대행사의 입찰 제안서 작성 보조다. 입력 JSON(basis)의 숫자만 그대로 쓰고 새 숫자를 계산하거나 지어내지 마라. "
-    "금액·예산·인건비는 쓰지 마라. 한국어 제안서체로 '1. 과업 이해 2. 운영 계획 3. 성과 지표와 목표 4. 결과 보고 계획' 순서로, "
-    "항목마다 2~3문장으로 쓴다. 3번에는 measured(지난 회차 실측)와 targets(목표)를 나란히 쓴다. "
-    "bottleneck이 있으면 2번에서 그 거점의 인력·안내 보강을 제안한다."
+    "너는 행사 대행사의 입찰 제안서(기술 부문) 작성 보조다. 입력 JSON(basis)의 숫자만 그대로 쓰고 새 숫자를 계산하거나 지어내지 마라. "
+    "금액·예산·인건비는 쓰지 마라. 한국어 제안서체(~하겠음, ~임)로 아래 다섯 항목을 번호와 제목 그대로, 항목마다 2~3문장으로 쓴다. 표·기호·마크다운은 쓰지 않는다.\n"
+    "1. 제안 개요: 제안 배경과 과업 이해. 지난 회차 기록을 근거로 한다는 점.\n"
+    "2. 행사 운영 계획: 거점 구성과 QR 참가 확인, 실시간 집계.\n"
+    "3. 인력 및 안전관리 계획: bottleneck 거점의 인력·안내 보강, crowd의 혼잡 경고 기준.\n"
+    "4. 성과 지표 및 목표: measured(지난 회차 기록)와 targets(목표)를 나란히.\n"
+    "5. 결과 보고 및 사후 관리 계획: 결과보고서, 회차 비교, 원자료 제출."
 )
 
 
 def _template_proposal(b):
     m, t = b["measured"], b["targets"]
-    src = f"{b['based_on']['festival']} {b['based_on']['edition']}회차"
-    scale = "".join([f" 예상 참가 {b['expected_visitors']}명," if b.get("expected_visitors") else "",
-                     f" 행사 기간 {b['days']}일," if b.get("days") else ""])
+    src = f"「{b['based_on']['festival']}」 {b['based_on']['edition']}회차"
+    scale = "".join([f"예상 참가 {b['expected_visitors']}명, " if b.get("expected_visitors") else "",
+                     f"행사 기간 {b['days']}일, " if b.get("days") else ""])
+    cr = b.get("crowd") or {}
     lines = [
-        f"1. 과업 이해: 본 제안은 「{b['title']}」의 참가 확인, 관람객 집계, 만족도 조사, 결과 보고를 QR 기반으로 수행하는 방안이다."
-        f"{scale} 거점 {b['checkpoint_count']}곳 운영을 기준으로 하며, {src} QR 기록을 근거로 삼는다.",
-        f"2. 운영 계획: 거점({', '.join(b['checkpoint_names'])})마다 QR을 설치하고, 참가자는 앱 설치 없이 카메라로 찍어 참여한다. "
-        "거점별 방문자는 운영자 화면에서 실시간으로 확인하고, 기준 인원을 넘으면 혼잡 경고로 인력을 재배치한다."
-        + (f" 지난 회차에 '{b['bottleneck']['name']}' 이후 이탈률이 {b['bottleneck']['drop_rate']}%로 가장 높았으므로, 이 구간에 안내 인력과 이동 안내를 보강한다."
-           if b.get("bottleneck") else ""),
-        f"3. 성과 지표와 목표: 지난 회차 기록은 참여 {m['visitors']}명, 완주 {m['completed']}명(완주율 {m['completion_rate']}%)"
-        + (f", 만족도 평균 {m['satisfaction_avg']} / 5" if m.get("satisfaction_avg") else "")
+        f"1. 제안 개요: 본 제안은 「{b['title']}」의 참가 확인, 관람객 집계, 만족도 조사, 결과 보고를 QR 기반으로 수행하는 방안임. "
+        f"{scale}거점 {b['checkpoint_count']}곳 운영을 기준으로 하며, {src}의 QR 기록을 근거로 계획을 수립하였음.",
+        f"2. 행사 운영 계획: 거점({', '.join(b['checkpoint_names'])})마다 QR을 설치하고, 참가자는 앱 설치나 가입 없이 휴대폰 카메라로 참여하도록 하겠음. "
+        "거점별 방문 인원은 운영자 화면에서 실시간으로 집계하며, 완주자에게는 모바일 설문과 경품 교환권을 제공하겠음.",
+        "3. 인력 및 안전관리 계획: "
+        + (f"지난 회차에 '{b['bottleneck']['name']}' 이후 이탈률이 {b['bottleneck']['drop_rate']}%로 가장 높았으므로, 이 구간에 안내 인력과 이동 안내를 보강하겠음. "
+           if b.get("bottleneck") else "거점별 방문 현황에 따라 안내 인력을 배치하겠음. ")
+        + (f"한 거점에서 최근 {cr['window_min']}분 동안 {cr['threshold']}명 이상이 확인되면 혼잡 경고를 띄워 인력을 재배치하겠음."
+           if cr else "거점별 혼잡 경고 기준을 정해 인력을 재배치하겠음."),
+        f"4. 성과 지표 및 목표: 지난 회차 기록은 참여 {m['visitors']}명, 완주 {m['completed']}명(완주율 {m['completion_rate']}%)"
+        + (f", 만족도 평균 {m['satisfaction_avg']}점" if m.get("satisfaction_avg") else "")
         + (f", 설문 응답 {m['survey_count']}건" if m.get("survey_count") else "")
-        + f"이다. 이번 목표는 완주율 {t['completion_rate']}%"
-        + (f", 만족도 {t['satisfaction_avg']} / 5" if t.get("satisfaction_avg") else "") + "로 둔다.",
-        "4. 결과 보고 계획: 행사 종료 후 참여·완주·거점별 이탈·설문 결과를 같은 집계 기준으로 정리한 결과보고서 초안을 제출하고, "
-        "지난 회차와 같은 지표로 비교한 표를 함께 낸다. 원자료(CSV)도 함께 제출한다.",
+        + f"임. 이번 행사의 목표는 완주율 {t['completion_rate']}%"
+        + (f", 만족도 평균 {t['satisfaction_avg']}점" if t.get("satisfaction_avg") else "") + "으로 설정함.",
+        "5. 결과 보고 및 사후 관리 계획: 행사 종료 후 참여·완주·거점별 이탈·설문 결과를 같은 집계 기준으로 정리한 결과보고서를 제출하고, "
+        "지난 회차와 같은 지표로 비교한 표와 원자료(CSV)를 함께 제출하겠음.",
     ]
     return "\n".join(lines)
 

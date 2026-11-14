@@ -267,7 +267,9 @@ async function boot() {
   seg('patSeg', 'pattern', fresh); seg('spdSeg', 'speed');
   $('body').hidden = false; fit(); fresh(); addEventListener('resize', () => { fit(); paint(); });
 }
-(isDemo ? Promise.resolve() : Admin.ready($('gate'))).then(boot).catch(e => { $('gate').innerHTML = `<div class="pn cover">행사 정보를 불러오지 못했습니다. ${E(e.message || '')}</div>`; });
+const EMBED = new URLSearchParams(location.search).has('embed');
+if (EMBED) { document.querySelector('.topbar').hidden = true; document.querySelector('.hd h1').parentNode.hidden = true; document.querySelector('main.page').style.padding = '14px 16px 24px'; document.body.style.background = '#fff'; }
+(isDemo ? Promise.resolve() : Admin.ready($('gate'))).then(boot).then(() => { if (new URLSearchParams(location.search).get('mode') === 'live') setMode('live'); }).catch(e => { $('gate').innerHTML = `<div class="pn cover">행사 정보를 불러오지 못했습니다. ${E(e.message || '')}</div>`; });
 </script>
 </body>
 </html>

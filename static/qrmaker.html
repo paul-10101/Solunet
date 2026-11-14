@@ -197,6 +197,7 @@ let armT; $('clear').onclick = () => { const b = $('clear');
   if (!b.classList.contains('arm')) { b.classList.add('arm'); b.textContent = '한 번 더 누르면 지웁니다'; armT = setTimeout(() => { b.classList.remove('arm'); b.textContent = '모두 지우기'; }, 3000); return; }
   clearTimeout(armT); b.classList.remove('arm'); b.textContent = '모두 지우기'; list = []; keep(); drawSheet(); };
 
+if (new URLSearchParams(location.search).has('embed')) { document.querySelector('.topbar').hidden = true; document.querySelector('.intro h1').hidden = true; document.querySelector('main.page').style.padding = '14px 16px 24px'; document.body.style.background = '#fff'; }
 seg('mapSeg', 'map'); seg('bankSeg', 'bank'); seg('wifiSeg', 'wifi'); seg('colorSeg', 'color'); update(); drawSheet();
 </script>
 </body>
