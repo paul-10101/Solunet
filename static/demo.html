@@ -27,7 +27,7 @@
   .wrapx { max-width:1400px; margin:0 auto; padding:18px 28px 56px; }
 
   /* 단계 */
-  .steps { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:14px; }
+  .steps { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-bottom:14px; }
   .steps button { display:flex; align-items:center; gap:10px; padding:11px 14px; border:1.5px solid var(--grid); border-radius:12px; background:#fff; color:var(--muted); cursor:pointer; text-align:left; min-width:0; }
   .steps button b { width:26px; height:26px; flex:none; border-radius:50%; background:#E2E8F0; color:#fff; font-size:13px; display:grid; place-items:center; }
   .steps button span { font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -43,6 +43,9 @@
   .say .vs .ar { color:#7DD3FC; font-weight:700; }
   .say .vs .me { background:var(--route); border-radius:8px; padding:5px 12px; font-weight:700; }
   .say .vs small { color:#94A3B8; font-size:11.5px; margin-left:auto; }
+  .say .vs .ir { background:#FEF3C7; color:#78350F; border-radius:8px; padding:5px 12px; font-weight:500; } .say .vs .ir b { font-weight:700; }
+  .say .vs .nx { color:#7DD3FC; font-weight:700; border:1px solid #334155; border-radius:8px; padding:4px 11px; }
+  .say .vs .br { flex-basis:100%; height:0; }
   .keys { font-size:12px; color:#94A3B8; white-space:nowrap; } .keys kbd { display:inline-block; border:1px solid #475569; border-radius:5px; padding:1px 7px; font-family:inherit; color:#E2E8F0; margin:0 2px; }
 
   /* 1단계: 휴대폰 + 집계 */
@@ -50,10 +53,10 @@
   .cap { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:10px; }
   .cap b { font-size:15px; } .cap span, .cap label { font-size:12px; color:var(--muted); margin:0; display:inline-flex; align-items:center; gap:5px; cursor:pointer; } .cap input { width:auto; accent-color:var(--route); }
   .phone { background:var(--ink); border-radius:38px; padding:10px; box-shadow:var(--shadow); }
-  .scr { background:var(--paper); border-radius:29px; overflow:hidden; height:clamp(470px, calc(100vh - 345px), 600px); display:flex; flex-direction:column; position:relative; }
+  .scr { background:var(--paper); border-radius:29px; overflow:hidden; height:clamp(400px, calc(100vh - 300px), 600px); display:flex; flex-direction:column; position:relative; }
   .scr::before { content:""; position:absolute; top:8px; left:50%; width:84px; height:6px; margin-left:-42px; border-radius:3px; background:rgba(255,255,255,.28); z-index:2; }
   .ph-head { background:var(--ink); color:#fff; padding:26px 20px 16px; }
-  .ph-head .ev { font-size:12px; opacity:.75; } .ph-head h2 { font-size:20px; margin-top:3px; letter-spacing:-0.02em; color:#fff; }
+  .ph-head .ev { font-size:12px; opacity:.75; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .ph-head h2 { font-size:19px; margin-top:3px; letter-spacing:-0.02em; color:#fff; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .langs { display:flex; gap:5px; margin-top:10px; }
   .langs button { font-size:11px; padding:3px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.3); background:transparent; color:rgba(255,255,255,.75); cursor:pointer; }
   .langs button[aria-pressed="true"] { background:#fff; color:var(--ink); border-color:#fff; font-weight:700; }
@@ -197,7 +200,7 @@
   .spin { width:34px; height:34px; border:3px solid var(--grid); border-top-color:var(--route); border-radius:50%; margin:0 auto 16px; animation:sp .8s linear infinite; }
   @keyframes sp { to { transform:rotate(360deg); } }
 
-  @media (max-width:1180px) { .kpis5, .cmp { grid-template-columns:repeat(3,1fr); } .cols { grid-template-columns:1fr !important; } .form { grid-template-columns:1fr 1fr; } .mg { grid-template-columns:repeat(3,1fr); } .say h1 { font-size:26px; } .keys { display:none; } }
+  @media (max-width:1180px) { .src5, .t3, .fld { grid-template-columns:1fr 1fr; } .kpis5, .cmp { grid-template-columns:repeat(3,1fr); } .cols { grid-template-columns:1fr !important; } .form { grid-template-columns:1fr 1fr; } .mg { grid-template-columns:repeat(3,1fr); } .say h1 { font-size:26px; } .keys { display:none; } }
   @media (max-width:900px) {
     .wrapx { padding:14px 14px 40px; } .top { padding:10px 14px; flex-wrap:wrap; } .top .ev, .timer { display:none; }
     .steps { gap:5px; } .steps button { padding:9px 6px; justify-content:center; } .steps button span { display:none; }
@@ -206,8 +209,39 @@
     .kpis5, .cmp, .mg { grid-template-columns:1fr 1fr; } .kp b { font-size:28px; }
     .row { grid-template-columns:96px minmax(0,1fr) 44px; } .row .chip { display:none; } .pair { grid-template-columns:96px minmax(0,1fr) 70px; }
     .panel { padding:18px 16px; } .doc { padding:18px 16px; } .form { grid-template-columns:1fr; }
-    .pipe { grid-template-columns:1fr; } .pa { display:none; } .simT { font-size:13px; } .simT .wb { grid-template-columns:1fr; } .simT .wb i { display:none; }
+    .pipe { grid-template-columns:1fr; } .pa { display:none; } .src5, .t3, .fld { grid-template-columns:1fr; } .phf { grid-template-columns:1fr; } .phf .ph2 { width:100%; } .phf iframe { width:100%; } .simT { font-size:13px; } .simT .wb { grid-template-columns:1fr; } .simT .wb i { display:none; }
   }
+  /* 노트북 화면(세로 900px 이하): 위쪽을 줄여 휴대폰 틀이 한 화면에 들어오게 */
+  @media (max-height:900px) and (min-width:901px) {
+    .top { padding:7px 28px; } .wrapx { padding-top:10px; } .steps { margin-bottom:8px; } .steps button { padding:7px 12px; }
+    .say { padding:12px 22px; margin-bottom:10px; gap:6px 20px; } .say h1 { font-size:24px; } .say .vs { font-size:13.5px; } .say .vs .o, .say .vs .me, .say .vs .ir { padding:3px 10px; }
+    .cap { margin-bottom:6px; } .phone { border-radius:32px; padding:8px; } .scr { border-radius:25px; height:clamp(400px, calc(100vh - 262px), 600px); }
+    .ph-head { padding:20px 16px 11px; } .ph-head h2 { font-size:17px; } .langs { margin-top:7px; } .ph-body { padding:10px 14px 8px; } .ph-foot { padding:9px 14px 11px; }
+    .cps li { padding:7px 10px; } .cta { padding:10px; font-size:15px; } .cta small { font-size:11px; } .hint { display:none; } .again { margin-top:6px; }
+    .coupon { padding:16px 14px; } .coupon .code { font-size:26px; } .q { margin:7px 0 4px; } .scale button { padding:7px 0; } .done-card { padding:8px 12px; margin-bottom:6px; }
+    .kp { padding:12px 14px; } .kp b { font-size:28px; }
+  }
+  .scr:lang(zh) .cta, .scr:lang(ja) .cta { font-size:14.5px; }
+
+  /* 6단계: 만든 방법 */
+  .how h2 { font-size:18px; letter-spacing:-0.02em; margin:0 0 4px; } .how > section + section { margin-top:26px; } .how .lead { font-size:13.5px; color:var(--muted); margin-bottom:14px; }
+  .src5 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .sc { border:1px solid var(--grid); border-radius:12px; padding:14px 16px; background:#fff; }
+  .sc .k { font-size:12px; font-weight:700; color:var(--route); } .sc b { display:block; font-size:16px; margin:3px 0 4px; letter-spacing:-0.01em; } .sc p { font-size:13px; color:var(--muted); line-height:1.55; } .sc .n { font-size:12.5px; color:var(--ink); margin-top:6px; font-variant-numeric:tabular-nums; }
+  .arch { display:flex; gap:8px; align-items:stretch; overflow-x:auto; padding-bottom:4px; } .arch .an { flex:1; }
+  .an { border:1.5px solid var(--grid); border-radius:12px; padding:11px 13px; background:#fff; min-width:128px; } .an span { font-size:11.5px; color:var(--muted); display:block; } .an b { font-size:14.5px; display:block; } .an small { font-size:12px; color:var(--muted); display:block; margin-top:2px; line-height:1.45; }
+  .an.key { border-color:var(--good); background:#F0FDF4; } .an.ai { border-color:#93C5FD; background:var(--soft); }
+  .ap { align-self:center; color:#94A3B8; font-weight:700; }
+  .t3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:12px; }
+  .t3 .sc b { font-size:15px; }
+  .fld { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .fc { border:1px solid var(--grid); border-radius:12px; padding:14px 16px; } .fc .k { font-size:12px; font-weight:700; color:var(--good); } .fc b { display:block; font-size:15px; margin:3px 0; } .fc p { font-size:13.5px; color:var(--ink); line-height:1.6; } .fc small { color:var(--muted); font-size:12px; display:block; margin-top:6px; }
+  .todo { list-style:none; display:grid; gap:8px; } .todo li { display:grid; grid-template-columns:auto 1fr; gap:10px; font-size:14px; padding:10px 14px; border-radius:10px; background:#F8FAFC; border:1px dashed var(--line); }
+  .todo li b { color:var(--warn-ink); white-space:nowrap; } .todo li span { color:var(--muted); }
+  .phf { display:grid; grid-template-columns:auto 1fr; gap:24px; align-items:start; padding:16px 20px 20px; }
+  .phf .ph2 { background:var(--ink); border-radius:34px; padding:9px; width:376px; } .phf iframe { display:block; width:358px; height:min(700px, calc(100vh - 180px)); border:0; border-radius:26px; background:#fff; }
+  .phf .ex b { display:block; font-size:16px; margin-bottom:6px; } .phf .ex p { font-size:14px; color:var(--muted); line-height:1.7; } .phf .ex ol { margin:10px 0 0 18px; font-size:14px; line-height:1.9; }
+
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
   @media print { .top, .steps, .say, .more, .noprint, .frame, .side, .pipe, #step-1 { display:none !important; } .cols { display:block !important; } .wrapx { padding:0; } .panel { border:0; padding:0; } }
 </style>
@@ -232,6 +266,7 @@
     <button role="tab" data-step="3"><b>3</b><span>회차 비교</span></button>
     <button role="tab" data-step="4"><b>4</b><span>다음 제안서</span></button>
     <button role="tab" data-step="5"><b>5</b><span>혼잡 시뮬레이션</span></button>
+    <button role="tab" data-step="6"><b>6</b><span>만든 방법</span></button>
   </nav>
 
   <div class="say" aria-live="polite">
@@ -310,16 +345,62 @@
     </div>
   </section>
 
+  <!-- 6 만든 방법 -->
+  <section id="step-6" hidden>
+    <div class="panel how">
+      <section>
+        <h2>무엇을 근거로 만들었나</h2><p class="lead">기능과 숫자는 모두 공개 원자료를 직접 분석해서 정했습니다.</p>
+        <div class="src5">
+          <div class="sc"><span class="k">문제 정의</span><b>통계청 서비스업조사 원자료</b><p>행사대행업(KSIC 75992) 2021~2024년 원자료를 직접 집계</p><div class="n">9,278곳 · 매출 가중 영업이익률 2.3% · 적자 23.5%</div></div>
+          <div class="sc"><span class="k">원가 구조</span><b>나라장터 산출내역서 10건</b><p>행사 대행 용역의 비목별 금액으로 참여형·공연형 원가 모델을 세움</p><div class="n">참여형 인건비+재료비 55% · 공연형 16.7%</div></div>
+          <div class="sc"><span class="k">기능 정의</span><b>입찰 공고 과업지시서</b><p>공고가 요구하는 관람객 집계·만족도 조사·결과보고서를 기능으로 옮김</p><div class="n">기술 배점 80~90% · 결과보고서 제출 요구</div></div>
+          <div class="sc"><span class="k">시장·고객</span><b>나라장터 낙찰정보</b><p>2025-01~2026-11 축제 대행 낙찰 기록에서 반복 수주 대행사를 찾음</p><div class="n">축제 대행 낙찰 112건 · 중앙값 2.18억 원</div></div>
+          <div class="sc"><span class="k">대체 비용</span><b>경북문화재단 수의계약 공개</b><p>2025.9~2026.9 계약 198건에서 보고서가 따로 발주되는 것을 확인</p><div class="n">결과자료집 별도 계약 640만~1,680만 원</div></div>
+          <div class="sc"><span class="k">가격</span><b>경쟁 서비스 공개 가격표</b><p>스탬프 서비스·대행사의 공개 정가를 모아 가격대를 정함</p><div class="n">스탬프 도구 100만~600만 원/행사</div></div>
+        </div>
+      </section>
+      <section>
+        <h2>어떻게 동작하나</h2><p class="lead">숫자는 코드가 정하고, AI는 문장만 씁니다. 그 문장도 숫자를 대조해서 통과해야 씁니다.</p>
+        <div class="arch">
+          <div class="an"><span>참가자</span><b>휴대폰 카메라</b><small>앱·가입 없음<br>익명 방문 번호</small></div><span class="ap">→</span>
+          <div class="an"><span>서버</span><b>QR 스캔 기록</b><small>거점별 무작위 토큰<br>60초 내 중복 제외</small></div><span class="ap">→</span>
+          <div class="an key"><span>코드</span><b>집계</b><small>참여·완주·이탈률<br>설문 평균·회차 비교</small></div><span class="ap">→</span>
+          <div class="an ai"><span>AI</span><b>문장 작성</b><small id="modelName">집계값만 입력</small></div>
+        </div>
+        <div class="arch" style="margin-top:8px">
+          <div class="an key"><span>코드</span><b>숫자 대조</b><small>문장 속 숫자가 집계에<br>하나라도 없으면 폐기</small></div><span class="ap">→</span>
+          <div class="an"><span>결과</span><b>보고서·제안서 초안</b><small>표는 코드가 채움<br>기록 밖 항목은 담당자 칸</small></div><span class="ap">→</span>
+          <div class="an"><span>다음 회차</span><b>같은 QR로 누적</b><small>회차 비교 · 시뮬레이션의<br>입력값이 됨</small></div>
+        </div>
+        <div class="t3">
+          <div class="sc"><span class="k">왜 AI에게 숫자를 맡기지 않나</span><b>보고서는 숫자가 틀리면 끝</b><p>언어 모델은 그럴듯한 숫자를 지어낼 수 있습니다. 그래서 계산은 전부 코드가 하고, AI 문장에 집계에 없는 숫자가 나오면 버리고 문장 틀로 대신 씁니다.</p></div>
+          <div class="sc"><span class="k">혼잡 시뮬레이션</span><b>대기열 + 보행 밀도 모델</b><p>거점은 수용 인원만큼 이용하고 나머지는 줄을 서는 창구로, 통로는 밀도가 높을수록 느려지는 구간(Weidmann 1993)으로 계산합니다. 같은 조건이면 같은 결과가 나옵니다.</p></div>
+          <div class="sc"><span class="k">개인정보</span><b>이름·연락처·위치를 받지 않음</b><p>남는 것은 익명 방문 번호, 찍은 거점과 시각, 고른 설문 답뿐입니다. 운영진 테스트 스캔은 집계에서 뺍니다.</p></div>
+        </div>
+      </section>
+      <section id="fieldSec">
+        <h2>현장에서 확인한 것</h2><p class="lead">인터뷰, 행사 운영, AI 학습 기록입니다.</p>
+        <div class="fld" id="field"></div>
+      </section>
+      <section>
+        <h2>아직 하지 않은 것</h2><p class="lead">숨기지 않고 다음 단계로 둡니다.</p>
+        <ul class="todo" id="todo"></ul>
+      </section>
+    </div>
+  </section>
+
   <details class="more" id="more">
     <summary>기능 더 보기 <small>시연 흐름에는 넣지 않은 기능 · 질문이 나오면 여기서 엽니다</small></summary>
     <div class="mg">
       <button class="mc" id="mCrowd"><b>혼잡 경고</b><span>한 거점에 최근 10분 동안 기준 인원 이상이 찍으면 경고가 뜹니다.</span><i>메인 무대 혼잡 재현 (시연용)</i></button>
-      <button class="mc" id="mPrize"><b>경품 교환권</b><span>완주자에게 한 장 발급되고, 스태프가 지급 완료를 누르면 다시 쓸 수 없습니다.</span><i>휴대폰 화면에서 보기</i></button>
-      <button class="mc" id="mLang"><b>다국어 참가자 화면</b><span>한국어·영어·일본어·중국어. 휴대폰 언어에 맞춰 열립니다.</span><i>일본어로 바꿔 보기</i></button>
+      <button class="mc" id="mPrize"><b>경품 교환권</b><span>완주자에게 한 장 발급되고, 스태프가 지급 완료를 누르면 다시 쓸 수 없습니다.</span><i>실제 참가자 화면으로 받아 보기</i></button>
+      <button class="mc" id="mLang"><b>다국어 참가자 화면</b><span>한국어·영어·일본어·중국어. 휴대폰 언어에 맞춰 열립니다.</span><i>실제 참가자 화면으로 보기</i></button>
       <button class="mc" id="mQr"><b>QR 생성기</b><span>점포 위치, 계좌 안내, 와이파이 QR을 만들어 한 번에 인쇄합니다.</span><i>이 화면에서 열기</i></button>
       <button class="mc" id="mLive"><b>실시간 현황 지도</b><span>거점별 최근 방문자와 혼잡 경고를 지도에서 봅니다.</span><i>이 화면에서 열기</i></button>
     </div>
     <div class="frame noprint" id="moreFrame" hidden style="margin:0 20px 20px"><div class="fh"><span id="moreTitle"></span><button class="ghost" data-close="moreFrame">닫기</button></div><iframe title="추가 기능" loading="lazy"></iframe></div>
+    <div class="frame noprint" id="phoneFrame" hidden style="margin:0 20px 20px"><div class="fh"><span id="phoneTitle"></span><button class="ghost" data-close="phoneFrame">닫기</button></div>
+      <div class="phf"><div class="ph2"><iframe title="참가자 화면"></iframe></div><div class="ex" id="phoneEx"></div></div></div>
   </details>
 </div>
 
@@ -336,25 +417,33 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
 /* ---------- 단계: 한 줄 메시지와 IR 8장 비교 ---------- */
 const STEPS = {
-  1: { h:'앱 없이 찍으면 <em>바로 집계</em>됩니다', o:['B사 <b>앱 설치 필요</b>', 'A사 <b>설문은 추가</b>'], me:'설치·가입 없음, 설문 기본 포함' },
-  2: { h:'기록이 그대로 <em>결과보고서</em>가 됩니다', o:['A사 <b>엑셀 원자료만</b>', 'B사 <b>보고 기능 없음</b>'], me:'결과보고서 초안 · 숫자 대조' },
-  3: { h:'회차가 쌓여 <em>지난 행사와 바로 비교</em>됩니다', o:['A사 <b>회차 비교 없음</b>', 'B사 <b>회차 비교 없음</b>'], me:'같은 QR로 회차 누적 · 비교' },
-  4: { h:'지난 숫자가 <em>다음 수주의 근거</em>가 됩니다', o:['A사 <b>QR 발급만</b>', 'B사 <b>준비 기능 없음</b>'], me:'지난 회차 기록으로 제안서 초안' },
-  5: { h:'인원을 늘리면 <em>어디가 막히는지</em> 미리 봅니다', note:'같은 기록에서 나오는 또 하나의 결과 · 추정 모델이며 안전 예측이 아닙니다' },
+  1: { h:'앱 없이 찍으면 <em>바로 집계</em>됩니다', o:['B사 <b>앱 설치 필요</b>', 'A사 <b>설문은 추가</b>'], me:'설치·가입 없음, 설문 기본 포함',
+       ir:'IR 6장 · 스탬프북 인쇄 <b>−240~400만</b> · 체크포인트 인력 <b>−300만</b>' },
+  2: { h:'기록이 그대로 <em>결과보고서</em>가 됩니다', o:['A사 <b>엑셀 원자료만</b>', 'B사 <b>보고 기능 없음</b>'], me:'결과보고서 초안 · 숫자 대조',
+       ir:'IR 6장 · 집계·설문·보고 <b>−420만</b> · 결과보고서 <b>−191만</b>' },
+  3: { h:'회차가 쌓여 <em>지난 행사와 바로 비교</em>됩니다', o:['A사 <b>회차 비교 없음</b>', 'B사 <b>회차 비교 없음</b>'], me:'같은 QR로 회차 누적 · 비교',
+       ir:'IR 4장 · 매년 0에서 다시 하는 평가 용역 <b>1,800만~5,000만</b>' },
+  4: { h:'지난 숫자가 <em>다음 수주의 근거</em>가 됩니다', o:['A사 <b>QR 발급만</b>', 'B사 <b>준비 기능 없음</b>'], me:'지난 회차 기록으로 제안서 초안',
+       ir:'IR 4장 · 수주를 가르는 기술 배점 <b>80~90%</b>' },
+  5: { h:'인원을 늘리면 <em>어디가 막히는지</em> 미리 봅니다', note:'같은 기록에서 나오는 또 하나의 결과 · 추정 모델이며 안전 예측이 아닙니다', next:'다음 → IR 8장: 보고서·회차 비교·제안서는 다른 서비스에 없습니다' },
+  6: { h:'어떻게 만들었고, <em>무엇을 근거로</em> 만들었나', note:'공개 원자료 분석 → 기능 정의 → 숫자는 코드, 문장은 AI → 숫자 대조' },
 };
 let step = 1; const seen = new Set([1]), made = { report:false, prop:false, sim:false };
 function show(n) {
-  step = Math.max(1, Math.min(5, n)); seen.add(step);
-  for (let i = 1; i <= 5; i++) { $('step-' + i).hidden = i !== step; const b = document.querySelector(`[data-step="${i}"]`); b.setAttribute('aria-selected', i === step); b.classList.toggle('done', seen.has(i) && i !== step); }
+  step = Math.max(1, Math.min(6, n)); seen.add(step);
+  for (let i = 1; i <= 6; i++) { $('step-' + i).hidden = i !== step; const b = document.querySelector(`[data-step="${i}"]`); b.setAttribute('aria-selected', i === step); b.classList.toggle('done', seen.has(i) && i !== step); }
   const s = STEPS[step]; $('sayH').innerHTML = s.h;
-  $('sayV').innerHTML = s.o ? s.o.map(x => `<span class="o">${x}</span>`).join('') + `<span class="ar">→</span><span class="me">솔루넷 · ${s.me}</span><small>비교: 업체 공개 자료 기준 (2026-11 열람)</small>` : `<span class="o">${s.note}</span>`;
+  $('sayV').innerHTML = (s.o ? s.o.map(x => `<span class="o">${x}</span>`).join('') + `<span class="ar">→</span><span class="me">솔루넷 · ${s.me}</span>` : `<span class="o">${s.note}</span>`)
+    + (s.ir ? `<span class="ir">${s.ir} <small style="margin:0;color:#92400E">(추정)</small></span>` : '') + (s.next ? `<span class="nx">${s.next}</span>` : '')
+    + (s.o ? '<small>비교: 업체 공개 자료 기준 (2026-11 열람)</small>' : '');
+  if (step === 6) loadHow();
   if (last) { if (step === 2 && !made.report) makeReport(); if (step === 4 && !made.prop) makeProposal(); if (step === 5 && !made.sim) runSim(); }
   scrollTo({ top:0 });
 }
 document.querySelectorAll('[data-step]').forEach(b => b.onclick = () => show(+b.dataset.step));
 document.addEventListener('keydown', e => {
   if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
-  if (e.key >= '1' && e.key <= '5') show(+e.key);
+  if (e.key >= '1' && e.key <= '6') show(+e.key);
   else if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); show(step + 1); }
   else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(step - 1); }
   else if (e.key === ' ') { e.preventDefault(); if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); primary(); }
@@ -634,9 +723,46 @@ $('mQr').onclick = () => openFrame('moreFrame', '/qr-maker?embed=1', 'QR 생성�
 $('mLive').onclick = () => openFrame('moreFrame', '/sim?embed=1&mode=live', '실시간 현황 지도');
 
 /* ---------- 더 보기 ---------- */
-$('mCrowd').onclick = async () => { $('moreFrame').hidden = true; show(1); await post('/api/demo/crowd').catch(() => {}); feed('메인 무대에 방문 집중', '시연용 재현'); refresh(); };
-$('mPrize').onclick = () => { show(1); if (ph.stage !== 'prize') feed('휴대폰에서 완주하고 설문을 보내면 교환권이 나옵니다'); };
-$('mLang').onclick = () => { show(1); L = L === 'ja' ? 'ko' : 'ja'; drawPhone(); };
+function closeMore() { ['moreFrame', 'phoneFrame'].forEach(id => $(id).hidden = true); }
+/* 실제 참가자 화면(/s/...)을 휴대폰 크기로 이 자리에서 연다 */
+function openPhone(src, title, ex) { closeMore(); const box = $('phoneFrame'), fr = box.querySelector('iframe'); fr.setAttribute('src', src + (src.includes('?') ? '&' : '?') + 't=' + Date.now()); $('phoneTitle').textContent = title; $('phoneEx').innerHTML = ex; box.hidden = false; box.scrollIntoView({ behavior:'smooth', block:'start' }); }
+$('mCrowd').onclick = async () => { await post('/api/demo/crowd').catch(() => {}); feed('메인 무대에 방문 집중', '시연용 재현'); refresh(); closeMore(); openFrame('moreFrame', '/sim?embed=1&mode=live', '혼잡 경고 · 실시간 현황 지도 (메인 무대에 36명이 방금 찍은 상황을 재현)'); };
+$('mPrize').onclick = async () => {
+  /* 새 참가자로 앞의 네 거점을 찍어 두고, 마지막 거점 QR을 연 화면을 보여 준다 */
+  const sid = 'v' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36), cps = fest.checkpoints;
+  try { localStorage.setItem('solunet_sid', sid); localStorage.removeItem('solunet_prize_' + FID); localStorage.setItem('solunet_lang', 'ko'); } catch (e) {}
+  for (const c of cps.slice(0, -1)) await post('/api/scan', { festival:FID, token:c.id, session:sid }).catch(() => {});
+  refresh();
+  openPhone(`/s/${FID}/${encodeURIComponent(cps[cps.length - 1].id)}`, '경품 교환권 · 실제 참가자 화면', `<b>마지막 거점 QR을 찍은 화면입니다</b><p>앞의 네 거점은 미리 찍어 두었습니다.</p>
+    <ol><li>혼잡도·동선 점수를 고르고 <b>보내고 경품 받기</b>를 누릅니다.</li><li>교환권 코드가 나옵니다.</li><li><b>지급 완료</b>를 두 번 누르면(실수 방지) 다시 쓸 수 없게 됩니다.</li></ol><p style="margin-top:10px">위쪽 운영자 화면의 '경품 지급' 숫자가 함께 올라갑니다.</p>`);
+};
+$('mLang').onclick = () => {
+  try { localStorage.setItem('solunet_lang', 'zh'); } catch (e) {}
+  openPhone(`/s/${FID}/${encodeURIComponent(fest.checkpoints[0].id)}?test=1`, '다국어 · 실제 참가자 화면', `<b>휴대폰 언어에 맞춰 열립니다</b><p>위쪽 버튼으로 한국어·English·日本語·中文을 바꿔 보세요. 거점 이름은 운영자가 설정에 넣은 외국어 이름으로 바뀝니다.</p><p style="margin-top:10px">테스트 접속이라 집계에는 들어가지 않습니다.</p>`);
+};
+$('mQr').onclick = () => { closeMore(); openFrame('moreFrame', '/qr-maker?embed=1', 'QR 생성기'); };
+$('mLive').onclick = () => { closeMore(); openFrame('moreFrame', '/sim?embed=1&mode=live', '실시간 현황 지도'); };
+
+/* ---------- 6단계: 만든 방법 ---------- */
+let howDone = false;
+async function loadHow() {
+  if (howDone) return; howDone = true;
+  const a = await fetch('/about.json').then(r => r.ok ? r.json() : {}).catch(() => ({}));
+  const h = await fetch('/api/health').then(r => r.json()).catch(() => ({}));
+  $('modelName').innerHTML = h.model ? `집계값만 입력<br>${esc(h.model)}` : '집계값만 입력<br>(지금 미연결 · 문장 틀 사용)';
+  const card = (k, b, p, sm) => `<div class="fc"><span class="k">${k}</span><b>${esc(b)}</b><p>${esc(p)}</p>${sm ? `<small>${esc(sm)}</small>` : ''}</div>`;
+  const iv = (a.interviews || []).map(x => card('인터뷰', `${x.who || ''}${x.when ? ' · ' + x.when : ''}`, x.said || '', x.applied ? '반영: ' + x.applied : ''));
+  const ft = (a.field_tests || []).map(x => card('현장 운영', `${x.name || ''}${x.when ? ' · ' + x.when : ''}`, x.result || '', x.people ? `참여 ${x.people}명` : ''));
+  const fn = a.finetune ? [card('AI 학습', `${a.finetune.base || ''} ${a.finetune.status ? '· ' + a.finetune.status : ''}`, a.finetune.result || '', a.finetune.data ? '데이터: ' + a.finetune.data : '')] : [];
+  const all = iv.concat(ft, fn);
+  $('fieldSec').hidden = !all.length; $('field').innerHTML = all.join('');
+  const todo = [];
+  if (!ft.length) todo.push(['실제 행사 운영', '아직 실제 행사에서 운영한 기록이 없습니다. 지금 화면은 예시 데이터입니다. 첫 행사 무료 파일럿으로 확보합니다.']);
+  if (!iv.length) todo.push(['대행사 인터뷰', '반복 수주 대행사 263곳 중 실제 인터뷰를 진행해, 보고서 작성 시간과 비용을 확인합니다.']);
+  if (!fn.length) todo.push(['AI 학습(파인튜닝)', '지금은 범용 언어 모델에 숫자 대조를 붙여 씁니다. 공개 결과보고서로 학습시키는 것은 다음 단계입니다.']);
+  todo.push(['대규모 동시 접속', '동시 접속 1,000명 이상 부하 테스트는 아직 하지 않았습니다.'], ['시뮬레이션 보정', '시뮬레이션은 실제 행사 기록으로 맞춰 보지 않은 추정 모델입니다.']);
+  $('todo').innerHTML = todo.map(([b, t]) => `<li><b>${b}</b><span>${t}</span></li>`).join('');
+}
 
 /* 처음 상태로: 한 번 누르면 확인 상태, 3초 안에 다시 누르면 실행 */
 let armT;
