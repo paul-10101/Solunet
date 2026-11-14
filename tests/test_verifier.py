@@ -37,3 +37,9 @@ def test_draft_falls_back_without_llm(monkeypatch=None):
 def test_verify_trial_shape():
     t = ai.verify_trial()
     assert [c["ok"] for c in t["cases"]] == [True, False, False]
+
+
+def test_verify_text_free_input():
+    assert ai.verify_text("참여 320명 중 완주율은 90%임.")["bad"] == [90.0]
+    assert ai.verify_text("참여 320명 중 240명 완주함.")["ok"] is True
+    assert ai.verify_text("   ")["empty"] is True

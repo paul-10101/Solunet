@@ -55,9 +55,19 @@ def _draft(system, data, template, use_llm=True):
 GH_MODEL = os.getenv("GH_MODEL", "openai/gpt-4.1-mini")
 
 
+VERIFY_DATA = {"participants": 320, "completed": 240, "completion_rate": 75.0, "top_dropoff": "먹거리 장터", "satisfaction": 4.2}
+
+
+def verify_text(text):
+    """사용자가 입력한 문장을 시험용 집계값과 대조한다 (AI 호출 없음)."""
+    text = (text or "")[:400]
+    bad = _bad_numbers(text, VERIFY_DATA)
+    return {"text": text, "ok": bool(text.strip()) and not bad, "bad": bad, "checked": len(_nums(text)), "empty": not text.strip()}
+
+
 def verify_trial():
     """AI 없이 숫자 검증기만 시험한다. 문장은 우리가 만든 예시이고, 판정은 실제 검증기가 한다."""
-    data = {"participants": 320, "completed": 240, "completion_rate": 75.0, "top_dropoff": "먹거리 장터", "satisfaction": 4.2}
+    data = VERIFY_DATA
     cases = [
         ("집계값을 그대로 인용", "참여 320명 중 240명이 완주하여 완주율은 75.0%임. 이탈이 가장 많은 거점은 먹거리 장터임."),
         ("없는 숫자를 지어냄", "참여 320명 중 240명이 완주하여 완주율은 82%임. 만족도는 4.8점으로 매우 높음."),

@@ -522,6 +522,12 @@ def verify_demo():
     return ai.verify_trial()
 
 
+@app.post("/api/verify-text")
+def verify_text(body: dict):
+    """입력한 문장의 숫자를 시험용 집계값과 대조 (AI 호출 없음)."""
+    return ai.verify_text(str(body.get("text", "")))
+
+
 @app.get("/api/health")
 def health():
     p = ai.llm_provider()
