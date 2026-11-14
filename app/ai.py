@@ -19,12 +19,37 @@ def _numbers_in(obj):
     return _nums(json.dumps(obj, ensure_ascii=False))
 
 
-def _grounded(text, data):
+def _bad_numbers(text, data):
     allowed = _numbers_in(data) | set(range(0, 11))  # 서수·개수 같은 작은 수 허용
-    bad = _nums(text) - allowed
+    bad = sorted(_nums(text) - allowed)
     if bad:
-        print("LLM grounding rejected numbers:", sorted(bad)[:10])
-    return not bad
+        print("LLM grounding rejected numbers:", bad[:10])
+    return bad
+
+
+def _grounded(text, data):
+    return not _bad_numbers(text, data)
+
+
+def _draft(system, data, template, use_llm=True):
+    """AI 문장을 쓰고 숫자를 대조한다. 결과와 함께 '왜 이 문장이 나왔는지'를 돌려준다.
+    reason: None(AI 문장 통과) / no_llm(AI 미연결) / skipped(예비 경로) / rejected(숫자 불일치로 폐기) / error(AI 장애)"""
+    reason, rejected = None, []
+    if not use_llm:
+        reason = "skipped"
+    elif not llm_provider():
+        reason = "no_llm"
+    else:
+        try:
+            text = _call_llm(system, data)
+            rejected = _bad_numbers(text, data) if text else []
+            if text and not rejected:
+                return {"source": "llm", "text": text, "reason": None, "rejected": []}
+            reason = "rejected" if text else "error"
+        except Exception as e:  # 시연 중 API 장애가 나도 화면은 유지
+            print("LLM error:", e)
+            reason = "error"
+    return {"source": "template", "text": template(), "reason": reason, "rejected": rejected[:10]}
 
 
 GH_MODEL = os.getenv("GH_MODEL", "openai/gpt-4.1-mini")
@@ -117,13 +142,7 @@ def write_report(festival, stats, comparison=None, use_llm=True):
         data["changes"] = {k: diff(comparison.get(k + "_prev"), comparison.get(k + "_cur"))
                            for k in ("visitors", "completion", "satisfaction", "revisit", "crowd")}
         data["changes"]["checkpoints"] = {c["name"]: c["change"] for c in comparison["checkpoints"]}
-    try:
-        text = _call_llm(REPORT_SYSTEM, data) if use_llm else None
-        if text and _grounded(text, data):
-            return {"source": "llm", "text": text}
-    except Exception as e:  # 시연 중 API 장애가 나도 화면은 유지
-        print("LLM error:", e)
-    return {"source": "template", "text": _template_report(festival, stats, comparison)}
+    return _draft(REPORT_SYSTEM, data, lambda: _template_report(festival, stats, comparison), use_llm)
 
 
 def explain_design(design):
@@ -168,10 +187,4 @@ def _template_proposal(b):
 
 
 def write_proposal(basis, use_llm=True):
-    try:
-        text = _call_llm(PROPOSAL_SYSTEM, {"basis": basis}) if use_llm else None
-        if text and _grounded(text, basis):
-            return {"source": "llm", "text": text}
-    except Exception as e:
-        print("LLM error:", e)
-    return {"source": "template", "text": _template_proposal(basis)}
+    return _draft(PROPOSAL_SYSTEM, {"basis": basis}, lambda: _template_proposal(basis), use_llm)
