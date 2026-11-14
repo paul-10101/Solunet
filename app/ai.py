@@ -95,7 +95,11 @@ def _call_llm(system, payload):
             timeout=60,
         )
         r.raise_for_status()
-        return r.json()["choices"][0]["message"]["content"]
+        try:
+            return r.json()["choices"][0]["message"]["content"]
+        except Exception:
+            ct = r.headers.get("content-type", "")
+            raise RuntimeError(f"HTTP {r.status_code} 응답이 JSON 아님 ({ct}, {len(r.content)}바이트): {(r.text or '')[:200]!r}")
     if provider != "anthropic":
         return None
     key = os.getenv("ANTHROPIC_API_KEY")
