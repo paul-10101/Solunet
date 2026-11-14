@@ -607,6 +607,11 @@ def my_page():
     return _page("my.html")
 
 
+@app.get("/sim")
+def sim_page():
+    return _page("sim.html")
+
+
 @app.get("/demo")
 def demo_page():
     return _page("demo.html")
