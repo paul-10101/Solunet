@@ -3,125 +3,160 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solunet — 행사장 숫자를 QR로 모으고, 몰리는 곳을 안내합니다</title>
-<meta name="description" content="행사 대행사를 위한 현장 데이터 도구. 스탬프 QR로 거점별 방문·설문을 모으고, 몰리는 거점을 알려 주고, 결과보고서 초안까지 만듭니다. 예비 창업팀이 시범 운영 중입니다.">
+<title>Solunet — 축제 현장을 QR 하나로 집계하고 보고서까지</title>
+<meta name="description" content="스탬프 QR로 거점별 방문·설문을 실시간 집계하고, 몰리는 곳은 분산 안내하고, 공고문이 요구하는 결과보고서 초안까지 만드는 행사 대행사용 현장 데이터 서비스.">
+<meta property="og:title" content="Solunet — 축제 현장을 QR 하나로 집계하고 보고서까지">
+<meta property="og:description" content="실시간 집계, 분산 안내, 결과보고서 초안, 회차 비교. 앱 설치·가입 없이 QR만 찍으면 됩니다.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-:root{--paper:#F8FAFC;--ink:#0F172A;--grid:#E2E8F0;--route:#2563EB;--route-dark:#1E40AF;--sign:#F59E0B;--muted:#64748B;--line:#CBD5E1;--soft:#EFF6FF;--hot:#DC2626;--good:#15803D}
+:root{--paper:#F8FAFC;--ink:#0F172A;--ink2:#1E293B;--grid:#E2E8F0;--route:#2563EB;--route-dark:#1E40AF;--sky:#7DD3FC;--sign:#F59E0B;--muted:#64748B;--line:#CBD5E1}
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;scroll-padding-top:76px}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
 body{font-family:"Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;color:var(--ink);background:var(--paper);line-height:1.7;font-size:17px;word-break:keep-all;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
 a{color:inherit}
-:focus-visible{outline:3px solid var(--sign);outline-offset:3px;border-radius:2px}
-.wrap{max-width:1160px;margin:0 auto;padding:0 28px}
-.skip{position:absolute;left:-999px;top:8px;background:var(--ink);color:#fff;padding:8px 14px;border-radius:6px;z-index:50}.skip:focus{left:8px}
+:focus-visible{outline:3px solid var(--sign);outline-offset:3px;border-radius:3px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.skip{position:absolute;left:-999px;top:8px;background:#fff;color:var(--ink);padding:8px 14px;border-radius:6px;z-index:60}.skip:focus{left:8px}
 
 /* 상단바 */
-.bar{position:sticky;top:0;z-index:30;background:rgba(248,250,252,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--grid)}
-.bar .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
-.logo{font-weight:900;font-size:20px;letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center;gap:9px}
-.logo i{width:11px;height:11px;background:var(--route);display:block}
-.bar nav{display:flex;align-items:center;gap:26px;font-size:15px}
-.bar nav a{text-decoration:none;color:var(--muted)}.bar nav a:hover{color:var(--ink)}
-.bar nav a.cta{color:#fff;background:var(--route);padding:9px 16px;border-radius:6px;font-weight:500}.bar nav a.cta:hover{background:var(--route-dark)}
+.bar{position:sticky;top:0;z-index:40;background:rgba(15,23,42,.96);backdrop-filter:blur(8px);color:#fff}
+.bar .wrap{display:flex;align-items:center;justify-content:space-between;height:66px;gap:16px}
+.logo{font-weight:900;font-size:21px;letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center;gap:9px}
+.logo i{width:12px;height:12px;background:var(--route);display:block;box-shadow:5px 5px 0 var(--sign)}
+.bar nav{display:flex;align-items:center;gap:28px;font-size:15px}
+.bar nav a{text-decoration:none;color:#CBD5E1}.bar nav a:hover{color:#fff}
+.bar nav a.cta{color:#fff;background:var(--route);padding:9px 18px;border-radius:6px;font-weight:500}.bar nav a.cta:hover{background:#3B82F6}
 
-/* 버튼 */
-.btn{display:inline-block;font:500 16px/1 "Noto Sans KR",sans-serif;padding:15px 22px;border-radius:6px;border:2px solid var(--route);background:var(--route);color:#fff;text-decoration:none;cursor:pointer}
-.btn:hover{background:var(--route-dark);border-color:var(--route-dark)}
-.btn.line{background:transparent;color:var(--route)}.btn.line:hover{background:var(--soft)}
+.btn{display:inline-block;font:500 16px/1 "Noto Sans KR",sans-serif;padding:16px 26px;border-radius:7px;border:2px solid var(--route);background:var(--route);color:#fff;text-decoration:none;cursor:pointer}
+.btn:hover{background:#3B82F6;border-color:#3B82F6}
+.btn.ghost{background:transparent;border-color:#475569;color:#fff}.btn.ghost:hover{background:#1E293B}
+.btn.line{background:transparent;color:var(--route)}.btn.line:hover{background:#EFF6FF}
 .btn:disabled{opacity:.55;cursor:default}
 
-h1{font-size:50px;line-height:1.22;letter-spacing:-.045em;font-weight:900}
-h2{font-size:34px;line-height:1.3;letter-spacing:-.035em;font-weight:900;margin-bottom:14px}
-h3{font-size:19px;line-height:1.4;letter-spacing:-.02em;font-weight:700;margin-bottom:8px}
-.lead{font-size:19px;color:#334155;max-width:34em}
-.muted{color:var(--muted)}
-section{padding:92px 0}
+h1{font-size:54px;line-height:1.2;letter-spacing:-.045em;font-weight:900}
+h2{font-size:36px;line-height:1.3;letter-spacing:-.04em;font-weight:900;margin-bottom:14px}
+h3{font-size:21px;line-height:1.4;letter-spacing:-.025em;font-weight:700;margin-bottom:8px}
+section{padding:96px 0}
+.sub{color:var(--muted);font-size:18px;max-width:40em;margin-bottom:48px}
 .tint{background:#fff;border-top:1px solid var(--grid);border-bottom:1px solid var(--grid)}
-.sub{color:var(--muted);max-width:38em;margin-bottom:44px}
 
-/* 첫 화면 */
-.hero{padding:64px 0 76px}
-.hero .wrap{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:52px;align-items:center}
-.hero .lead{margin:22px 0 30px}
-.act{display:flex;gap:12px;flex-wrap:wrap}
-.honest{margin-top:22px;font-size:14px;color:var(--muted);max-width:32em}
-.shot{margin:0}
-.shot img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;box-shadow:0 18px 40px -22px rgba(15,23,42,.35)}
-.shot figcaption{font-size:13px;color:var(--muted);margin-top:10px}
+/* 히어로 */
+.hero{background:var(--ink);color:#fff;padding:72px 0 0;overflow:hidden}
+.hero .top{max-width:760px}
+.hero h1 em{font-style:normal;color:var(--sky)}
+.hero p.lead{font-size:20px;color:#CBD5E1;margin:24px 0 34px;max-width:36em}
+.hero .act{display:flex;gap:12px;flex-wrap:wrap}
+.facts{display:flex;gap:28px;flex-wrap:wrap;margin-top:34px;font-size:15px;color:#94A3B8;list-style:none}
+.facts li::before{content:"";display:inline-block;width:8px;height:8px;background:var(--sign);margin-right:9px}
+.stage{position:relative;margin-top:56px;padding-bottom:0}
+.frame{background:#fff;border-radius:12px 12px 0 0;border:1px solid #334155;border-bottom:0;box-shadow:0 -10px 60px -20px rgba(37,99,235,.45);overflow:hidden}
+.frame .dots{display:flex;gap:7px;padding:11px 14px;background:#E2E8F0;border-bottom:1px solid var(--line)}
+.frame .dots i{width:10px;height:10px;border-radius:50%;background:#94A3B8}
+.frame img{display:block;width:100%;height:auto}
+.stage .phone{position:absolute;left:0;bottom:0;width:230px;z-index:2}
+.stage .frame{margin-left:214px}
 
-/* 하는 일 */
-.three{display:grid;grid-template-columns:repeat(3,1fr);gap:40px}
-.three>div{border-top:3px solid var(--ink);padding-top:18px}
-.three p{color:#334155;font-size:16px}
-.three small{display:block;margin-top:12px;font-size:14px;color:var(--muted)}
+/* 폰 */
+.phone{background:#0B1220;border-radius:30px 30px 0 0;padding:10px 10px 0;border:1px solid #334155;box-shadow:0 20px 50px -18px rgba(0,0,0,.55)}
+.phone img{display:block;width:100%;height:auto;border-radius:22px 22px 0 0}
+.tag{display:inline-block;font-size:12px;color:var(--muted);margin-top:12px}
+.hero .tag{color:#94A3B8;margin:10px 0 18px}
 
-/* 방법 (순서가 있는 내용) */
-.steps{list-style:none;counter-reset:s;display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:8px;background:#fff}
-.steps li{counter-increment:s;padding:28px 26px;border-left:1px solid var(--grid)}
-.steps li:first-child{border-left:0}
-.steps li::before{content:counter(s);display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--route);color:#fff;font-weight:700;font-size:15px;margin-bottom:14px}
+/* 공고→기능 */
+.map{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:17px}
+.map th,.map td{padding:18px 22px;text-align:left;border-bottom:1px solid var(--grid);vertical-align:top}
+.map thead th{background:var(--ink);color:#CBD5E1;font-weight:500;font-size:14px}
+.map tbody th{font-weight:700;width:30%}
+.map td b{color:var(--route-dark)}
+.map tr:last-child th,.map tr:last-child td{border-bottom:0}
+.basis{margin-top:20px;font-size:14px;color:var(--muted)}
+
+/* 기능 행 */
+.feat{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:56px;align-items:center}
+.feat+.feat{margin-top:96px}
+.feat.rev{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}.feat.rev .txt{order:2}
+.feat .txt p{color:#334155;margin-bottom:14px}
+.feat ul{list-style:none;margin-top:18px;display:grid;gap:9px}
+.feat li{padding-left:22px;position:relative;font-size:16px;color:#334155}
+.feat li::before{content:"";position:absolute;left:0;top:.7em;width:9px;height:9px;background:var(--route)}
+.kicker{display:inline-block;font-size:14px;font-weight:700;color:var(--route);margin-bottom:10px}
+.feat .frame{border-radius:12px;border-bottom:1px solid #94A3B8;box-shadow:0 24px 50px -28px rgba(15,23,42,.5);border-color:var(--line)}
+.note{margin-top:18px;padding:14px 18px;background:#fff;border-left:4px solid var(--sign);font-size:15px;color:#334155}
+
+/* 참가자 */
+.pp{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:72px;align-items:center}
+.pp .phone{width:300px;margin:0 auto}
+.langs{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.langs span{padding:6px 16px;border:1px solid var(--line);border-radius:999px;font-size:15px;background:#fff}
+
+/* 절차 */
+.steps{list-style:none;counter-reset:s;display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.steps li{counter-increment:s;border-top:3px solid var(--ink);padding-top:20px}
+.steps li::before{content:counter(s);display:block;font-size:44px;font-weight:900;color:var(--route);line-height:1;margin-bottom:12px;letter-spacing:-.04em}
 .steps p{font-size:16px;color:#334155}
 
-/* 운영자 화면 */
-.ops{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:48px;align-items:start}
-.ops dl{display:grid;gap:22px}
-.ops dt{font-weight:700;font-size:17px}
-.ops dd{color:#334155;font-size:16px;margin-top:2px}
-.limits{margin-top:28px;padding:18px 20px;border-left:4px solid var(--sign);background:#FFFBEB;font-size:15px;color:#422006}
-
 /* 가격 */
-.tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:16px}
-.tbl th,.tbl td{padding:15px 18px;text-align:left;border-bottom:1px solid var(--grid);vertical-align:top}
-.tbl thead th{font-size:14px;color:var(--muted);font-weight:500;background:#F1F5F9}
+.tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:17px}
+.tbl th,.tbl td{padding:17px 22px;text-align:left;border-bottom:1px solid var(--grid);vertical-align:top}
+.tbl thead th{font-size:14px;color:#CBD5E1;font-weight:500;background:var(--ink)}
 .tbl tbody th{font-weight:700}
-.tbl td.n{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
-.tbl tr.free td,.tbl tr.free th{background:var(--soft)}
+.tbl td.n{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;font-size:19px}
+.tbl tr.pick th,.tbl tr.pick td{background:#EFF6FF}
 .tbl tr:last-child th,.tbl tr:last-child td{border-bottom:0}
-.tbl small{display:block;color:var(--muted);font-weight:400;font-size:13px}
-.pricenote{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:28px}
-.pricenote p{font-size:15px;color:#334155}
-.pricenote b{color:var(--ink)}
-.status{margin-top:22px;font-size:14px;color:var(--muted)}
+.tbl small{display:block;color:var(--route-dark);font-weight:500;font-size:13px}
 .scroll{overflow-x:auto}
+.pn{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:32px}
+.pn div{padding-top:16px;border-top:3px solid var(--ink)}
+.pn h3{font-size:18px}.pn p{font-size:16px;color:#334155}
+.pfoot{margin-top:22px;font-size:14px;color:var(--muted)}
 
 /* FAQ */
-.faq{max-width:820px}
+.faq{max-width:840px}
 .faq details{border-top:1px solid var(--line)}.faq details:last-child{border-bottom:1px solid var(--line)}
-.faq summary{cursor:pointer;list-style:none;padding:20px 40px 20px 0;font-weight:500;font-size:18px;position:relative}
+.faq summary{cursor:pointer;list-style:none;padding:22px 44px 22px 0;font-weight:500;font-size:19px;position:relative}
 .faq summary::-webkit-details-marker{display:none}
-.faq summary::after{content:"+";position:absolute;right:6px;top:16px;font-size:26px;color:var(--route);font-weight:400}
+.faq summary::after{content:"+";position:absolute;right:6px;top:17px;font-size:28px;color:var(--route);font-weight:400}
 .faq details[open] summary::after{content:"−"}
-.faq details p{padding:0 40px 22px 0;color:#334155;font-size:16px}
+.faq details p{padding:0 44px 24px 0;color:#334155;font-size:17px}
 
-/* 팀·상담 */
-.end{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:start}
-.team dl{display:grid;gap:16px;margin-top:22px}
-.team dt{font-weight:700}.team dd{color:#334155;font-size:16px}
-.team .state{margin-top:26px;padding:16px 18px;background:#fff;border:1px solid var(--line);border-radius:8px;font-size:15px;color:#334155}
-form{background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px}
+/* 팀 */
+.team{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+.team div{border-top:3px solid var(--ink);padding-top:16px}
+.team p{font-size:16px;color:#334155}
+
+/* 문의 */
+.contact{background:var(--ink);color:#fff}
+.contact .end{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:64px;align-items:start}
+.contact .sub{color:#94A3B8;margin-bottom:0}
+.contact ul{margin-top:26px;list-style:none;display:grid;gap:10px;color:#CBD5E1;font-size:16px}
+.contact li::before{content:"";display:inline-block;width:8px;height:8px;background:var(--sign);margin-right:10px}
+form{background:#fff;color:var(--ink);border-radius:12px;padding:32px}
 form label{display:block;font-size:14px;color:#334155;font-weight:500;margin-bottom:16px}
-form input[type=text],form input[type=date],form textarea{width:100%;margin-top:6px;font:400 16px "Noto Sans KR",sans-serif;padding:11px 12px;border:1px solid #94A3B8;border-radius:6px;background:#fff;color:var(--ink)}
+form input[type=text],form input[type=date],form textarea{width:100%;margin-top:6px;font:400 16px "Noto Sans KR",sans-serif;padding:12px;border:1px solid #94A3B8;border-radius:6px;background:#fff;color:var(--ink)}
 form textarea{resize:vertical}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 form .agree{display:flex;gap:10px;align-items:flex-start;font-weight:400;color:var(--muted);font-size:14px}
 form .agree input{margin-top:5px;width:18px;height:18px;flex:none}
-#msg{margin-top:12px;font-size:15px;min-height:1.5em}#msg.err{color:#B91C1C}
-footer{padding:32px 0 44px;border-top:1px solid var(--grid);font-size:14px;color:var(--muted)}
+form .btn{width:100%;padding:17px}
+#msg{margin-top:12px;font-size:15px;min-height:1.5em;color:var(--muted)}#msg.err{color:#B91C1C}
+footer{background:#0B1220;color:#94A3B8;padding:30px 0 40px;font-size:14px}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer b{color:#fff}
 
-@media (max-width:900px){
-  h1{font-size:36px}h2{font-size:27px}section{padding:64px 0}.hero{padding:40px 0 56px}
-  .hero .wrap,.ops,.end{grid-template-columns:1fr;gap:34px}
-  .three{grid-template-columns:1fr;gap:28px}
-  .steps{grid-template-columns:1fr}.steps li{border-left:0;border-top:1px solid var(--grid)}.steps li:first-child{border-top:0}
-  .pricenote{grid-template-columns:1fr}
+@media (max-width:960px){
+  h1{font-size:38px}h2{font-size:28px}section{padding:68px 0}.hero{padding:44px 0 0}
+  .hero p.lead{font-size:18px}
+  .stage .phone{position:relative;left:auto;width:200px;margin:0 auto -1px}
+  .stage .frame{margin:24px 0 0;display:none}
+  .feat,.feat.rev,.pp,.contact .end{grid-template-columns:1fr;gap:30px}
+  .feat.rev .txt{order:0}.feat+.feat{margin-top:64px}
+  .steps,.team,.pn{grid-template-columns:1fr}
   .bar nav a:not(.cta){display:none}
-  .g2{grid-template-columns:1fr}
-  .wrap{padding:0 20px}
+  .g2{grid-template-columns:1fr}.wrap{padding:0 20px}
+  .map th,.map td,.tbl th,.tbl td{padding:14px}.map tbody th{width:auto}
 }
 </style>
 </head>
@@ -130,118 +165,147 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 <header class="bar"><div class="wrap">
   <a class="logo" href="/" aria-label="Solunet 처음으로"><i></i>Solunet</a>
   <nav aria-label="주요 메뉴">
-    <a href="#what">하는 일</a><a href="#ops">운영자 화면</a><a href="#price">가격</a><a href="#faq">질문</a>
-    <a class="cta" href="#contact">상담 요청</a>
+    <a href="#features">기능</a><a href="#visitor">참가자 화면</a><a href="#price">가격</a><a href="#faq">질문</a>
+    <a class="cta" href="#contact">도입 문의</a>
   </nav>
 </div></header>
 
 <main id="main">
 <section class="hero" aria-labelledby="h1"><div class="wrap">
+  <div class="top">
+    <h1 id="h1">축제 현장을 QR 하나로 집계하고, <em>보고서까지</em> 끝냅니다</h1>
+    <p class="lead">스탬프 QR로 거점별 방문과 설문을 실시간으로 모으고, 몰리는 곳은 한산한 곳으로 안내하고, 공고문이 요구하는 결과보고서 초안까지 만들어 드립니다.</p>
+    <div class="act"><a class="btn" href="#contact">도입 문의</a><a class="btn ghost" href="/demo">시연 보기 (1분)</a></div>
+    <ul class="facts"><li>앱 설치·가입 없음</li><li>참가자 개인정보 수집 없음</li><li>한국어·English·日本語·中文</li></ul>
+  </div>
+  <div class="stage">
+    <div class="phone"><img src="/img/p-phone.png" width="780" height="1420" alt="참가자 휴대폰 화면: 입구 안내소 스탬프 완료, 다음 추천 거점으로 먹거리 장터 안내"></div>
+    <div class="frame"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+      <img src="/img/p-collect.png" width="1100" height="628" alt="대행사 운영자 화면: 참여자 320명, 완주율 50.0%, 만족도 3.8, 거점별 방문 수 막대 그래프"></div>
+  </div>
+</div></section>
+
+<section class="tint" id="features" aria-labelledby="h-map"><div class="wrap">
+  <h2 id="h-map">공고문이 요구하는 일이 그대로 기능입니다</h2>
+  <p class="sub">입찰 공고와 과업지시서에서 반복해서 요구하는 항목을 행사 중에 모읍니다.</p>
+  <div class="scroll"><table class="map">
+    <caption style="position:absolute;left:-999px">공고문 요구 사항과 솔루넷 기능</caption>
+    <thead><tr><th scope="col">공고문이 요구하는 것</th><th scope="col">솔루넷이 하는 일</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">관람객 수 집계</th><td>거점마다 붙인 QR을 찍는 순간 집계합니다. <b>거점별 방문, 완주율, 이탈 거점</b>을 실시간으로 봅니다.</td></tr>
+      <tr><th scope="row">만족도 조사</th><td>완주한 참가자에게 그 자리에서 설문을 받습니다. 응답은 곧바로 집계됩니다.</td></tr>
+      <tr><th scope="row">동선·인파 관리</th><td>몰리는 거점을 감지해 한산한 거점을 추천하고, 운영자에게 <b>보조 인력 이동</b>을 제안합니다.</td></tr>
+      <tr><th scope="row">결과보고서</th><td>집계값으로 <b>결과보고서 초안</b>을 쓰고, 문장 속 숫자를 집계와 대조합니다.</td></tr>
+      <tr><th scope="row">다음 회차 제안</th><td>이전 회차와 같은 기준으로 비교하고, 다음 제안서 초안의 출발점을 만듭니다.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="basis">울산공업축제, 양동통맥축제, 안산 겨울 빛의 나라, 행정안전부 신년인사회, 태백산 눈축제 등 실제 입찰 공고의 과업을 기준으로 설계했습니다.</p>
+</div></section>
+
+<section aria-labelledby="h-f1"><div class="wrap">
+  <div class="feat">
+    <div class="txt"><span class="kicker">실시간 집계</span>
+      <h2 id="h-f1" style="font-size:32px">찍는 순간, 운영자 화면에 올라옵니다</h2>
+      <p>참가자가 거점 QR을 찍으면 방문이 바로 기록됩니다. 엑셀로 정리하거나 종이 설문을 옮겨 적을 필요가 없습니다.</p>
+      <ul><li>참여자, 완주율, 만족도, 설문 응답을 한 화면에서 확인</li><li>거점별 방문 수와 다음 거점으로 가장 많이 빠지는 곳 표시</li><li>기록은 CSV로 내려받아 발주처 양식에 붙일 수 있음</li></ul></div>
+    <div><div class="frame"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><img src="/img/p-collect.png" width="1100" height="628" loading="lazy" alt="운영자 화면: 거점별 방문 수 막대 그래프와 핵심 지표"></div><span class="tag">예시 데이터 화면</span></div>
+  </div>
+
+  <div class="feat rev">
+    <div class="txt"><span class="kicker">분산 유도</span>
+      <h2 style="font-size:32px">한 곳이 붐비면 한산한 곳으로 안내합니다</h2>
+      <p>예상보다 많이 몰린 거점을 감지하면 참가자 화면에 한산한 거점을 추천하고, 운영자에게는 보조 인력 이동을 제안합니다. 행정안전부 지역축제장 안전관리 매뉴얼이 제시하는 인파 분산, 동선 분산, 실시간 인파 안내, 안전요원 재배치 방향에 맞춘 기능입니다.</p>
+      <ul><li>추천을 받은 참가자가 실제로 찍은 비율(수락률)을 기록</li><li>켜지고 꺼진 시각과 거점을 기록으로 남김</li></ul>
+      <p class="note">혼잡 안내 기능이며 안전 통제 장치를 대신하지 않습니다. 법정 배치 인력은 줄이지 않고, 보조 인력의 위치만 제안합니다.</p></div>
+    <div><div class="frame"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><img src="/img/p-spread.png" width="1100" height="473" loading="lazy" alt="분산 유도 화면: 메인 무대 36명으로 혼잡 표시, 참가자 폰에는 먹거리 장터 추천, 운영자에게 보조 인력 2명 이동 제안"></div><span class="tag">예시 데이터 화면</span></div>
+  </div>
+
+  <div class="feat">
+    <div class="txt"><span class="kicker">결과보고서</span>
+      <h2 style="font-size:32px">기록이 그대로 보고서 초안이 됩니다</h2>
+      <p>숫자는 코드가 집계하고, 문장은 그 숫자로 씁니다. 문장 속 숫자가 집계와 다르면 그 문장을 버립니다. 보고서의 숫자를 누르면 근거와 계산식이 나옵니다.</p>
+      <ul><li>행사 개요, 방문객 집계, 이탈 분석, 설문 결과, 개선 제안 구성</li><li>행사 일시·장소 등 담당자가 채울 항목은 빈칸으로 표시</li><li>초안이므로 담당자가 검수한 뒤 제출</li></ul></div>
+    <div><div class="frame"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><img src="/img/p-report.png" width="1100" height="473" loading="lazy" alt="결과보고서 화면: 기록, 코드 집계, 문장 작성, 검증 4단계와 보고서 초안, 코드가 계산한 값 목록"></div><span class="tag">예시 데이터 화면</span></div>
+  </div>
+
+  <div class="feat rev">
+    <div class="txt"><span class="kicker">회차 비교</span>
+      <h2 style="font-size:32px">다음 회차는 이번 숫자에서 시작합니다</h2>
+      <p>같은 QR, 같은 거점, 같은 집계 기준으로 회차를 비교합니다. 참여자와 완주율, 만족도, 재방문 의사, 거점별 이탈률의 변화를 한눈에 봅니다.</p>
+      <ul><li>이탈이 줄어든 거점과 늘어난 거점 확인</li><li>지난 회차 숫자에서 시작하는 다음 제안서 초안</li></ul></div>
+    <div><div class="frame"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><img src="/img/p-compare.png" width="1100" height="378" loading="lazy" alt="회차 비교 화면: 1회차에서 2회차로 참여자 320명에서 321명, 완주율 34.7%에서 49.8%, 거점별 이탈률 변화"></div><span class="tag">예시 데이터 화면</span></div>
+  </div>
+</div></section>
+
+<section class="tint" id="visitor" aria-labelledby="h-v"><div class="wrap pp">
   <div>
-    <h1 id="h1">행사장의 숫자를 QR로 모으고, 몰리는 곳을 바로 알려 드립니다</h1>
-    <p class="lead">참가자는 앱 설치 없이 카메라로 찍기만 합니다. 대행사는 거점별 방문과 설문을 한 화면에서 보고, 결과보고서 초안까지 받습니다.</p>
-    <div class="act">
-      <a class="btn" href="/demo">시연 보기 (1분)</a>
-      <a class="btn line" href="#contact">상담 요청</a>
-    </div>
-    <p class="honest">화면은 예시 데이터로 만든 실제 운영 화면입니다. 실제 행사에서 운영한 실적은 아직 없습니다.</p>
+    <h2 id="h-v">참가자는 카메라로 찍기만 하면 됩니다</h2>
+    <p class="sub" style="margin-bottom:0">앱 설치도, 가입도, 로그인도 없습니다. 휴대폰 기본 카메라로 QR을 찍으면 웹 화면이 열리고, 진행 상황과 다음 거점이 바로 보입니다.</p>
+    <div class="langs" aria-label="지원 언어"><span>한국어</span><span>English</span><span>日本語</span><span>中文</span></div>
+    <p class="note" style="margin-top:28px">이름, 연락처, 위치는 기록하지 않습니다. 남는 것은 익명 방문 번호, 찍은 거점과 시각, 선택한 설문 응답입니다.</p>
   </div>
-  <figure class="shot">
-    <img src="/img/ops-hero.png" width="1000" height="596" alt="운영자 지도: 다섯 거점 중 메인 무대에 36명이 몰려 빨간색으로 표시되고, 나머지 거점은 파란색으로 표시된 화면">
-    <figcaption>운영자 지도 (예시 데이터). 예상보다 많이 몰린 거점은 빨강, 한산한 거점은 파랑으로 표시합니다.</figcaption>
-  </figure>
+  <div><div class="phone"><img src="/img/p-phone.png" width="780" height="1420" loading="lazy" alt="참가자 휴대폰 화면: 1 / 5 거점 진행, 다음 추천 거점, 거점 목록"></div></div>
 </div></section>
 
-<section class="tint" id="what" aria-labelledby="h-what"><div class="wrap">
-  <h2 id="h-what">행사 중에 하는 일은 세 가지입니다</h2>
-  <p class="sub">공고문과 과업지시서에서 자주 요구하는 관람객 집계, 만족도 조사, 결과보고서를 행사 중에 모읍니다.</p>
-  <div class="three">
-    <div><h3>거점별 방문과 설문을 집계합니다</h3>
-      <p>거점마다 붙인 QR을 찍으면 방문이 기록됩니다. 완주율, 이탈이 많은 거점, 설문 응답이 실시간으로 쌓입니다.</p>
-      <small>이름, 연락처, 위치는 기록하지 않습니다.</small></div>
-    <div><h3>몰리는 거점을 안내합니다</h3>
-      <p>예상보다 많이 몰린 거점이 생기면 한산한 거점을 참가자에게 추천하고, 운영자에게는 보조 인력 이동을 제안합니다.</p>
-      <small>안내와 제안입니다. 안전 통제 장치가 아닙니다.</small></div>
-    <div><h3>결과보고서 초안을 만듭니다</h3>
-      <p>숫자는 코드가 집계하고, 문장은 그 숫자로 씁니다. 문장 속 숫자가 집계와 다르면 그 문장을 버립니다.</p>
-      <small>초안입니다. 담당자가 검수한 뒤 제출하세요.</small></div>
-  </div>
-</div></section>
-
-<section aria-labelledby="h-how"><div class="wrap">
-  <h2 id="h-how">준비부터 결과까지 세 단계입니다</h2>
-  <p class="sub">대행사가 하는 일은 거점 이름을 적고 QR을 붙이는 것까지입니다.</p>
+<section aria-labelledby="h-steps"><div class="wrap">
+  <h2 id="h-steps">준비는 세 단계입니다</h2>
+  <p class="sub">대행사가 하는 일은 거점을 정하고 QR을 붙이는 것까지입니다.</p>
   <ol class="steps">
-    <li><h3>거점을 만들고 QR을 붙입니다</h3><p>행사 이름과 거점 이름을 입력하면 QR 인쇄 화면이 나옵니다.</p></li>
-    <li><h3>참가자가 카메라로 찍습니다</h3><p>앱 설치도 가입도 없습니다. 휴대폰 기본 카메라로 찍으면 웹 화면이 열립니다. 한국어, 영어, 중국어, 일본어를 지원합니다.</p></li>
-    <li><h3>운영자 화면과 보고서를 봅니다</h3><p>행사 중에는 실시간 집계를 보고, 끝나면 보고서 초안과 CSV를 받습니다. 다음 회차와 비교할 수 있습니다.</p></li>
+    <li><h3>거점을 만들고 QR을 붙입니다</h3><p>행사 이름과 거점 이름을 입력하면 QR 인쇄 화면이 나옵니다. 현장에는 인쇄한 QR을 붙이기만 하면 됩니다.</p></li>
+    <li><h3>참가자가 찍습니다</h3><p>행사 중에는 운영자 화면에서 집계와 혼잡 상황을 실시간으로 봅니다.</p></li>
+    <li><h3>끝나면 보고서를 받습니다</h3><p>결과보고서 초안과 CSV, 이전 회차와의 비교가 바로 준비됩니다.</p></li>
   </ol>
 </div></section>
 
-<section class="tint" id="ops" aria-labelledby="h-ops"><div class="wrap">
-  <h2 id="h-ops">몰림은 이렇게 판단하고, 이렇게 알려 줍니다</h2>
-  <p class="sub">기준을 숨기지 않고 화면에 그대로 적어 둡니다.</p>
-  <div class="ops">
-    <figure class="shot">
-      <img src="/img/ops.png" width="1100" height="1114" loading="lazy" alt="운영자 지도와 거점별 예상 대비 실제 표. 메인 무대는 예상 7.2명에 실제 36명으로 5배, 혼잡으로 표시되고, 보조 인력 2명 이동 제안이 아래에 나타남">
-      <figcaption>예시 데이터로 메인 무대에 36명이 몰리게 한 화면입니다.</figcaption>
-    </figure>
-    <div>
-      <dl>
-        <div><dt>어떻게 판단하나요</dt><dd>최근 10분 스캔 수를 거점 수로 나눠 예상값을 잡고, 실제가 1.5배 이상이면서 8명 이상이면 '혼잡'으로 봅니다. 한 번 켜지면 1.2배 아래로 내려와야 꺼집니다.</dd></div>
-        <div><dt>참가자에게는 무엇이 보이나요</dt><dd>아직 찍지 않은 거점 중 가장 한산한 곳이 추천 카드로 나타납니다. 따를지는 참가자가 정합니다.</dd></div>
-        <div><dt>운영자에게는 무엇이 보이나요</dt><dd>보조 인력 이동 제안이 나옵니다. 자동으로 실행되지 않고, 법정 배치 인력은 줄이지 않습니다.</dd></div>
-        <div><dt>효과는 어떻게 확인하나요</dt><dd>추천을 받은 사람이 실제로 그 거점을 찍은 비율(수락률)을 기록합니다.</dd></div>
-      </dl>
-      <p class="limits">기준값은 가정이며 첫 행사 기록으로 조정합니다. 효과는 아직 증명되지 않았고, 첫 행사에서 수락률을 측정하려고 합니다.</p>
-    </div>
-  </div>
-</div></section>
-
-<section id="price" aria-labelledby="h-price"><div class="wrap">
-  <h2 id="h-price">가격은 모두 공개합니다</h2>
-  <p class="sub">모든 플랜에 QR 스탬프, 실시간 집계, 설문, 결과보고서 초안, 회차 비교가 들어 있습니다. 행사 1건 기준이며 기간은 30일, 스탬프는 30개까지, 부가세 포함입니다.</p>
+<section class="tint" id="price" aria-labelledby="h-price"><div class="wrap">
+  <h2 id="h-price">가격을 모두 공개합니다</h2>
+  <p class="sub">모든 플랜에 QR 스탬프, 실시간 집계, 설문, 결과보고서 초안, 회차 비교가 들어 있습니다. 행사 1건, 30일, 스탬프 30개까지, 부가세 포함입니다.</p>
   <div class="scroll"><table class="tbl">
-    <caption class="sr" style="position:absolute;left:-999px">플랜별 가격</caption>
+    <caption style="position:absolute;left:-999px">플랜별 가격</caption>
     <thead><tr><th scope="col">플랜</th><th scope="col">동시 접속</th><th scope="col">가격</th><th scope="col">맞는 행사</th></tr></thead>
     <tbody>
       <tr><th scope="row">라이트</th><td>500명</td><td class="n">70만 원</td><td>대학 축제, 소규모 투어</td></tr>
-      <tr class="free"><th scope="row">스탠다드<small>첫 행사 무료</small></th><td>1,000명</td><td class="n">90만 원</td><td>지역 축제, 스탬프투어</td></tr>
+      <tr class="pick"><th scope="row">스탠다드<small>첫 행사 무료</small></th><td>1,000명</td><td class="n">90만 원</td><td>지역 축제, 스탬프투어</td></tr>
       <tr><th scope="row">프로</th><td>5,000명</td><td class="n">220만 원</td><td>시·군 대표 축제</td></tr>
       <tr><th scope="row">페스티벌</th><td>10,000명</td><td class="n">350만 원</td><td>광역 축제, 대형 박람회</td></tr>
     </tbody>
   </table></div>
-  <div class="pricenote">
-    <p><b>대행사 연간 구독.</b> 에이전시 베이직은 연 330만 원으로 스탠다드 행사 4건과 제안서 초안이 들어 있습니다(행사당 82.5만 원). 에이전시 프로는 연 800만 원으로 스탠다드 10건, 제안서 초안, 연간 회차 리포트가 들어 있습니다(행사당 80만 원). 5,000명 이상 행사는 구독 안에서 구간 차액만 더 냅니다.</p>
-    <p><b>현장 지원.</b> 행사 당일 현장 지원은 하루 70만 원이 추가됩니다. QR 부착과 운영자 화면 안내를 함께 합니다.</p>
+  <div class="pn">
+    <div><h3>대행사 연간 구독</h3><p>에이전시 베이직 연 330만 원: 스탠다드 행사 4건과 제안서 초안(행사당 82.5만 원). 에이전시 프로 연 800만 원: 스탠다드 10건, 제안서 초안, 연간 회차 리포트(행사당 80만 원). 5,000명 이상 행사는 구독 안에서 구간 차액만 더 냅니다.</p></div>
+    <div><h3>현장 지원</h3><p>행사 당일 현장 지원은 하루 70만 원이 추가됩니다. QR 부착과 운영자 화면 사용을 함께 안내합니다.</p></div>
   </div>
-  <p class="status">가격은 시범 운영 기준의 계획입니다. 지금은 결제를 받지 않으며, 세부 조건은 상담 후 정합니다.</p>
+  <p class="pfoot">세부 조건은 상담 후 확정합니다.</p>
 </div></section>
 
-<section class="tint" id="faq" aria-labelledby="h-faq"><div class="wrap">
+<section id="faq" aria-labelledby="h-faq"><div class="wrap">
   <h2 id="h-faq">도입 전에 많이 묻는 것</h2>
-  <p class="sub">모르는 것과 아직 못 한 것도 그대로 적었습니다.</p>
+  <p class="sub">대행사 담당자가 가장 많이 묻는 질문입니다.</p>
   <div class="faq">
     <details><summary>참가자가 앱을 설치해야 하나요?</summary><p>아니요. 휴대폰 기본 카메라로 QR을 찍으면 웹 화면이 열립니다. 가입이나 로그인도 없습니다.</p></details>
-    <details><summary>실제 행사에서 운영해 본 적이 있나요?</summary><p>아직 없습니다. 화면의 숫자는 모두 예시 데이터이고, 시뮬레이션은 보정하지 않은 추정 모델입니다. 첫 행사에서 실제 기록을 쌓아 기준값을 조정할 계획입니다.</p></details>
-    <details><summary>분산 안내로 사고를 막을 수 있나요?</summary><p>그렇게 말씀드릴 수 없습니다. 몰리는 거점을 알리고 한산한 거점을 추천하는 안내 기능이며, 안전 관리를 대신하지 않습니다. 현장 안전은 기존 안전관리 계획과 인력이 맡아야 합니다.</p></details>
-    <details><summary>보고서 숫자가 틀리면 어떻게 되나요?</summary><p>숫자는 코드가 집계합니다. 문장 속 숫자가 집계와 맞지 않으면 그 문장을 버리고 문장 틀로 다시 씁니다. 결과보고서는 초안이므로 담당자 검수가 필요합니다.</p></details>
-    <details><summary>참가자 개인정보는 어떻게 다루나요?</summary><p>이름, 연락처, 위치는 기록하지 않습니다. 남는 것은 익명 방문 번호, 찍은 거점과 시각, 선택한 설문 응답입니다.</p></details>
+    <details><summary>참가자 개인정보는 어떻게 되나요?</summary><p>이름, 연락처, 위치는 받지 않습니다. 남는 것은 익명 방문 번호, 찍은 거점과 시각, 선택한 설문 응답뿐입니다.</p></details>
+    <details><summary>보고서 숫자가 틀리면 어떻게 되나요?</summary><p>숫자는 모두 코드가 집계합니다. 문장 속 숫자가 집계와 맞지 않으면 그 문장을 버리고 문장 틀로 다시 씁니다. 결과보고서는 초안이므로 담당자가 검수한 뒤 제출하세요.</p></details>
+    <details><summary>발주처에 그대로 낼 수 있나요?</summary><p>집계 기록은 CSV로 내려받아 발주처 양식에 붙일 수 있습니다. 보고서 초안에서 행사 일시, 장소, 주최·주관처럼 담당자가 채울 항목은 빈칸으로 표시됩니다.</p></details>
+    <details><summary>혼잡 안내가 안전 관리를 대신하나요?</summary><p>아니요. 몰리는 거점을 알리고 한산한 거점을 추천하는 안내 기능입니다. 현장 안전은 기존 안전관리 계획과 배치 인력이 맡습니다. 인력 이동도 제안만 하며 자동으로 실행되지 않습니다.</p></details>
     <details><summary>행사장 인터넷이 약하면요?</summary><p>참가자 휴대폰의 데이터 연결로 동작합니다. 연결이 불안정하면 다시 시도 안내가 나옵니다. 산간이나 지하 행사장은 미리 테스트 스캔을 해 보세요.</p></details>
-    <details><summary>결제는 어떻게 하나요?</summary><p>지금은 결제를 받지 않습니다. 상담을 남겨 주시면 일정과 조건을 먼저 이야기합니다.</p></details>
+    <details><summary>도입은 어떻게 시작하나요?</summary><p>아래 문의 폼에 행사 규모와 일정을 남겨 주세요. 연락드려 필요한 거점 수와 일정부터 정합니다.</p></details>
   </div>
 </div></section>
 
-<section id="contact" aria-labelledby="h-contact"><div class="wrap end">
+<section class="tint" aria-labelledby="h-team"><div class="wrap">
+  <h2 id="h-team">만든 사람들</h2>
+  <p class="sub">국립경국대학교 디지털ICT공학과 학생 두 명이 만들고 있습니다.</p>
   <div class="team">
-    <h2 id="h-contact">다음 행사 이야기를 들려 주세요</h2>
-    <p class="lead">규모와 일정만 알려 주셔도 됩니다. 남겨 주신 연락처로 팀이 직접 연락드립니다.</p>
-    <dl>
-      <div><dt>조바울</dt><dd>서비스 개발, 서버·인프라, AI 파이프라인</dd></div>
-      <div><dt>김태환</dt><dd>서비스 개발, 마케팅, 고객 응대</dd></div>
-      <div><dt>수상·참가 이력</dt><dd>SPARK 대상, 포항 MICE 최우수상, 부산 데이터 해커톤 DIVE 2026 본선 진출</dd></div>
-    </dl>
-    <p class="state">국립경국대학교 디지털ICT공학과 1학년 두 명이 만든 예비 창업팀입니다. 아직 사업자 등록 전이며, 시범 운영 단계입니다.</p>
+    <div><h3>조바울</h3><p>서비스 개발, 서버·인프라, AI 파이프라인</p></div>
+    <div><h3>김태환</h3><p>서비스 개발, 마케팅, 고객 응대</p></div>
+    <div><h3>수상·참가 이력</h3><p>SPARK 창업경진대회 대상, 포항 MICE 최우수상, 부산 데이터 해커톤 DIVE 2026 본선 진출</p></div>
+  </div>
+</div></section>
+
+<section class="contact" id="contact" aria-labelledby="h-contact"><div class="wrap end">
+  <div>
+    <h2 id="h-contact">다음 행사, 같이 준비해 보세요</h2>
+    <p class="sub">행사 규모와 일정만 알려 주셔도 됩니다. 남겨 주신 연락처로 팀이 직접 연락드립니다.</p>
+    <ul><li>거점 수와 QR 부착 위치 상담</li><li>공고문 요구 항목에 맞춘 보고서 구성</li><li>첫 행사는 스탠다드 플랜 무료</li></ul>
   </div>
   <form id="f" novalidate>
     <div class="g2">
@@ -254,16 +318,16 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
       <label>행사 날짜 (선택)<input type="date" name="when"></label>
     </div>
     <label>문의 내용 (선택)<textarea name="message" rows="4" maxlength="1000" placeholder="행사 규모, 일정, 궁금한 점"></textarea></label>
-    <label class="agree"><input type="checkbox" name="agree" required><span>입력한 연락처는 상담 연락에만 씁니다.</span></label>
-    <button class="btn" type="submit" id="go">상담 요청 보내기</button>
+    <label class="agree"><input type="checkbox" name="agree" required><span>입력한 연락처는 상담 연락에만 사용합니다.</span></label>
+    <button class="btn" type="submit" id="go">도입 문의 보내기</button>
     <p id="msg" role="status" aria-live="polite"></p>
   </form>
 </div></section>
 </main>
 
 <footer><div class="wrap">
-  <span><b style="color:var(--ink)">Solunet</b> · 행사 대행사를 위한 현장 데이터 도구 · 국립경국대학교</span>
-  <span><a href="/demo">시연</a> · <a href="/sim">시뮬레이션</a> · <a href="#price">가격</a></span>
+  <span><b>Solunet</b> · 행사 대행사를 위한 현장 데이터 서비스 · 국립경국대학교</span>
+  <span><a href="/demo">시연</a> · <a href="/sim">시뮬레이션</a> · <a href="#price">가격</a> · <a href="#faq">질문</a></span>
 </div></footer>
 
 <script>
@@ -279,7 +343,7 @@ f.onsubmit=async e=>{
     const r=await fetch('/api/inquiry',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({org:v('org'),name:v('name'),contact:v('contact'),festival:v('festival'),when:v('when'),message:v('message')})});
     if(!r.ok)return fail('보내지 못했습니다. 잠시 후 다시 시도해 주세요.');
-    f.innerHTML='<h3>상담 요청을 받았습니다</h3><p class="muted">남겨 주신 연락처로 솔루넷 팀이 연락드리겠습니다.</p>';
+    f.innerHTML='<h3>문의를 받았습니다</h3><p style="color:#64748B">남겨 주신 연락처로 솔루넷 팀이 연락드리겠습니다.</p>';
   }catch(err){fail('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.')}
 };
 </script>

@@ -40,13 +40,13 @@ def test_home2_page_served():
     from app.main import app
     c = TestClient(app)
     r = c.get("/home2")
-    assert r.status_code == 200 and "예비 창업팀" in r.text
-    assert c.get("/img/ops-hero.png").status_code == 200
+    assert r.status_code == 200 and "Solunet" in r.text
+    assert c.get("/img/p-collect.png").status_code == 200
 
 
 def test_root_is_new_home():
     from fastapi.testclient import TestClient
     from app.main import app
     c = TestClient(app)
-    assert "예비 창업팀" in c.get("/").text
+    assert "Solunet" in c.get("/").text
     assert c.get("/home-old").status_code == 200
