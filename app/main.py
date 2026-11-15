@@ -763,6 +763,11 @@ def demo2_page():
 
 @app.get("/demo")
 def demo_page():
+    return _page("demo2.html")
+
+
+@app.get("/demo-old")
+def demo_old_page():
     return _page("demo.html")
 
 
