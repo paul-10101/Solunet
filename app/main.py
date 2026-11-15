@@ -609,6 +609,16 @@ def verify_demo():
     return ai.verify_trial()
 
 
+@app.post("/api/verify/{fid}")
+def verify_report_text(fid: str, body: dict, x_admin_key: str = Header(default=""), x_event_key: str = Header(default="")):
+    """입력한 문장의 숫자를 이 행사의 실제 집계(보고서와 같은 입력)와 대조한다. AI 호출 없음."""
+    d = get_stats(fid, x_admin_key, x_event_key)
+    text = str(body.get("text", ""))[:400]
+    data = {"festival": d["festival"]["name"], "edition": d["festival"].get("edition"), "stats": d["current"], "comparison": d["comparison"]}
+    bad = ai._bad_numbers(text, data)
+    return {"text": text, "ok": bool(text.strip()) and not bad, "bad": bad, "checked": len(ai._nums(text)), "empty": not text.strip()}
+
+
 @app.post("/api/verify-text")
 def verify_text(body: dict):
     """입력한 문장의 숫자를 시험용 집계값과 대조 (AI 호출 없음)."""
@@ -734,6 +744,11 @@ def home2_page():
 @app.get("/spread")
 def spread_page():
     return _page("spread.html")
+
+
+@app.get("/demo2")
+def demo2_page():
+    return _page("demo2.html")
 
 
 @app.get("/demo")
