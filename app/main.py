@@ -736,9 +736,19 @@ def sim_page():
     return _page("sim.html")
 
 
+@app.get("/")
+def home_page():
+    return _page("index2.html")
+
+
 @app.get("/home2")
 def home2_page():
     return _page("index2.html")
+
+
+@app.get("/home-old")
+def home_old_page():
+    return _page("index.html")
 
 
 @app.get("/spread")
