@@ -726,6 +726,11 @@ def sim_page():
     return _page("sim.html")
 
 
+@app.get("/home2")
+def home2_page():
+    return _page("index2.html")
+
+
 @app.get("/spread")
 def spread_page():
     return _page("spread.html")
