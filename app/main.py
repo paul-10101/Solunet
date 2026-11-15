@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import ai, design, stats
+from . import ai, design, spread, stats
 from .store import make_store, now
 
 if os.getenv("SENTRY_DSN"):
@@ -88,6 +88,7 @@ class Settings(BaseModel):
     crowd_threshold: int = Field(default=30, ge=1, le=100000)  # 최근 구간 방문자가 이 수 이상이면 경고
     crowd_window_min: int = Field(default=10, ge=1, le=120)
     prize_name: str = Field(default="", max_length=40)         # 비우면 경품 기능을 쓰지 않는다
+    spread: bool = True                                        # 분산 유도(한산한 거점 추천) 사용 여부
     checkpoints: list[CpMeta] = Field(default_factory=list, max_length=40)
 
 
@@ -169,9 +170,19 @@ def _real(rows):
     return [r for r in rows if not str(r.get("session", "")).startswith("test")]  # 운영진 테스트 스캔 제외
 
 
+SPREAD_KINDS = ("rec", "spread_log")
+
+
 def _stats(f, edition):
-    resp = [r for r in _real(db.responses_for(f["id"], edition)) if r.get("kind") not in ("prize", "prize_redeem")]
-    return stats.compute_stats(f, _real(db.scans_for(f["id"], edition)), resp)
+    rows = _real(db.responses_for(f["id"], edition))
+    scans = _real(db.scans_for(f["id"], edition))
+    resp = [r for r in rows if r.get("kind") not in ("prize", "prize_redeem") + SPREAD_KINDS]
+    out = stats.compute_stats(f, scans, resp)
+    logs = [r for r in rows if r.get("kind") == "spread_log"]
+    recs = [r for r in rows if r.get("kind") == "rec"]
+    sp = spread.summarize(logs, recs, scans)
+    out["spread"] = {k: sp[k] for k in ("activations", "issued", "accepted", "rate")}
+    return out
 
 
 def _prizes(f, edition):
@@ -200,6 +211,30 @@ def _crowd(f):
     return {"window_min": win, "threshold": th, "checkpoints": rows, "alerts": [r for r in rows if r["level"] == "alert"]}
 
 
+def _spread(f):
+    """분산 유도 상태. 거점별 최근 N분 방문자 수 → 예상 대비 실제. 켜짐·꺼짐이 바뀌면 발동 기록을 남긴다."""
+    win = f.get("crowd_window_min", 10)
+    since = now() - timedelta(minutes=win)
+    recent = defaultdict(set)
+    for s in _real(db.scans_for(f["id"], f["edition"])):
+        try:
+            if datetime.fromisoformat(s["ts"]) >= since:
+                recent[s["checkpoint"]].add(s["session"])
+        except (ValueError, TypeError, KeyError):
+            continue
+    logs = [r for r in db.responses_for(f["id"], f["edition"]) if r.get("kind") == "spread_log"]
+    was = bool(logs) and max(logs, key=lambda r: r["ts"])["on"]
+    m = spread.measure(f["checkpoints"], {k: len(v) for k, v in recent.items()}, was)
+    enabled = f.get("spread", True)
+    m["enabled"], m["window_min"] = enabled, win
+    if not enabled:
+        m["active"], m["staff"] = False, []
+    if m["active"] != was:
+        db.add_response({"kind": "spread_log", "festival": f["id"], "edition": f["edition"], "on": m["active"],
+                         "hot": [r["name"] for r in m["rows"] if r["level"] == "hot"], "ts": now().isoformat()})
+    return m
+
+
 def _session_done(f, session):
     return sorted({s["checkpoint"] for s in db.scans_for(f["id"], f["edition"]) if s["session"] == session})
 
@@ -222,8 +257,37 @@ def post_scan(s: Scan):
         db.add_scan({"festival": f["id"], "checkpoint": cp["id"], "session": s.session, "event": s.event,
                      "edition": f["edition"], "ts": t.isoformat()})
     done = sorted({x["checkpoint"] for x in mine} | {cp["id"]})
+    rec, tickets = _recommend(f, s.session, cp["id"], set(done)), _tickets(f, s.session)
     return {"ok": True, "duplicate": recent, "checkpoint": {"id": cp["id"], "name": cp["name"]},
-            "done": done, "total": len(f["checkpoints"])}
+            "done": done, "total": len(f["checkpoints"]), "recommend": rec, "tickets": tickets}
+
+
+def _recommend(f, session, here, done):
+    """분산 유도가 켜져 있으면 방금 찍은 사람에게 한산한 거점을 하나 추천한다. 같은 곳에서 새로고침해도 같은 추천을 돌려준다."""
+    if len(done) >= len(f["checkpoints"]):
+        return None
+    st = _spread(f)
+    old = next((r for r in db.responses_for(f["id"], f["edition"])
+                if r.get("kind") == "rec" and r["session"] == session and r["from"] == here), None)
+    if old:
+        return {"id": old["to"], "name": next((c["name"] for c in f["checkpoints"] if c["id"] == old["to"]), old["to"]),
+                "name_en": next((c.get("name_en", "") for c in f["checkpoints"] if c["id"] == old["to"]), ""), "ticket": 1}
+    if not st["active"]:
+        return None
+    pick = spread.recommend(st["rows"], done)
+    if not pick:
+        return None
+    db.add_response({"kind": "rec", "festival": f["id"], "edition": f["edition"], "session": session,
+                     "from": here, "to": pick["id"], "ticket": 1, "ts": now().isoformat()})
+    cp = next(c for c in f["checkpoints"] if c["id"] == pick["id"])
+    return {"id": cp["id"], "name": cp["name"], "name_en": cp.get("name_en", ""), "ticket": 1}
+
+
+def _tickets(f, session):
+    """추천을 받고 실제로 그 거점을 찍은 횟수만큼 추첨권. 추첨 자체는 운영자가 이 기록으로 진행한다."""
+    recs = [r for r in db.responses_for(f["id"], f["edition"]) if r.get("kind") == "rec" and r["session"] == session]
+    mine = [x for x in db.scans_for(f["id"], f["edition"]) if x["session"] == session]
+    return spread.acceptance(recs, mine)["accepted"]
 
 
 @app.post("/api/exit-reason")
@@ -367,6 +431,7 @@ def put_settings(fid: str, q: Settings, x_admin_key: str = Header(default=""), x
     f = _festival(fid)
     _require_manage(f, x_admin_key, x_event_key)
     f["crowd_threshold"], f["crowd_window_min"], f["prize_name"] = q.crowd_threshold, q.crowd_window_min, q.prize_name.strip()
+    f["spread"] = q.spread
     meta = {m.id: m for m in q.checkpoints}
     for c in f["checkpoints"]:
         m = meta.get(c["id"])
@@ -399,7 +464,8 @@ def admin_logs(fid: str, x_admin_key: str = Header(default=""), x_event_key: str
     _require_manage(f, x_admin_key, x_event_key)
     names = {c["id"]: c["name"] for c in f["checkpoints"]}
     scans = sorted(db.scans_for(fid, f["edition"]), key=lambda s: s["ts"], reverse=True)
-    resp = sorted(db.responses_for(fid, f["edition"]), key=lambda r: r["ts"], reverse=True)
+    resp = sorted((r for r in db.responses_for(fid, f["edition"]) if r.get("kind") not in SPREAD_KINDS),
+                  key=lambda r: r["ts"], reverse=True)
     for x in scans + resp:
         if "checkpoint" in x:
             x["checkpoint_name"] = names.get(x["checkpoint"], x["checkpoint"])
@@ -437,6 +503,27 @@ def get_crowd(fid: str, x_admin_key: str = Header(default=""), x_event_key: str 
     f = _festival(fid)
     _guard(f, x_admin_key, x_event_key)
     return _crowd(f)
+
+
+@app.get("/api/spread/{fid}")
+def get_spread(fid: str, x_admin_key: str = Header(default=""), x_event_key: str = Header(default="")):
+    """운영자 지도용: 거점별 예상 대비 실제, 유도 켜짐 여부, 발동 기록, 인력 재배치 제안, 추천 수락률."""
+    f = _festival(fid)
+    _guard(f, x_admin_key, x_event_key)
+    st = _spread(f)
+    rows = db.responses_for(f["id"], f["edition"])
+    scans = _real(db.scans_for(f["id"], f["edition"]))
+    recs = [r for r in rows if r.get("kind") == "rec" and not str(r["session"]).startswith("test")]
+    logs = sorted((r for r in rows if r.get("kind") == "spread_log"), key=lambda r: r["ts"])
+    acc = spread.acceptance(recs, scans)
+    pos = {c["id"]: (c.get("x"), c.get("y")) for c in (f.get("layout") or {}).get("checkpoints", [])}
+    for r in st["rows"]:
+        r["x"], r["y"] = pos.get(r["id"], (None, None))
+    return {**st, "staff_text": [spread.staff_text(m) for m in st["staff"]],
+            "log": [{"ts": x["ts"], "on": x["on"], "hot": x.get("hot", [])} for x in logs[-20:]],
+            "activations": sum(1 for x in logs if x["on"]), "acceptance": acc,
+            "rules": {"on": spread.RATIO_ON, "off": spread.RATIO_OFF, "min_n": spread.MIN_N, "calm": spread.CALM_RATIO,
+                      "expected": "최근 구간 전체 스캔을 거점 수로 균등 배분 (가정)"}}
 
 
 @app.post("/api/proposal/{fid}")
@@ -615,6 +702,7 @@ def demo_crowd(cp: str = "stage", n: int = 36):
     for sess in seen[:max(1, min(n, 200))]:
         db.add_scan({"festival": DEMO_ID, "checkpoint": cp, "session": sess, "event": "visit",
                      "edition": f["edition"], "ts": t, "replay": True})
+    _spread(f)  # 켜짐이 바로 발동 기록에 남도록
     return {"ok": True, **_crowd(f)}
 
 
@@ -636,6 +724,11 @@ def my_page():
 @app.get("/sim")
 def sim_page():
     return _page("sim.html")
+
+
+@app.get("/spread")
+def spread_page():
+    return _page("spread.html")
 
 
 @app.get("/demo")
