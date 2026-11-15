@@ -153,7 +153,7 @@ REPORT_SYSTEM = (
     "2. 방문객 집계 결과: 참여, 완주, 완주율, 이탈률이 가장 높은 거점.\n"
     "3. 만족도 조사 결과: 설문 응답 수, 만족도·혼잡도·동선 편의 평균, 재방문 의사. 설문이 없으면 '조사 결과 없음'.\n"
     "4. 전 회차 대비 성과: comparison과 changes의 값. comparison이 없으면 '비교할 이전 회차 없음'.\n"
-    "5. 문제점 및 개선 방안: improvements의 각 항목(거점, 조치, 근거)을 문장으로."
+    "5. 문제점 및 개선 방안: improvements의 각 항목(거점, 조치, 근거)을 문장으로. stats.spread가 있고 발동·추천이 있으면 발동 횟수, 추천 건수, 수락 건수, 수락률을 한 문장으로 쓰되 사고 예방·안전 효과는 말하지 않는다."
 )
 
 DESIGN_SYSTEM = (
@@ -199,6 +199,10 @@ def _template_report(festival, stats, comparison, improvements=None):
         head = f"중도 이탈 사유는 '{k}' 응답이 {stats['exit_reasons'][k]}건으로 가장 많음. "
     else:
         head = ""
+    sp = stats.get("spread") or {}
+    if sp.get("activations") or sp.get("issued"):
+        head += (f"참가자 분산 유도는 {sp['activations']}회 작동하였고, 한산한 거점 추천 {sp['issued']}건 중 {sp['accepted']}건이 실제 방문으로 이어짐"
+                 + (f"(수락률 {sp['rate']}%)" if sp.get("rate") is not None else "") + ". ")
     lines.append("5. 문제점 및 개선 방안: " + head + " ".join(f"[{c['checkpoint']}] {c['evidence']}. 개선 방안: {c['action']}." for c in imp))
     return "\n".join(lines)
 

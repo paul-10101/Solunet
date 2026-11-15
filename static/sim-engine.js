@@ -17,27 +17,52 @@ class Sim {
     for (let i = 0; i < N; i++) { const u = rnd(); arr[i] = T * (c.pattern === 'early' ? u * u : c.pattern === 'peak' ? (u + rnd()) / 2 : u); }
     this.arr = arr.sort();
     this.st = new Uint8Array(N); this.cp = new Int16Array(N); this.tm = new Float64Array(N); this.pg = new Float32Array(N);
+    // 분산 유도(c.guide = { follow })를 켜면 추천을 받은 사람 일부가 정해진 순서 대신 한산한 거점으로 먼저 간다. 끄면 아래 필드는 쓰이지 않는다.
+    this.g = c.guide || null; this.rnd2 = rng(20261118);   // 추천 수락 여부는 별도 난수로 뽑아 켬/끔이 같은 도착 순서를 쓰게 한다
+    this.mask = new Int32Array(N); this.cnt = new Int16Array(N); this.tg = new Int16Array(N); this.pref = new Int16Array(N).fill(-1); this.tl = new Float64Array(N);
+    this.arr10 = c.cps.map(() => []); this.ah = new Int32Array(K); this.gIssued = 0; this.gFollowed = 0; this.gOnSec = 0; this.gActive = false;
     this.next = 0; this.left = 0; this.fin = 0; this.onsite = 0; this.peakOn = 0; this.peakOnT = 0;
     this.q = c.cps.map(() => []); this.qh = new Int32Array(K); this.serving = new Int32Array(K);
     this.len = []; for (let i = 0; i < K - 1; i++) { const a = c.cps[i], b = c.cps[i + 1]; this.len.push(Math.max(5, Math.hypot(b.x - a.x, b.y - a.y) * c.cell_m * 1.2)); }  // 직선거리의 1.2배를 걷는다고 본다
-    this.seg = new Int32Array(Math.max(K - 1, 1)); this.rho = new Float32Array(Math.max(K - 1, 1));
+    this.seg = new Int32Array(Math.max(K, 1)); this.rho = new Float32Array(Math.max(K, 1));
+    this.D = c.cps.map(a => c.cps.map(b => Math.max(5, Math.hypot(b.x - a.x, b.y - a.y) * c.cell_m * 1.2)));
     this.m = c.cps.map(() => ({ peakQ: 0, peakT: 0, waitSum: 0, waitN: 0, waitMax: 0, alertSec: 0, first: null, lv: 0, in10: 0, peakIn: 0, served: 0 }));
     this.sm = this.len.map(() => ({ peakRho: 0, peakT: 0, alertSec: 0, first: null, lv: 0 }));
     this.log = []; this.line = []; this.done = false; this._win = 0;
   }
-  _enq(i, k) { this.st[i] = 1; this.cp[i] = k; this.tm[i] = this.t; this.q[k].push(i); this.m[k].in10++; }
+  _enq(i, k) { this.st[i] = 1; this.cp[i] = k; this.tm[i] = this.t; this.q[k].push(i); this.m[k].in10++;
+    this.mask[i] |= 1 << k; this.cnt[i]++;
+    if (this.g) { this.arr10[k].push(this.t); this.pref[i] = -1;
+      if (this.gActive && this.cnt[i] < this.K) { const r = this._rec(this.mask[i]); if (r >= 0) { this.gIssued++; if (this.rnd2() < this.g.follow) { this.pref[i] = r; this.gFollowed++; } } } } }
+  // 실제 서비스(app/spread.py)와 같은 규칙: 최근 10분 방문자 수를 거점 수로 균등 배분한 값과 비교한다.
+  _guide() {
+    const K = this.K, lim = this.t - 600; let tot = 0; const n = new Array(K);
+    for (let k = 0; k < K; k++) { const a = this.arr10[k]; while (this.ah[k] < a.length && a[this.ah[k]] < lim) this.ah[k]++; n[k] = a.length - this.ah[k]; tot += n[k];
+      if (this.ah[k] > 4096) { this.arr10[k] = a.slice(this.ah[k]); this.ah[k] = 0; } }
+    const ex = tot / K; this.gN = n; this.gEx = ex;
+    const on = this.gActive ? 1.2 : 1.5; let hot = false; for (let k = 0; k < K; k++) if (ex && n[k] >= 8 && n[k] / ex >= on) hot = true;
+    this.gActive = hot;
+  }
+  _rec(mask) {   // 아직 안 간 한산한 거점(예상의 0.7배 이하) 중 비율이 가장 낮은 곳
+    let best = -1, br = 9; for (let k = 0; k < this.K; k++) if (!(mask >> k & 1) && this.gEx && this.gN[k] / this.gEx <= 0.7 && this.gN[k] / this.gEx < br) { br = this.gN[k] / this.gEx; best = k; }
+    return best;
+  }
   step() {
     if (this.done) return;
-    const { c, dt, K, st, cp, tm, pg, m } = this, t = this.t += dt;
-    for (let s = 0; s < K - 1; s++) this.rho[s] = this.seg[s] / (this.len[s] * c.width);
+    const { c, dt, K, st, cp, tm, pg, m, cnt } = this, t = this.t += dt;
+    const RS = this.g ? K : K - 1;   // 유도를 켜면 마지막 거점에서 되돌아가는 통로도 있다 (길이는 마지막 구간과 같게 본다)
+    for (let s = 0; s < RS; s++) this.rho[s] = this.seg[s] / (this.len[Math.min(s, K - 2)] * c.width);
+    if (this.g) { this._guide(); if (this.gActive) this.gOnSec += dt; }
     while (this.next < this.N && this.arr[this.next] <= t) { this._enq(this.next++, 0); this.onsite++; }
     for (let i = 0; i < this.next; i++) {
       const s = st[i];
       if (s === 2) { if (t >= tm[i]) { const k = cp[i]; this.serving[k]--; m[k].served++;
-          if (this.rnd() < c.cps[k].drop) { st[i] = 4; this.left++; this.onsite--; }
-          else if (k === K - 1) { st[i] = 5; this.fin++; this.onsite--; }
-          else { st[i] = 3; pg[i] = 0; this.seg[k]++; } } }
-      else if (s === 3) { const k = cp[i]; pg[i] += speedAt(this.rho[k]) * dt / this.len[k]; if (pg[i] >= 1) { this.seg[k]--; this._enq(i, k + 1); } }
+          // 이탈은 '몇 번째 거점인지'를 기준으로 뽑는다 (정해진 순서에서는 거점별 이탈률과 같다). 그래서 유도가 완주율을 바꾸지 않는다.
+          if (this.rnd() < c.cps[cnt[i] - 1].drop) { st[i] = 4; this.left++; this.onsite--; }
+          else if (cnt[i] === K) { st[i] = 5; this.fin++; this.onsite--; }
+          else { let nk = k + 1; if (this.g) { let j = 0; while (this.mask[i] >> j & 1) j++; nk = this.pref[i] >= 0 ? this.pref[i] : j; }
+            st[i] = 3; pg[i] = 0; this.seg[k]++; this.tg[i] = nk; this.tl[i] = nk === k + 1 ? this.len[k] : this.D[k][nk]; } } }
+      else if (s === 3) { const k = cp[i]; pg[i] += speedAt(this.rho[k]) * dt / this.tl[i]; if (pg[i] >= 1) { this.seg[k]--; this._enq(i, this.tg[i]); } }
     }
     for (let k = 0; k < K; k++) {
       const q = this.q[k], cap = c.cps[k].cap, svc = c.cps[k].svc, mk = m[k];
@@ -66,6 +91,7 @@ class Sim {
     const worst = cps.reduce((a, b) => (b.alertSec > a.alertSec || (b.alertSec === a.alertSec && b.waitMax > a.waitMax)) ? b : a, cps[0]);
     const segs = this.sm.map((x, s) => ({ name: `${this.c.cps[s].name} → ${this.c.cps[s + 1].name}`, len: this.len[s], peakRho: x.peakRho, alertSec: x.alertSec, first: x.first }));
     return { N: this.N, end: this.t, peakOn: this.peakOn, peakOnT: this.peakOnT, fin: this.fin, left: this.left, cps, segs, worst,
+      guide: this.g ? { follow: this.g.follow, issued: this.gIssued, followed: this.gFollowed, onSec: this.gOnSec } : null,
       anyAlert: cps.some(x => x.alertSec > 0) || segs.some(x => x.alertSec > 0), alertSec: Math.max(0, ...cps.map(x => x.alertSec), ...segs.map(x => x.alertSec)) };
   }
 }
