@@ -33,3 +33,12 @@ def test_spread_flow_recommend_accept_report_and_verify():
     assert ok["ok"] and ok["checked"] == 1
     bad = c.post("/api/verify/demo", json={"text": "참여 인원은 777명임."}).json()
     assert not bad["ok"] and 777.0 in bad["bad"]
+
+
+def test_home2_page_served():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    c = TestClient(app)
+    r = c.get("/home2")
+    assert r.status_code == 200 and "예비 창업팀" in r.text
+    assert c.get("/img/ops-hero.png").status_code == 200
