@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>시연 · Solunet</title>
-<meta name="description" content="QR 한 번에서 결과보고서, 회차 비교, 다음 제안서, 혼잡 시뮬레이션까지. 다섯 단계로 보는 솔루넷 시연. 예시 데이터입니다.">
+<meta name="description" content="QR 한 번에서 결과보고서, 회차 비교, 다음 제안서, 혼잡 시뮬레이션까지. 여섯 단계로 보는 솔루넷 시연. 예시 데이터입니다.">
 <link rel="stylesheet" href="/ui.css">
 <style>
   :root { --good:#15803D; --bad:#B3261E; --warn-soft:#FEF3C7; --warn-ink:#92400E; --r:14px;
@@ -229,6 +229,7 @@
   .vt { display:grid; gap:8px; margin-top:10px; } .vt .r { display:grid; grid-template-columns:150px 1fr 150px; gap:12px; align-items:center; border:1px solid var(--grid); border-radius:10px; padding:10px 14px; background:#fff; font-size:13.5px; }
   .vt .r .l { font-weight:700; } .vt .r .t { color:var(--muted); line-height:1.5; } .vt .r .v { font-weight:700; text-align:right; font-variant-numeric:tabular-nums; } .vt .r.ok .v { color:#15803d; } .vt .r.no .v { color:var(--bad); } .vt .r.no { border-color:var(--bad); }
   .vt .r mark { background:#fee2e2; color:var(--bad); border-radius:4px; padding:0 3px; }
+  @media (max-width:900px) { .doc, .side, #simOut, #reportOut, #propOut { min-width:0; max-width:100%; overflow-x:auto; } .arch { flex-wrap:wrap; overflow:visible; } .arch .ap { display:none; } .arch .an { flex:1 1 130px; min-width:0; } .sc { min-width:0; } .vt .r { grid-template-columns:1fr; gap:4px; } .vt .r .v { text-align:left; } .vf { flex-direction:column; } }
   .vf { display:flex; gap:8px; margin-top:12px; } .vf input { flex:1; min-width:0; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; font-size:14px; }
   .vtn { font-size:12.5px; color:var(--muted); margin-top:8px; }
   .sc { border:1px solid var(--grid); border-radius:12px; padding:14px 16px; background:#fff; }
@@ -257,7 +258,7 @@
   <span class="ev" id="evName">시연</span>
   <span class="badge demo">예시 데이터</span>
   <span class="sp"></span>
-  <span class="ai" id="aiState" title="결과보고서와 제안서 문장을 쓰는 AI 연결 상태">AI 확인 중</span>
+  <span class="ai" id="aiState" title="결과보고서와 제안서 문장을 쓰는 방식 (문장 틀 또는 AI 모듈)">확인 중</span>
   <button class="timer" id="timer" title="첫 동작부터 잽니다. 누르면 0으로 돌아갑니다">0:00</button>
   <span class="live" id="live"><i></i><span>실시간 연결</span></span>
   <button class="ghost" id="reset" title="예시 데이터를 처음 상태로 되돌립니다">처음 상태로</button>
@@ -365,12 +366,12 @@
         </div>
       </section>
       <section>
-        <h2>어떻게 동작하나</h2><p class="lead">숫자는 코드가 정하고, AI는 문장만 씁니다. 그 문장도 숫자를 대조해서 통과해야 씁니다.</p>
+        <h2>어떻게 동작하나</h2><p class="lead">숫자는 코드가 정하고, 문장은 문장 틀이나 AI 모듈이 씁니다. 그 문장도 숫자를 대조해서 통과해야 씁니다.</p>
         <div class="arch">
           <div class="an"><span>참가자</span><b>휴대폰 카메라</b><small>앱·가입 없음<br>익명 방문 번호</small></div><span class="ap">→</span>
           <div class="an"><span>서버</span><b>QR 스캔 기록</b><small>거점별 무작위 토큰<br>60초 내 중복 제외</small></div><span class="ap">→</span>
           <div class="an key"><span>코드</span><b>집계</b><small>참여·완주·이탈률<br>설문 평균·회차 비교</small></div><span class="ap">→</span>
-          <div class="an ai"><span>AI</span><b>문장 작성</b><small id="modelName">집계값만 입력</small></div>
+          <div class="an ai"><span>문장 틀 · AI</span><b>문장 작성</b><small id="modelName">집계값만 입력</small></div>
         </div>
         <div class="arch" style="margin-top:8px">
           <div class="an key"><span>코드</span><b>숫자 대조</b><small>문장 속 숫자가 집계에<br>하나라도 없으면 폐기</small></div><span class="ap">→</span>
@@ -439,7 +440,7 @@ const STEPS = {
   4: { h:'지난 숫자가 <em>다음 수주의 근거</em>가 됩니다', o:['A사 <b>QR 발급만</b>', 'B사 <b>준비 기능 없음</b>'], me:'지난 회차 기록으로 제안서 초안',
        ir:'IR 4장 · 수주를 가르는 기술 배점 <b>80~90%</b>' },
   5: { h:'인원을 늘리면 <em>어디가 막히는지</em> 미리 봅니다', note:'같은 기록에서 나오는 또 하나의 결과 · 추정 모델이며 안전 예측이 아닙니다', next:'다음 → IR 8장: 보고서·회차 비교·제안서는 다른 서비스에 없습니다' },
-  6: { h:'어떻게 만들었고, <em>무엇을 근거로</em> 만들었나', note:'공개 원자료 분석 → 기능 정의 → 숫자는 코드, 문장은 AI → 숫자 대조' },
+  6: { h:'어떻게 만들었고, <em>무엇을 근거로</em> 만들었나', note:'공개 원자료 분석 → 기능 정의 → 숫자는 코드, 문장은 틀·AI → 숫자 대조' },
 };
 let step = 1; const seen = new Set([1]), made = { report:false, prop:false, sim:false };
 function show(n) {
