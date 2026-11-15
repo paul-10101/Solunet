@@ -41,7 +41,7 @@ def test_home2_page_served():
     c = TestClient(app)
     r = c.get("/home2")
     assert r.status_code == 200 and "예비 창업팀" in r.text
-    assert c.get("/img/ops-hero.png").status_code == 200
+    assert c.get("/img/p-collect.png").status_code == 200
 
 
 def test_root_is_new_home():
