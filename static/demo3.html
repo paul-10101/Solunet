@@ -498,6 +498,7 @@
         <div class="panel" id="staffEv" style="margin-bottom:12px;scroll-margin-top:12px">
           <div class="ph" style="margin-bottom:8px"><div><h2>도움 요청 · 호출 배치</h2><p>거점마다 세워 두는 대신, 요청이 온 곳으로 갑니다</p></div></div>
           <div class="kpis3" style="margin-bottom:10px"><div class="kp"><span>도움 요청</span><b id="clN">-</b></div><div class="kp"><span>수락까지 평균</span><b id="clW">-</b></div><div class="kp"><span>지금 대기</span><b id="clO">-</b></div></div>
+          <div class="noprint" style="margin-bottom:10px"><button class="big" type="button" id="callBtn">참가자 도움 요청 보내기 (예시)</button> <span class="muted" style="font-size:13px">요청이 오면 왼쪽 휴대폰에서 [제가 갑니다]를 누르세요</span></div>
           <table class="opsT" id="clT"></table>
           <p class="miss" id="clBy" style="margin-top:10px"></p>
           <p class="nt">참가자나 부스가 휴대폰에서 [직원 도움 요청]을 누르면 운영요원 휴대폰에 뜨고, 한 명이 [제가 갑니다]를 누릅니다. 거점별 요청 건수와 수락 시간이 남아, 다음 회차 운영 인원을 정하는 자료가 됩니다. 안전관리요원과 경비는 이 기능과 상관없이 그대로 배치하며, 긴급 신고용이 아닙니다.</p>
@@ -698,8 +699,8 @@ function show(n) {
   document.querySelectorAll('[data-phase]').forEach(b => { const k = b.dataset.phase; b.setAttribute('aria-selected', k === pk); b.classList.toggle('done', k !== pk && Object.keys(PH_OF).some(i => PH_OF[i] === k && seen.has(+i))); });
   $('feats').innerHTML = '<span class="lb">이 단계의 기능</span>' + P.feats.map(([t, to, sub, an]) => `<button type="button" data-go="${to}"${an ? ` data-an="${an}"` : ''} class="${to === step ? 'on' : seen.has(to) ? 'seen' : ''}">${t}${sub ? `<small>${sub}</small>` : ''}</button>`).join('');
   $('feats').querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const an = b.dataset.an; if (+b.dataset.go !== step) show(+b.dataset.go); if (an) setTimeout(() => $(an).scrollIntoView({ behavior:'smooth', block:'start' }), 60); });
-  if (step === 8) loadPrep();
-  if (step === 9) { if (!$('stPh').src) $('stPh').src = '/staff?f=' + FID; opsPoll(); }
+  if (step === 8) { loadPrep(); if (!made.est) setTimeout(() => { if (step === 8 && !made.est) makeEstimate(true); }, 300); }
+  if (step === 9) { if (!$('stPh').src) $('stPh').src = `/staff?f=${FID}&tab=call&name=${encodeURIComponent('운영요원 B')}`; opsPoll(); clearInterval(window.opsT); window.opsT = setInterval(() => { if (step === 9) opsPoll(); else clearInterval(window.opsT); }, 2000); }
   if (step === 10 || step === 11) opsPoll();
   const s = STEPS[step]; $('sayH').innerHTML = s.h;
   $('sayV').innerHTML = s.paper ? `<span class="o"><em>종이 방식</em>${s.paper}</span>${s.other ? `<span class="o"><em>타사</em>${s.other}</span>` : ''}<span class="ar">→</span><span class="me">솔루넷 · ${s.me}</span>${s.other ? '<small>타사: 업체 공개 자료 기준 (2026-11 열람)</small>' : ''}` : `<span class="o">${s.note}</span>`;
@@ -729,13 +730,6 @@ let opsBusy = false;
 function flowOf(n) { return ORDER.find(i => PH_OF[i] === PH_OF[n]) ?? ORDER[ORDER.length - 1]; }
 function dirBusy() { return !!(opsBusy || ph.busy || $('spBtn').disabled || (step === 2 && $('reportBtn').disabled) || (step === 8 && $('propBtn').disabled) || (step === 5 && $('simBtn').disabled)); }
 function dirPlan() {
-  if (step === 1 && ph.stage === 'scan' && $('scanBtn')) return { t:'QR 찍기', go:() => $('scanBtn').click() };
-  if (step === 1 && ph.stage === 'survey' && $('sendBtn')) return { t:'설문 보내고 경품 받기', go:() => $('sendBtn').click() };
-  if (step === 7 && spN < 3) return { t:SPSEQ[spN].replace(/^[①②③]\s*/, ''), go:() => $('spBtn').click() };
-  if (step === 8 && !made.est) return { t:'행사 기초 설계 만들기', go:() => makeEstimate() };
-  if (step === 9 && !did.call) return { t:'참가자가 도움 요청', go:() => callDemo() };
-  if (step === 9 && !did.acc) return { t:'운영요원이 [제가 갑니다]', go:() => acceptDemo() };
-  if (step === 11 && !did.rcpt) return { t:'영수증 내역 넣어 분류', go:() => rcptDemo() };
   const at = ORDER.indexOf(step);
   if (at < 0) { const b = flowOf(step); return { t:'시연 흐름으로: ' + NAME[b], go:() => show(b) }; }
   if (at < ORDER.length - 1) return { t:'다음: ' + NAME[ORDER[at + 1]], go:() => show(ORDER[at + 1]) };
@@ -1246,8 +1240,8 @@ function loadPrep() {
   $('qrs').innerHTML = fest.checkpoints.map(c => { const q = qrcode(0, 'M'); q.addData(`${location.origin}/s/${FID}/${c.id}`); q.make(); return `<div>${q.createSvgTag({ cellSize:3, margin:2, scalable:true })}${esc(c.name)}</div>`; }).join('');
   $('qrNote').textContent = `거점 ${fest.checkpoints.length}곳의 QR이 바로 발급됩니다. 인쇄해 붙이면 준비가 끝나고, 참가자는 앱 설치나 가입 없이 기본 카메라로 찍습니다.`;
 }
-async function makeEstimate() {
-  if (opsBusy) return; opsBusy = true; $('estBtn').disabled = true; startTimer();
+async function makeEstimate(auto) {
+  if (opsBusy) return; opsBusy = true; $('estBtn').disabled = true; if (auto !== true) startTimer();
   const d = await fetch(`/api/plan/${FID}?visitors=${+$('pVis').value || 400}&days=${+$('pDays').value || 2}${aiOk ? '' : '&mode=template'}`).then(r => r.ok ? r.json() : null).catch(() => null);
   opsBusy = false; $('estBtn').disabled = false;
   if (!d) { $('planOut').innerHTML = '<div class="empty"><b>불러오지 못했습니다</b>다시 눌러 주세요.</div>'; return; }
@@ -1311,17 +1305,13 @@ async function opsPoll() {
   $('rcC').innerHTML = '<tr><th>비목</th><th class="n">건수</th><th class="n">금액 (원)</th></tr>' + rc.by_category.map(c => `<tr><td><span class="tag ${c.category === '미분류' ? 'un' : ''}">${esc(c.category)}</span></td><td class="n">${c.count}</td><td class="n">${won(c.amount)}</td></tr>`).join('') + `<tr class="sum"><td>합계</td><td class="n">${rc.rows.length}</td><td class="n">${won(rc.total)}</td></tr>`;
 }
 async function callDemo() {
-  opsBusy = true; startTimer();
+  if (opsBusy) return; opsBusy = true; startTimer();
   const r = await post('/api/call', { festival:FID, token:'craft', reason:'경품 문의' }).then(x => x.ok ? x.json() : null).catch(() => null);
   if (r) opsNew.call = r.id;
   $('stPh').src = `/staff?f=${FID}&tab=call&name=${encodeURIComponent('운영요원 B')}&t=${Date.now()}`;
-  await wait(900); await opsPoll(); did.call = true; opsBusy = false;
+  await opsPoll(); opsBusy = false;
 }
-async function acceptDemo() {
-  opsBusy = true;
-  if (opsNew.call) $('stPh').src = `/staff?f=${FID}&tab=call&name=${encodeURIComponent('운영요원 B')}&accept=${opsNew.call}&t=${Date.now()}`;
-  await wait(1300); await opsPoll(); did.acc = true; opsBusy = false;
-}
+document.addEventListener('DOMContentLoaded', () => { $('callBtn').onclick = callDemo; });
 async function staffDemo() {
   opsBusy = true; startTimer(); opsNew.staff = '운영요원 F';
   $('stPh').src = `/staff?f=${FID}&name=${encodeURIComponent(opsNew.staff)}&auto=in&t=${Date.now()}`;
