@@ -370,9 +370,31 @@ def ops_summary(fid: str, x_admin_key: str = Header(default=""), x_event_key: st
     f = _festival(fid)
     if not f.get("demo"):
         _require_manage(f, x_admin_key, x_event_key)
+    return _ops(f)
+
+
+def _ops(f, cur=None):
+    """운영 기록 요약. 매출은 QR 방문 기록과 묶어 참여자 1인당·구역 방문 1명당 매출까지 계산한다."""
+    cur = cur or _stats(f, f["edition"])
     comments = [r.get("comment", "") for r in _real(db.responses_for(f["id"], f["edition"])) if r.get("kind") == "survey"]
-    return {"staff": ops.summarize_staff(_ops_rows(f, "ops_staff")), "sales": ops.summarize_sales(_ops_rows(f, "ops_sales")),
+    sales = ops.summarize_sales(_ops_rows(f, "ops_sales"), booths=f.get("booths"), target=f.get("sales_target"),
+                                visitors=cur["visitors"], cp_visits={c["id"]: c["visitors"] for c in cur["checkpoints"]},
+                                cp_names={c["id"]: c["name"] for c in f["checkpoints"]})
+    return {"staff": ops.summarize_staff(_ops_rows(f, "ops_staff")), "sales": sales,
             "receipts": ops.summarize_receipts(_ops_rows(f, "ops_receipt")), "comments": ops.summarize_comments(comments)}
+
+
+@app.get("/api/plan/{fid}")
+def base_plan(fid: str, visitors: int = 400, days: int = 2, mode: str = ""):
+    """행사 기초 설계와 산출내역 초안. 숫자는 지난 회차 QR 기록에서 코드가 계산하고, 설명 문장만 AI 모듈(없으면 문장 틀)이 쓴다."""
+    f = _festival(fid)
+    visitors, days = max(1, min(visitors, 1_000_000)), max(1, min(days, 60))
+    cur = _stats(f, f["edition"])
+    if not cur["visitors"]:
+        raise HTTPException(400, "근거로 쓸 지난 회차 기록이 아직 없습니다")
+    plan = design.base_plan(f, cur, visitors, days)
+    est = ops.estimate(len(f["checkpoints"]), visitors, days, plan["target_completion"], staff=plan["staff_total"] , prizes=plan["prizes"])
+    return {"plan": plan, "explanation": ai.explain_plan(plan, use_llm=mode != "template"), "estimate": est}
 
 
 @app.get("/api/estimate/{fid}")
@@ -571,8 +593,12 @@ def get_stats(fid: str, x_admin_key: str = Header(default=""), x_event_key: str 
 def make_report(fid: str, mode: str = "", x_admin_key: str = Header(default=""), x_event_key: str = Header(default="")):
     """mode=template 이면 AI를 부르지 않고 숫자 기반 문장만 쓴다 (AI가 느릴 때의 예비 경로)."""
     d = get_stats(fid, x_admin_key, x_event_key)
+    f = _festival(fid)
+    o = _ops(f, d["current"])
+    has = o["staff"]["checked_in"] or o["sales"]["total"] or o["comments"]["total"] or o["receipts"]["total"]
     return {**ai.write_report(d["festival"], d["current"], d["comparison"], use_llm=mode != "template",
-                              improvements=design.propose(d["current"])["changes"]), "sections": ai.REPORT_SECTIONS}
+                              improvements=design.propose(d["current"])["changes"], ops=o if has else None),
+            "sections": ai.REPORT_SECTIONS, "ops": o}
 
 
 @app.get("/api/crowd/{fid}")
@@ -768,7 +794,8 @@ def seed_demo():
     """예시 데이터(실측 아님). 작년(1회차)과 올해(2회차)를 만든다."""
     db.upsert_festival({"id": DEMO_ID, "name": "예시 축제 (시연용 가상 데이터)", "edition": 2,
                         "demo": True, "checkpoints": DEMO_CPS, "layout": DEMO_LAYOUT,
-                        "prize_name": DEMO_PRIZE, "crowd_threshold": 30, "crowd_window_min": 10})
+                        "prize_name": DEMO_PRIZE, "crowd_threshold": 30, "crowd_window_min": 10,
+                        "booths": DEMO_BOOTHS, "sales_target": 10_000_000})
     db.clear_festival(DEMO_ID)
     _seed_edition(1, [0.9, 0.85, 0.55, 0.8], {"화장실·편의시설 부족": 5, "대기 줄이 김": 2, "다음 장소가 멀다": 3},
                   (0.6, [1, 2, 3, 4, 3], [2, 4, 4, 3, 1], [1, 2, 4, 4, 2], [5, 4, 2]), seed=1)
@@ -783,6 +810,45 @@ DEMO_COMMENTS = ["메인 무대 앞 줄이 너무 길었어요", "화장실이 �
                  "아이와 함께하기 좋았어요", "대기 시간이 길었습니다", "체험 부스가 재밌었어요", "다음 장소 찾기가 헷갈렸어요"]
 
 
+# 예시 부스(실측 아님): 구역은 스탬프 거점과 같은 자리. 매출 목표는 과업에서 정했다고 가정한 예시 값.
+DEMO_BOOTHS = [{"name": "먹거리 1호", "zone": "market"}, {"name": "먹거리 2호", "zone": "market"}, {"name": "분식 코너", "zone": "market"},
+               {"name": "체험 공방", "zone": "craft"}, {"name": "기념품 가게", "zone": "craft"}, {"name": "전망대 카페", "zone": "view"}]
+DEMO_SALES_DAY1 = [1840000, 1320000, 980000, 760000, 540000, 410000]
+DEMO_LIVE = {"gate": 26, "market": 23, "stage": 21, "craft": 18, "view": 14}  # 평소 최근 10분 방문 (예시)
+
+
+def _demo_replay(f, cp, n, ts, skip=0):
+    """예시 참가자의 재방문으로 '방금' 스캔을 넣는다. 이미 그 거점을 찍은 사람만 쓰므로 참여자·완주율은 바뀌지 않는다."""
+    seen = sorted({s["session"] for s in db.scans_for(DEMO_ID, f["edition"])
+                   if s["checkpoint"] == cp and s["session"].startswith("demo")})
+    picked = seen[skip:skip + max(0, n)]
+    for sess in picked:
+        db.add_scan({"festival": DEMO_ID, "checkpoint": cp, "session": sess, "event": "visit",
+                     "edition": f["edition"], "ts": ts.isoformat(), "replay": True})
+    return picked
+
+
+def _demo_recent(f):
+    since = now() - timedelta(minutes=f.get("crowd_window_min", 10) - 2)   # 2분 여유: 발표 중에 빠지지 않게
+    recent = defaultdict(set)
+    for s in db.scans_for(DEMO_ID, f["edition"]):
+        if s["session"].startswith("demo") and datetime.fromisoformat(s["ts"]) >= since:
+            recent[s["checkpoint"]].add(s["session"])
+    return {k: len(v) for k, v in recent.items()}
+
+
+@app.post("/api/demo/live")
+def demo_live():
+    """시연용: 행사가 진행 중인 것처럼 거점마다 '최근 10분' 방문을 평소 수준으로 채운다 (예시 데이터)."""
+    f = _festival(DEMO_ID)
+    have = _demo_recent(f)
+    for cp, want in DEMO_LIVE.items():
+        if have.get(cp, 0) < want * 0.8:
+            _demo_replay(f, cp, want, now() - timedelta(seconds=30))
+    _spread(f)
+    return {"ok": True, "recent": _demo_recent(f)}
+
+
 def _seed_ops():
     """예시 운영 기록(실측 아님): 운영요원 출퇴근, 부스 매출 1일차, 영수증 내역."""
     f = db.get_festival(DEMO_ID)
@@ -792,8 +858,8 @@ def _seed_ops():
     for i, name in enumerate(["운영요원 A", "운영요원 B", "운영요원 C", "운영요원 D", "운영요원 E"]):
         add("ops_staff", base + timedelta(minutes=5 * i), name=name, action="in")
     add("ops_staff", base + timedelta(hours=6), name="운영요원 A", action="out")
-    for booth, amt in [("먹거리 1호", 1840000), ("먹거리 2호", 1320000), ("체험 부스", 760000), ("기념품", 540000)]:
-        add("ops_sales", base + timedelta(hours=7), booth=booth, day=1, amount=amt)
+    for b, amt in zip(DEMO_BOOTHS, DEMO_SALES_DAY1):
+        add("ops_sales", base + timedelta(hours=7), booth=b["name"], day=1, amount=amt)
     for desc, amt in [("QR 안내판 인쇄", 75000), ("운영요원 일당 5명", 412800), ("음향 장비 렌탈", 800000),
                       ("완주 경품 구입", 480000), ("스태프 도시락", 60000), ("현장 물품 운송", 90000)]:
         cat, word = ops.classify_receipt(desc)
@@ -801,19 +867,29 @@ def _seed_ops():
 
 
 @app.post("/api/demo/crowd")
-def demo_crowd(cp: str = "stage", n: int = 36):
+def demo_crowd(cp: str = "stage", n: int = 96, recs: int = 1):
     """시연용: 예시 행사의 한 거점에 '방금' 사람이 몰린 상황을 재현한다.
-    이미 그 거점을 찍은 예시 참가자의 재방문으로 넣기 때문에 참여자·완주율 집계는 바뀌지 않는다."""
+    이미 그 거점을 찍은 예시 참가자의 재방문으로 넣기 때문에 참여자·완주율 집계는 바뀌지 않는다.
+    몰린 뒤 다른 참가자들이 받은 추천과 그중 실제로 추천 거점을 찍은 경우도 예시로 넣는다 (수락률 화면용)."""
     f = _festival(DEMO_ID)
     if cp not in {c["id"] for c in f["checkpoints"]}:
         raise HTTPException(404, "없는 거점입니다")
-    seen = sorted({s["session"] for s in db.scans_for(DEMO_ID, f["edition"])
-                   if s["checkpoint"] == cp and s["session"].startswith("demo")})
-    t = now().isoformat()
-    for sess in seen[:max(1, min(n, 200))]:
-        db.add_scan({"festival": DEMO_ID, "checkpoint": cp, "session": sess, "event": "visit",
-                     "edition": f["edition"], "ts": t, "replay": True})
-    _spread(f)  # 켜짐이 바로 발동 기록에 남도록
+    demo_live()
+    _demo_replay(f, cp, max(1, min(n, 200)), now())
+    st = _spread(f)  # 켜짐이 바로 발동 기록에 남도록
+    cold = [r for r in st["rows"] if r["level"] == "cold"]
+    if recs and st["active"] and cold and not any(r.get("kind") == "rec" and r.get("demo") for r in db.responses_for(DEMO_ID, f["edition"])):
+        to = min(cold, key=lambda r: r["ratio"])["id"]
+        gate = f["checkpoints"][0]["id"]
+        pool = sorted({s["session"] for s in db.scans_for(DEMO_ID, f["edition"])
+                       if s["checkpoint"] == to and s["session"].startswith("demo")})[100:138]   # 추천 38건 (예시)
+        for i, sess in enumerate(pool):
+            db.add_response({"kind": "rec", "festival": DEMO_ID, "edition": f["edition"], "session": sess, "from": gate,
+                             "to": to, "ticket": 1, "ts": (now() - timedelta(seconds=40)).isoformat(), "demo": True})
+            if i % 3 == 0:   # 그중 13건이 실제로 추천 거점을 찍음 (예시)
+                db.add_scan({"festival": DEMO_ID, "checkpoint": to, "session": sess, "event": "visit",
+                             "edition": f["edition"], "ts": (now() - timedelta(seconds=10)).isoformat(), "replay": True})
+        _spread(f)
     return {"ok": True, **_crowd(f)}
 
 

@@ -13,7 +13,7 @@ def test_spread_flow_recommend_accept_report_and_verify():
     assert c.get("/api/spread/demo").json()["active"] is False
     first = c.post("/api/scan", json={"festival": "demo", "token": "gate", "session": "demoT-0001"}).json()
     assert first["recommend"] is None  # 쏠림이 없으면 추천하지 않는다
-    c.post("/api/demo/crowd?cp=stage&n=36")
+    c.post("/api/demo/crowd?cp=stage&n=36&recs=0")
     st = c.get("/api/spread/demo").json()
     assert st["active"] and st["activations"] == 1 and st["staff_text"]
     r = c.post("/api/scan", json={"festival": "demo", "token": "gate", "session": "demoT-0002"}).json()

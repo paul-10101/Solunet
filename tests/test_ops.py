@@ -29,14 +29,17 @@ def test_ops_flow_and_stats_unchanged():
     c.post("/api/demo/seed")
     before = c.get("/api/stats/demo").json()["current"]
     d = c.get("/api/ops/demo").json()
-    assert d["staff"]["checked_in"] == 5 and d["sales"]["total"] == 4460000 and d["comments"]["total"] > 0
+    assert d["staff"]["checked_in"] == 5 and d["sales"]["total"] == 5850000 and d["comments"]["total"] > 0
     assert c.post("/api/staff/check", json={"festival": "demo", "name": "운영요원 F", "action": "in"}).json()["ok"]
-    c.post("/api/sales", json={"festival": "demo", "booth": "기념품", "day": 2, "amount": 100})
-    c.post("/api/sales", json={"festival": "demo", "booth": "기념품", "day": 2, "amount": 610000})
+    c.post("/api/sales", json={"festival": "demo", "booth": "기념품 가게", "day": 2, "amount": 100})
+    c.post("/api/sales", json={"festival": "demo", "booth": "기념품 가게", "day": 2, "amount": 610000})
     assert c.post("/api/receipts", json={"festival": "demo", "desc": "무대 조명 추가 임차", "amount": 350000}).json()["category"] == "외주비"
     d = c.get("/api/ops/demo").json()
     assert d["staff"]["checked_in"] == 6
-    assert d["sales"]["total"] == 4460000 + 610000  # 같은 부스·같은 날은 마지막 값
+    assert d["sales"]["total"] == 5850000 + 610000  # 같은 부스·같은 날은 마지막 값
+    assert d["sales"]["achievement"] == 64.6 and d["sales"]["per_visitor"] == round(6460000 / before["visitors"])
+    assert [m["booths"] for m in d["sales"]["missing"]][1] == ["먹거리 1호", "먹거리 2호", "분식 코너", "체험 공방", "전망대 카페"]
+    assert d["sales"]["zones"][0]["zone"] == "먹거리 장터"
     assert d["receipts"]["rows"][0]["desc"] == "무대 조명 추가 임차"
     after = c.get("/api/stats/demo").json()["current"]
     assert (before["visitors"], before["completion_rate"], before["survey"]["count"]) == (after["visitors"], after["completion_rate"], after["survey"]["count"])
@@ -47,3 +50,33 @@ def test_pages_and_estimate_api():
         assert c.get(u).status_code == 200
     assert "행사 전 · 준비" in c.get("/demo").text
     assert c.get("/api/estimate/demo?visitors=400&days=2").json()["basis"]["checkpoints"] == 5
+
+
+def test_plan_numbers_come_from_last_edition():
+    c.post("/api/demo/seed")
+    cur = c.get("/api/stats/demo").json()["current"]
+    d = c.get("/api/plan/demo?visitors=400&days=2&mode=template").json()
+    p = d["plan"]
+    assert p["checkpoints"][0]["expected"] == round(400 * cur["checkpoints"][0]["visitors"] / cur["visitors"])
+    assert p["prizes"] == round(400 * p["target_completion"] / 100)
+    assert d["estimate"]["basis"]["staff"] == p["staff_total"] and d["explanation"]["source"] == "template"
+
+
+def test_demo_crowd_is_realistic_and_keeps_stats():
+    c.post("/api/demo/seed")
+    before = c.get("/api/stats/demo").json()["current"]
+    c.post("/api/demo/live")
+    sp = c.get("/api/spread/demo").json()
+    assert not sp["active"] and min(r["actual"] for r in sp["rows"]) >= 14
+    c.post("/api/demo/crowd")
+    sp = c.get("/api/spread/demo").json()
+    stage = next(r for r in sp["rows"] if r["id"] == "stage")
+    assert sp["active"] and stage["actual"] == 96 and sp["acceptance"]["issued"] == 38 and sp["acceptance"]["accepted"] == 13
+    after = c.get("/api/stats/demo").json()["current"]
+    assert (before["visitors"], before["completed"]) == (after["visitors"], after["completed"])
+
+
+def test_report_has_ops_section():
+    c.post("/api/demo/seed")
+    d = c.post("/api/report/demo?mode=template").json()
+    assert len(d["sections"]) == 6 and "6. 현장 운영 및 상권 성과" in d["text"] and "5,850,000원" in d["text"]

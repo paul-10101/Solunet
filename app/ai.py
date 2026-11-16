@@ -144,16 +144,18 @@ def _call_llm(system, payload):
 
 # 결과보고서 목차: 공공 행사 대행 용역의 결과보고 요구(행사 개요, 관람객 집계, 만족도 조사, 전년 대비, 개선 방안)를 따른다.
 # 정산 내역·사진·홍보 실적처럼 QR 기록에 없는 항목은 화면에서 '담당자 작성' 칸으로 남긴다.
-REPORT_SECTIONS = ["행사 개요", "방문객 집계 결과", "만족도 조사 결과", "전 회차 대비 성과", "문제점 및 개선 방안"]
+REPORT_SECTIONS = ["행사 개요", "방문객 집계 결과", "만족도 조사 결과", "전 회차 대비 성과", "문제점 및 개선 방안",
+                   "현장 운영 및 상권 성과"]
 REPORT_SYSTEM = (
     "너는 공공 행사 대행 용역의 결과보고서 작성 보조다. 입력 JSON의 숫자만 그대로 사용하고, 더하기·빼기·비율 계산으로 새 숫자를 만들지 마라. "
     "변화량이 필요하면 changes에 있는 값만 쓴다. 금액·예산은 쓰지 마라. "
-    "한국어 공문서체(~함, ~임)로 아래 다섯 항목을 번호와 제목 그대로, 항목마다 2~3문장으로 쓴다. 표·기호·마크다운은 쓰지 않는다.\n"
+    "한국어 공문서체(~함, ~임)로 아래 여섯 항목을 번호와 제목 그대로, 항목마다 2~3문장으로 쓴다. 표·기호·마크다운은 쓰지 않는다.\n"
     "1. 행사 개요: 행사명과 회차, QR 기반으로 참가를 확인·집계했다는 점.\n"
     "2. 방문객 집계 결과: 참여, 완주, 완주율, 이탈률이 가장 높은 거점.\n"
     "3. 만족도 조사 결과: 설문 응답 수, 만족도·혼잡도·동선 편의 평균, 재방문 의사. 설문이 없으면 '조사 결과 없음'.\n"
     "4. 전 회차 대비 성과: comparison과 changes의 값. comparison이 없으면 '비교할 이전 회차 없음'.\n"
     "5. 문제점 및 개선 방안: improvements의 각 항목(거점, 조치, 근거)을 문장으로. stats.spread가 있고 발동·추천이 있으면 발동 횟수, 추천 건수, 수락 건수, 수락률을 한 문장으로 쓰되 사고 예방·안전 효과는 말하지 않는다."
+    "6. 현장 운영 및 상권 성과: ops가 있으면 출근 인원과 근무 시간, 부스 매출 합계와 목표 달성률, 참여자 1인당 매출, 한마디 응답 수와 가장 많은 주제를 쓴다. ops가 없으면 '기록 없음'. 이 항목에서만 금액을 쓸 수 있다.\n"
 )
 
 DESIGN_SYSTEM = (
@@ -162,7 +164,7 @@ DESIGN_SYSTEM = (
 )
 
 
-def _template_report(festival, stats, comparison, improvements=None):
+def _template_report(festival, stats, comparison, improvements=None, ops=None):
     worst = max((c for c in stats["checkpoints"] if c["dropped_after"] > 0), key=lambda c: c["drop_rate"], default=None)
     sv = stats.get("survey", {})
     lines = [
@@ -204,22 +206,66 @@ def _template_report(festival, stats, comparison, improvements=None):
         head += (f"참가자 분산 유도는 {sp['activations']}회 작동하였고, 한산한 거점 추천 {sp['issued']}건 중 {sp['accepted']}건이 실제 방문으로 이어짐"
                  + (f"(수락률 {sp['rate']}%)" if sp.get("rate") is not None else "") + ". ")
     lines.append("5. 문제점 및 개선 방안: " + head + " ".join(f"[{c['checkpoint']}] {c['evidence']}. 개선 방안: {c['action']}." for c in imp))
+    lines.append("6. 현장 운영 및 상권 성과: " + (_ops_sentence(ops) or "기록 없음."))
     return "\n".join(lines)
+
+
+def _ops_sentence(ops):
+    """운영 기록(출퇴근·매출·한마디·정산)을 보고서 문장으로. 값이 있는 것만 쓴다."""
+    if not ops:
+        return ""
+    t, st, sl, cm, rc = [], ops.get("staff") or {}, ops.get("sales") or {}, ops.get("comments") or {}, ops.get("receipts") or {}
+    if st.get("checked_in"):
+        t.append(f"운영 인력은 {st['checked_in']}명이 QR로 출근을 기록함.")
+    if sl.get("total"):
+        x = f"부스 {len(sl['booths'])}곳이 보고한 매출 합계는 {sl['total']:,}원"
+        if sl.get("achievement") is not None:
+            x += f"으로 목표 {sl['target']:,}원 대비 {sl['achievement']}%"
+        x += "임."
+        if sl.get("per_visitor"):
+            x += f" 스탬프 참여자 1인당으로는 {sl['per_visitor']:,}원임."
+        if sl.get("zones"):
+            lo = sl["zones"][-1]
+            if lo.get("per_visit") is not None and len(sl["zones"]) > 1:
+                x += f" 구역별로는 '{lo['zone']}'의 방문 1명당 매출이 {lo['per_visit']:,}원으로 가장 낮음."
+        t.append(x)
+    if cm.get("topics"):
+        k = cm["topics"][0]
+        t.append(f"설문 한마디 {cm['total']}건 가운데 '{k['topic']}' 관련이 {k['count']}건으로 가장 많음.")
+    if rc.get("total"):
+        t.append(f"입력된 집행 내역은 {len(rc['rows'])}건, {rc['total']:,}원이며 미분류 {rc['unclassified']}건은 담당자 확인이 필요함.")
+    return " ".join(t)
 
 
 def _template_design(design):
     return "\n".join(f"- {c['checkpoint']}: {c['action']} (근거: {c['evidence']})" for c in design["changes"])
 
 
-def write_report(festival, stats, comparison=None, use_llm=True, improvements=None):
+def write_report(festival, stats, comparison=None, use_llm=True, improvements=None, ops=None):
     data = {"festival": festival["name"], "edition": festival.get("edition"), "stats": stats, "comparison": comparison,
             "improvements": improvements or []}
+    if ops:
+        data["ops"] = ops
     if comparison:  # 모델이 직접 빼기를 하지 않도록 차이를 미리 계산해 넘긴다
         diff = lambda a, b: round(b - a, 1) if a is not None and b is not None else None
         data["changes"] = {k: diff(comparison.get(k + "_prev"), comparison.get(k + "_cur"))
                            for k in ("visitors", "completion", "satisfaction", "revisit", "crowd")}
         data["changes"]["checkpoints"] = {c["name"]: c["change"] for c in comparison["checkpoints"]}
-    return _draft(REPORT_SYSTEM, data, lambda: _template_report(festival, stats, comparison, improvements), use_llm)
+    return _draft(REPORT_SYSTEM, data, lambda: _template_report(festival, stats, comparison, improvements, ops), use_llm)
+
+
+def explain_plan(plan, use_llm=True):
+    """기초 설계를 설명하는 문장. AI가 쓰면 숫자를 설계값과 대조하고, 아니면 문장 틀로 쓴다."""
+    def template():
+        hot = max(plan["checkpoints"], key=lambda r: r["expected"])
+        two = [r["name"] for r in plan["checkpoints"] if r["staff"] > 1]
+        t = (f"지난 {plan['based_on']['edition']}회차 참여 {plan['based_on']['visitors']}명의 QR 기록을 기준으로, "
+             f"예상 참가 {plan['visitors']}명일 때 거점별 방문을 계산함. 방문이 가장 많을 것으로 보이는 거점은 '{hot['name']}'({hot['expected']}명)임. "
+             f"안내 인력은 모두 {plan['staff_total']}명으로 잡았"
+             + (f"고, 지난 회차 이탈이 많았던 {', '.join(repr(n) for n in two)}에는 2명을 둠. " if two else "음. ")
+             + f"목표 완주율은 {plan['target_completion']}%, 경품은 {plan['prizes']}개를 준비함.")
+        return t + " " + " ".join(f"[{c['checkpoint']}] {c['action']}." for c in plan["changes"])
+    return _draft(DESIGN_SYSTEM + " 설계 요약(예상 방문이 가장 많은 거점, 안내 인력, 목표 완주율, 경품 수량)을 먼저 2~3문장으로 쓴다.", plan, template, use_llm)
 
 
 def explain_design(design):
