@@ -291,6 +291,14 @@
   .expl small { display:block; color:var(--muted); font-size:12px; margin-top:6px; }
   .miss { font-size:13px; margin-top:10px; padding:9px 12px; border-radius:8px; background:#FEF3C7; color:#92400E; }
   .bar2 { display:block; height:6px; border-radius:3px; background:#E2E8F0; margin-top:5px; overflow:hidden; } .bar2 i { display:block; height:100%; background:var(--route); }
+  .simin { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px; } .simin > div { border:1px solid var(--grid); border-radius:12px; padding:16px 18px; min-width:0; }
+  .simin h3 { font-size:16px; margin-bottom:4px; } .simin p.d { font-size:13px; color:var(--muted); margin-bottom:12px; }
+  .simin .acts { display:flex; flex-wrap:wrap; gap:8px; align-items:center; } .simin .acts .big { padding:9px 14px; font-size:14px; }
+  .simin label.f { display:inline-flex; align-items:center; gap:6px; font-size:13px; margin:0; } .simin label.f input { width:84px; padding:8px; }
+  .mapbox { position:relative; margin-top:12px; border:1px solid var(--grid); border-radius:10px; overflow:hidden; background:#F8FAFC; cursor:crosshair; }
+  .mapbox svg { display:block; width:100%; height:auto; }
+  .srcline { font-size:13.5px; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:10px 14px; margin-bottom:12px; color:#1E3A8A; }
+  @media (max-width:900px) { .simin { grid-template-columns:1fr; } }
   .nt { font-size:12.5px; color:var(--muted); margin-top:10px; line-height:1.65; }
   .qrs { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; max-width:520px; margin-top:14px; } .qrs div { text-align:center; font-size:12.5px; font-weight:500; border:1px solid var(--grid); border-radius:10px; padding:8px 4px; } .qrs svg { width:100%; height:auto; display:block; }
   .setup { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; margin-bottom:14px; font-size:14px; } .setup div { background:#F8FAFC; border-radius:8px; padding:9px 12px; } .setup span { display:block; font-size:12px; color:var(--muted); }
@@ -508,7 +516,24 @@
     <div class="panel">
       <div class="ph"><div><h2>인원을 늘리면 어디가 막히나</h2><p>이번 회차의 거점 배치와 QR 기록의 이탈률로 계산합니다</p></div>
         <div class="noprint" style="display:flex;gap:8px"><button class="big" id="simBtn">인원별로 돌려 보기</button><button class="big line" id="simMapBtn">지도에서 직접 돌려 보기</button></div></div>
+      <div class="simin noprint">
+        <div>
+          <h3>기록 CSV로 돌리기</h3>
+          <p class="d">스캔 기록 CSV(시각, 거점, 방문자 ID)를 올리면 방문 인원, 운영 시간, 거점별 이탈률을 읽어 입력으로 씁니다.</p>
+          <div class="acts"><button class="big" id="csvDemo" type="button">예시 CSV로 돌리기</button><button class="big line" id="csvPick" type="button">CSV 파일 올리기</button><button class="ghost" id="csvGet" type="button">예시 CSV 받기</button><input type="file" id="csvFile" accept=".csv,text/csv" hidden></div>
+          <div id="csvOut"></div>
+        </div>
+        <div>
+          <h3>행사장 크기와 배치도로 지도 만들기</h3>
+          <p class="d">가로·세로를 넣고 배치도 사진을 올린 뒤, 그 위를 눌러 거점을 순서대로 놓습니다. 거리는 축척으로 계산합니다.</p>
+          <div class="acts"><label class="f">가로 (m)<input id="mapW" type="number" min="10" value="200"></label><label class="f">세로 (m)<input id="mapH" type="number" min="10" value="100"></label>
+            <button class="big line" id="mapPick" type="button">배치도 사진 올리기</button><button class="big" id="mapDemo" type="button">예시 배치도 불러오기</button><input type="file" id="mapFile" accept="image/*" hidden></div>
+          <div class="mapbox" id="mapBox" hidden><svg id="mapSvg" role="img" aria-label="직접 만든 행사장 지도"></svg></div>
+          <div class="acts" id="mapActs" style="margin-top:10px" hidden><button class="big" id="mapRun" type="button" disabled>이 지도로 시뮬레이션</button><button class="ghost" id="mapClear" type="button">다시 놓기</button><span class="muted" id="mapHint" style="font-size:13px"></span></div>
+        </div>
+      </div>
       <div id="simOut"><div class="empty"><b>같은 조건에서 인원만 바꿔 다섯 번 돌립니다</b>지난 회차 인원의 1·2·3·5·8배에서 대기 줄과 대기 시간을 비교합니다.</div></div>
+      <p class="nt">CSV는 인원과 이탈률을, 지도는 거점 사이 거리를 입력으로 바꿉니다. 배치도 사진에서 건물이나 통로를 자동으로 알아내지는 않으며, 거점 위치는 직접 놓습니다. 보정 전 추정 모델이라는 점은 같습니다.</p>
       <div class="frame noprint" id="simFrame" hidden><div class="fh"><span>지도 시뮬레이션 · 인원과 거점 조건을 바꿔 직접 돌려 봅니다</span><button class="ghost" data-close="simFrame">닫기</button></div><iframe title="혼잡 시뮬레이션" loading="lazy"></iframe></div>
     </div>
   </section>
@@ -613,7 +638,7 @@ const PHASES = [
   { k:'field', n:'현장', first:1, feats:[['QR 스탬프', 1], ['다국어 안내', 1], ['경품 지급 확인', 1], ['혼잡 경고', 7], ['분산 유도', 7], ['인력 재배치 제안', 7], ['인력 출퇴근 QR', 9]] },
   { k:'collect', n:'수집', first:10, feats:[['실시간 집계', 10], ['모바일 설문', 10], ['부스별 일일 매출', 10], ['방문 대비 매출', 10], ['자유 응답 요약', 10]] },
   { k:'report', n:'보고', first:2, feats:[['결과보고서 초안', 2], ['숫자 검증', 2], ['회차 비교', 3], ['영수증 정산 분류', 11]] },
-  { k:'q5', n:'질문용', first:5, feats:[['혼잡 시뮬레이션', 5, '보정 전 추정']] },
+  { k:'q5', n:'질문용', first:5, feats:[['혼잡 시뮬레이션', 5, '보정 전 추정'], ['기록 CSV로 돌리기', 5], ['크기·배치도로 지도 만들기', 5]] },
   { k:'q6', n:'질문용', first:6, feats:[['만든 방법과 근거', 6]] },
 ];
 const PH_OF = { 8:'prep', 1:'field', 7:'field', 9:'field', 10:'collect', 2:'report', 3:'report', 11:'report', 5:'q5', 6:'q6' };
@@ -947,22 +972,99 @@ async function runSim() {
   try {
     if (!simBase) { const lay = await fetch('/api/layout/' + FID).then(r => r.ok ? r.json() : null).catch(() => null); simBase = SimBase.build(last, lay).base; }
     await wait(40);
-    const n0 = Math.max(50, Math.round((last.comparison ? last.comparison.visitors_prev : last.current.visitors) / 10) * 10);   // 기준: 지난 회차 참여 인원
-    const mult = [1, 2, 3, 5, 8], rows = mult.map(x => new Sim(SimBase.config(simBase, n0 * x)).runAll().summary()), brk = rows.find(r => r.anyAlert);
+    const B = simSrc ? simSrc.base : simBase, H = simSrc && simSrc.hours ? simSrc.hours : 6;
+    const n0 = simSrc && simSrc.n0 ? simSrc.n0 : Math.max(50, Math.round((last.comparison ? last.comparison.visitors_prev : last.current.visitors) / 10) * 10);   // 기준: 지난 회차 참여 인원
+    const mult = [1, 2, 3, 5, 8], rows = mult.map(x => new Sim(SimBase.config(B, n0 * x, { hours:H })).runAll().summary()), brk = rows.find(r => r.anyAlert);
     const wmax = r => Math.max(...r.cps.map(x => x.waitMax)), wq = r => r.cps.reduce((a, c) => c.peakQ > a.peakQ ? c : a), top = Math.max(...rows.map(wmax), 1);
     const bw = brk && brk.worst.alertSec ? brk.worst : null;
-    $('simOut').innerHTML = (brk ? `<div class="verdict"><span class="ic">!</span><div><b>${brk.N.toLocaleString()}명부터 '${esc(bw ? bw.name : brk.segs.find(x => x.alertSec).name)}'에서 막힙니다</b>
+    $('simOut').innerHTML = (simSrc ? `<p class="srcline"><b>입력</b> · ${simSrc.label}</p>` : '') + (brk ? `<div class="verdict"><span class="ic">!</span><div><b>${brk.N.toLocaleString()}명부터 '${esc(bw ? bw.name : brk.segs.find(x => x.alertSec).name)}'에서 막힙니다</b>
         <span>${bw ? `대기 줄이 최대 ${bw.peakQ}명, 가장 오래 기다린 사람은 ${mins(bw.waitMax)}. 줄 없이 받으려면 수용 인원이 약 ${bw.need}명 필요합니다 (지금 ${bw.cap}명).` : '통로 밀도가 2명/㎡를 넘습니다.'}</span></div></div>`
       : `<div class="verdict okv"><span class="ic">✓</span><div><b>${rows[rows.length - 1].N.toLocaleString()}명까지는 혼잡 기준을 넘지 않습니다</b><span>대기 줄이 수용 인원을 넘는 거점이 없습니다.</span></div></div>`) +
       `<table class="simT"><tr><th>참가 인원</th><th>최대 동시 인원</th><th>가장 밀리는 거점</th><th>최대 대기 줄</th><th style="width:34%">가장 오래 기다린 시간</th><th>판정</th></tr>` +
-      rows.map((r, i) => { const q = wq(r); return `<tr class="${r.anyAlert ? 'bad' : ''} ${r === brk ? 'brk' : ''}"><td><b>${r.N.toLocaleString()}명</b> <span class="muted">${i ? mult[i] + '배' : '지난 회차'}</span></td><td>${r.peakOn.toLocaleString()}명</td><td>${q.peakQ ? esc(q.name) : '-'}</td><td>${q.peakQ}명</td>
+      rows.map((r, i) => { const q = wq(r); return `<tr class="${r.anyAlert ? 'bad' : ''} ${r === brk ? 'brk' : ''}"><td><b>${r.N.toLocaleString()}명</b> <span class="muted">${i ? mult[i] + '배' : (simSrc ? '기준' : '지난 회차')}</span></td><td>${r.peakOn.toLocaleString()}명</td><td>${q.peakQ ? esc(q.name) : '-'}</td><td>${q.peakQ}명</td>
         <td><div class="wb"><i style="width:${Math.max(1, wmax(r) / top * 100)}%"></i><span>${mins(wmax(r))}</span></div></td><td class="s">${r.anyAlert ? '혼잡 ' + mins(r.alertSec) : '여유'}</td></tr>`; }).join('') + '</table>' +
-      `<p class="cond">조건: 입장 6시간 동안 고르게, 통로 폭 3m. 거점 수용 인원은 ${simBase.cps.map(c => `${esc(c.name)} ${c.cap}명`).join(' · ')}. 이탈률은 이번 회차 QR 기록에서, 수용 인원과 이용 시간은 배치도에 넣은 값에서 가져옵니다. 혼잡 기준: 대기 줄 ≥ 수용 인원. 추정 모델이며 사고·안전을 예측하지 않습니다. 같은 조건이면 항상 같은 결과가 나옵니다.</p>`;
+      `<p class="cond">조건: 입장 ${H}시간 동안 고르게, 통로 폭 3m. 거점 수용 인원은 ${B.cps.map(c => `${esc(c.name)} ${c.cap}명`).join(' · ')}. 이탈률은 이번 회차 QR 기록에서, 수용 인원과 이용 시간은 배치도에 넣은 값에서 가져옵니다. 혼잡 기준: 대기 줄 ≥ 수용 인원. 추정 모델이며 사고·안전을 예측하지 않습니다. 같은 조건이면 항상 같은 결과가 나옵니다.</p>`;
     b.textContent = '다시 돌려 보기';
   } catch (e) { made.sim = false; $('simOut').innerHTML = '<div class="empty"><b>계산하지 못했습니다</b>잠시 후 다시 눌러 주세요.</div>'; b.textContent = '인원별로 돌려 보기'; }
   b.disabled = false;
 }
-$('simBtn').onclick = runSim;
+$('simBtn').onclick = () => { simSrc = null; runSim(); };
+let simSrc = null;
+async function ensureSimBase() { if (!simBase) { const lay = await fetch('/api/layout/' + FID).then(r => r.ok ? r.json() : null).catch(() => null); simBase = SimBase.build(last, lay).base; } return simBase; }
+
+/* ---------- 시뮬레이션 입력 1: 스캔 기록 CSV ---------- */
+function csvRows(text) {   // 따옴표가 있는 CSV도 읽는다
+  const out = []; let row = [], cur = '', q = false; text = text.replace(/^﻿/, '');
+  for (let i = 0; i < text.length; i++) { const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true; else if (ch === ',') { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some(x => x !== '')) out.push(row); row = []; }
+    else cur += ch; }
+  row.push(cur); if (row.some(x => x !== '')) out.push(row); return out;
+}
+function csvRead(text) {
+  const rows = csvRows(text); if (rows.length < 2) throw '읽을 행이 없습니다';
+  const head = rows[0].map(h => h.trim().toLowerCase()), find = (...ks) => head.findIndex(h => ks.some(k => h.includes(k)));
+  const iT = find('시각', '시간', 'time', 'ts'), iC = find('거점', 'checkpoint', '장소'), iS = find('방문자', 'session', 'visitor', 'id'), iK = find('구분', 'kind');
+  if (iC < 0 || iS < 0) throw "'거점'과 '방문자ID' 열을 찾지 못했습니다";
+  const by = new Map(), first = []; let t0 = Infinity, t1 = -Infinity, n = 0;
+  rows.slice(1).forEach(r => { if (iK >= 0 && r[iK] && r[iK] !== '스캔') return; const cp = (r[iC] || '').trim(), sid = (r[iS] || '').trim(); if (!cp || !sid) return; n++;
+    if (!by.has(cp)) { by.set(cp, new Set()); first.push(cp); } by.get(cp).add(sid);
+    if (iT >= 0) { const t = Date.parse((r[iT] || '').replace(' ', 'T')); if (!isNaN(t)) { t0 = Math.min(t0, t); t1 = Math.max(t1, t); } } });
+  if (!by.size) throw '스캔 행이 없습니다';
+  const known = fest.checkpoints.map(c => c.name).filter(nm => by.has(nm)), order = known.length === by.size ? known : first;   // 행사 거점과 이름이 같으면 그 순서, 아니면 처음 나온 순서
+  const all = new Set(); by.forEach(v => v.forEach(x => all.add(x)));
+  const cps = order.map((nm, i) => { const v = by.get(nm).size, nx = i < order.length - 1 ? by.get(order[i + 1]).size : null; return { name:nm, visitors:v, drop: nx == null || !v ? 0 : Math.max(0, Math.round((v - nx) / v * 1000) / 10) }; });
+  return { scans:n, visitors:all.size, hours: isFinite(t0) && t1 > t0 ? Math.max(1, Math.round((t1 - t0) / 3600000 * 10) / 10) : null, cps };
+}
+function csvSample() {   // 예시 CSV (가상 데이터): 500명, 5시간, 뒤로 갈수록 빠진다
+  const rnd = (() => { let a = 20261117; return () => (a = (a * 1664525 + 1013904223) >>> 0) / 4294967296; })(), keep = [0.9, 0.8, 0.82, 0.76];
+  const L = [['구분', '시각', '거점', '방문자ID']], day = Date.parse('2026-10-10T10:00:00');
+  for (let i = 0; i < 500; i++) { let t = day + Math.floor(rnd() * 5 * 3600) * 1000;
+    for (let j = 0; j < fest.checkpoints.length; j++) { if (j > 0 && rnd() > keep[(j - 1) % keep.length]) break;
+      L.push(['스캔', new Date(t + 9 * 3600000).toISOString().slice(0, 19).replace('T', ' '), fest.checkpoints[j].name, 'v' + String(i).padStart(4, '0')]); t += (4 + Math.floor(rnd() * 10)) * 60000; } }
+  return '﻿' + L.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+}
+async function csvRun(text, name) {
+  try { const d = csvRead(text), base0 = await ensureSimBase();
+    const cps = d.cps.map((c, i) => { const m = base0.cps.find(x => x.name === c.name) || base0.cps[i % base0.cps.length]; return { ...m, id:'c' + i, name:c.name, drop:c.drop / 100, ...(base0.cps.find(x => x.name === c.name) ? {} : { x:10 + i * 60, y:i % 2 ? 18 : 42 }) }; });
+    $('csvOut').innerHTML = `<table class="opsT" style="margin-top:12px"><tr><th>거점</th><th class="n">방문</th><th class="n">이후 이탈률</th></tr>${d.cps.map((c, i) => `<tr><td>${esc(c.name)}</td><td class="n">${won(c.visitors)}명</td><td class="n">${i < d.cps.length - 1 ? c.drop + '%' : '-'}</td></tr>`).join('')}</table>
+      <p class="nt">${esc(name)}에서 스캔 ${won(d.scans)}건, 방문자 ${won(d.visitors)}명${d.hours ? `, 운영 ${d.hours}시간` : ''}을 읽었습니다. 거점에서 한 명을 처리하는 시간과 수용 인원은 기록에 없어 배치도에 넣은 값(가정)을 씁니다.</p>`;
+    simSrc = { base:{ cell_m:base0.cell_m, cps }, n0:Math.max(10, d.visitors), hours:d.hours ? Math.max(1, Math.round(d.hours)) : 6, label:`${esc(name)} · 방문자 ${won(d.visitors)}명, 거점 ${d.cps.length}곳${d.hours ? `, ${d.hours}시간` : ''}의 기록에서 읽은 인원과 이탈률` };
+    runSim();
+  } catch (e) { $('csvOut').innerHTML = `<p class="miss">이 파일은 읽지 못했습니다. ${esc(typeof e === 'string' ? e : '형식을 확인해 주세요')}. 필요한 열: 시각, 거점, 방문자ID</p>`; }
+}
+$('csvDemo').onclick = () => csvRun(csvSample(), '예시 CSV (가상 데이터)');
+$('csvGet').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csvSample()], { type:'text/csv' })); a.download = 'solunet_example_scans.csv'; a.click(); };
+$('csvPick').onclick = () => $('csvFile').click();
+$('csvFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => csvRun(String(r.result), f.name); r.readAsText(f); e.target.value = ''; };
+
+/* ---------- 시뮬레이션 입력 2: 행사장 크기와 배치도 위에 거점 놓기 ---------- */
+const mapS = { img:null, pts:[], demo:false };
+const MAP_DEMO = `<rect width="200" height="100" fill="#EEF2E6"/><path d="M0 78 Q60 60 110 70 T200 40 V100 H0Z" fill="#DCE9F5"/><rect x="6" y="8" width="38" height="24" rx="2" fill="#E2E8F0" stroke="#94A3B8" stroke-width=".6"/><rect x="60" y="14" width="46" height="30" rx="2" fill="#FDE68A" stroke="#D97706" stroke-width=".6"/><rect x="122" y="20" width="30" height="20" rx="2" fill="#E2E8F0" stroke="#94A3B8" stroke-width=".6"/><circle cx="176" cy="20" r="11" fill="#D1FAE5" stroke="#059669" stroke-width=".6"/><path d="M10 52 H190" stroke="#CBD5E1" stroke-width="5" stroke-linecap="round"/><g font-size="4.2" fill="#475569" text-anchor="middle"><text x="25" y="22">주차장</text><text x="83" y="31">중앙 광장</text><text x="137" y="32">부스 구역</text><text x="176" y="22">언덕</text><text x="100" y="54">중앙 통로</text><text x="150" y="90">강변</text></g>`;
+function mapDraw() {
+  const W = Math.max(10, +$('mapW').value || 200), H = Math.max(10, +$('mapH').value || 100), u = Math.max(W, H) / 100, names = fest.checkpoints.map(c => c.name);
+  $('mapBox').hidden = false; $('mapActs').hidden = false; const sv = $('mapSvg'); sv.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const bg = mapS.demo ? `<svg x="0" y="0" width="${W}" height="${H}" viewBox="0 0 200 100" preserveAspectRatio="none">${MAP_DEMO}</svg>` : mapS.img ? `<image href="${mapS.img}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="none"/>` : `<rect width="${W}" height="${H}" fill="#F8FAFC"/>`;
+  let g = ''; for (let x = 0; x <= W; x += 10 * Math.ceil(u)) g += `<line x1="${x}" y1="0" x2="${x}" y2="${H}"/>`; for (let y = 0; y <= H; y += 10 * Math.ceil(u)) g += `<line x1="0" y1="${y}" x2="${W}" y2="${y}"/>`;
+  const seg = mapS.pts.slice(1).map((p, i) => { const a = mapS.pts[i], d = Math.hypot(p.x - a.x, p.y - a.y); return `<line x1="${a.x}" y1="${a.y}" x2="${p.x}" y2="${p.y}" stroke="#2563EB" stroke-width="${0.9 * u}" stroke-dasharray="${2 * u} ${1.5 * u}"/><text x="${(a.x + p.x) / 2}" y="${(a.y + p.y) / 2 - 1.5 * u}" font-size="${3.4 * u}" font-weight="700" text-anchor="middle" fill="#1E3A8A" stroke="#fff" stroke-width="${0.9 * u}" paint-order="stroke">${Math.round(d)}m</text>`; }).join('');
+  const dots = mapS.pts.map((p, i) => `<circle cx="${p.x}" cy="${p.y}" r="${3.4 * u}" fill="#0F172A"/><text x="${p.x}" y="${p.y + 1.3 * u}" font-size="${3.6 * u}" font-weight="700" text-anchor="middle" fill="#fff">${i + 1}</text><text x="${p.x}" y="${p.y - 4.6 * u}" font-size="${3.4 * u}" font-weight="700" text-anchor="middle" fill="#0F172A" stroke="#fff" stroke-width="${0.9 * u}" paint-order="stroke">${esc(names[i])}</text>`).join('');
+  sv.innerHTML = bg + `<g stroke="#94A3B8" stroke-opacity=".35" stroke-width="${0.25 * u}">${g}</g>` + seg + dots;
+  const left = names.length - mapS.pts.length, tot = mapS.pts.slice(1).reduce((a, p, i) => a + Math.hypot(p.x - mapS.pts[i].x, p.y - mapS.pts[i].y), 0);
+  $('mapHint').textContent = left > 0 ? `지도를 눌러 '${names[mapS.pts.length]}' 위치를 놓으세요 (${mapS.pts.length} / ${names.length})` : `${W}m × ${H}m · 동선 직선거리 합계 ${Math.round(tot)}m`;
+  $('mapRun').disabled = left > 0;
+}
+$('mapSvg').addEventListener('click', e => { if (mapS.pts.length >= fest.checkpoints.length) return; const sv = $('mapSvg'), r = sv.getBoundingClientRect(), vb = sv.viewBox.baseVal;
+  mapS.pts.push({ x:Math.round((e.clientX - r.left) / r.width * vb.width * 10) / 10, y:Math.round((e.clientY - r.top) / r.height * vb.height * 10) / 10 }); mapDraw(); });
+$('mapPick').onclick = () => $('mapFile').click();
+$('mapFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { mapS.img = String(r.result); mapS.demo = false; mapS.pts = []; mapDraw(); }; r.readAsDataURL(f); e.target.value = ''; };
+$('mapDemo').onclick = () => { $('mapW').value = 200; $('mapH').value = 100; mapS.demo = true; mapS.img = null;
+  mapS.pts = [[22, 46], [58, 60], [96, 24], [140, 48], [176, 22]].slice(0, fest.checkpoints.length).map(([x, y]) => ({ x, y })); mapDraw(); };
+$('mapClear').onclick = () => { mapS.pts = []; mapDraw(); };
+['mapW', 'mapH'].forEach(id => { $(id).addEventListener('change', () => { if (!$('mapBox').hidden) { mapS.pts = []; mapDraw(); } }); $(id).addEventListener('keydown', e => e.stopPropagation()); });
+$('mapRun').onclick = async () => { const base0 = await ensureSimBase(), W = +$('mapW').value, H = +$('mapH').value;
+  simSrc = { base:{ cell_m:1, cps:base0.cps.map((c, i) => ({ ...c, x:mapS.pts[i].x, y:mapS.pts[i].y })) }, label:`직접 만든 지도 (${W}m × ${H}m${mapS.demo ? ', 예시 배치도' : mapS.img ? ', 올린 배치도 사진' : ''}) · 거점 사이 거리는 지도에 놓은 위치에서 계산, 인원과 이탈률은 이번 회차 QR 기록` };
+  runSim(); $('simOut').scrollIntoView({ behavior:'smooth', block:'start' }); };
 
 /* ---------- 같은 화면 안에서 여는 창 ---------- */
 function openFrame(id, src, title) { const box = $(id), fr = box.querySelector('iframe'); if (fr.getAttribute('src') !== src) fr.setAttribute('src', src); if (title) $('moreTitle').textContent = title; box.hidden = false; box.scrollIntoView({ behavior:'smooth', block:'start' }); }
