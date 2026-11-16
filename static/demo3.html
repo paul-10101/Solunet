@@ -285,11 +285,18 @@
   .opsT small { color:var(--muted); display:block; font-size:12px; }
   .tag { display:inline-block; font-size:12px; font-weight:700; padding:2px 9px; border-radius:999px; background:#E0E7FF; color:#1E3A8A; white-space:nowrap; }
   .tag.un { background:#FEF3C7; color:#92400E; } .tag.as { background:#F1F5F9; color:#475569; font-weight:500; }
+  .why { background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:11px 14px; font-size:13.5px; line-height:1.65; margin-bottom:14px; color:#1E3A8A; }
+  .why b { color:var(--ink); }
+  .expl { background:#F8FAFC; border-left:3px solid var(--route); border-radius:0 8px 8px 0; padding:11px 14px; font-size:14px; line-height:1.75; margin:12px 0 4px; }
+  .expl small { display:block; color:var(--muted); font-size:12px; margin-top:6px; }
+  .miss { font-size:13px; margin-top:10px; padding:9px 12px; border-radius:8px; background:#FEF3C7; color:#92400E; }
+  .bar2 { display:block; height:6px; border-radius:3px; background:#E2E8F0; margin-top:5px; overflow:hidden; } .bar2 i { display:block; height:100%; background:var(--route); }
   .nt { font-size:12.5px; color:var(--muted); margin-top:10px; line-height:1.65; }
-  .qrs { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; } .qrs div { text-align:center; font-size:12.5px; font-weight:500; border:1px solid var(--grid); border-radius:10px; padding:8px 4px; } .qrs svg { width:100%; height:auto; display:block; }
+  .qrs { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; max-width:520px; margin-top:14px; } .qrs div { text-align:center; font-size:12.5px; font-weight:500; border:1px solid var(--grid); border-radius:10px; padding:8px 4px; } .qrs svg { width:100%; height:auto; display:block; }
   .setup { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; margin-bottom:14px; font-size:14px; } .setup div { background:#F8FAFC; border-radius:8px; padding:9px 12px; } .setup span { display:block; font-size:12px; color:var(--muted); }
   .tp { display:grid; gap:10px; } .tp .t { border:1px solid var(--grid); border-radius:10px; padding:11px 14px; } .tp .t b { font-size:15px; } .tp .t u { text-decoration:none; float:right; font-weight:700; color:var(--route); font-variant-numeric:tabular-nums; } .tp .t p { font-size:13px; color:var(--muted); margin-top:4px; }
-  @media (max-width:700px) { .qrs { grid-template-columns:repeat(3,1fr); } .setup { grid-template-columns:1fr; } }
+  #step-8 .panel, #step-10 .panel, #step-11 .panel, #step-9 .panel { overflow-x:auto; }
+  @media (max-width:700px) { .opsT { font-size:12.5px; } .opsT th, .opsT td { padding:7px 5px; } .qrs { grid-template-columns:repeat(3,1fr); } .setup { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -365,7 +372,7 @@
         <div class="sp-state off" id="spState"><span id="spStateT">불러오는 중</span></div>
         <div class="cols">
           <div class="panel">
-            <svg id="spMap" viewBox="0 0 100 50" preserveAspectRatio="xMidYMid meet" role="img" aria-label="거점 지도" style="width:100%;display:block"></svg>
+            <svg id="spMap" viewBox="0 -5 100 60" preserveAspectRatio="xMidYMid meet" role="img" aria-label="거점 지도" style="width:100%;display:block"></svg>
             <div class="legend"><span><i style="background:#DC2626"></i>혼잡 (예상의 1.5배 이상)</span><span><i style="background:#2563EB"></i>한산 (예상의 0.7배 이하)</span><span><i style="background:#94A3B8"></i>보통</span></div>
             <p class="note" id="spRule" style="font-size:12.5px;color:var(--muted);margin-top:8px"></p>
           </div>
@@ -399,37 +406,36 @@
 
   <!-- 3 회차 비교 -->
   <section id="step-3" hidden><div class="panel"><div class="ph"><div><h2>회차 비교</h2><p id="cmpNote"></p></div></div><div id="cmpOut"></div></div>
-  <h2 style="font-size:18px;margin:18px 0 8px">지난 회차 숫자에서 시작하는 다음 제안서</h2>
-    <div class="panel">
-      <form class="form noprint" id="propForm">
-        <label>제안할 행사 이름<input id="pTitle" maxlength="80" value="2027 예시 축제"></label>
-        <label>예상 참가 (명)<input id="pVis" type="number" min="1" value="400"></label>
-        <label>기간 (일)<input id="pDays" type="number" min="1" max="60" value="2"></label>
-        <button class="big" id="propBtn" type="submit">제안서 초안 만들기</button>
-      </form>
-      <div id="propOut"><div class="empty"><b>지난 회차 숫자에서 시작하는 제안서</b>과업 이해, 운영 계획, 성과 지표와 목표, 결과 보고 계획 네 항목을 씁니다. 금액은 넣지 않습니다.</div></div>
-    </div>
+  <p class="nt" style="font-size:14px;margin-top:14px">이 회차 비교가 다음 행사의 출발점입니다. 완주율과 이탈 거점은 <button class="big line" type="button" onclick="show(8)" style="padding:6px 14px;font-size:13.5px">행사 전 · 준비</button> 단계의 기초 설계와 제안서 목표로 그대로 넘어갑니다.</p>
   </section>
 
 
-  <!-- 준비: 개설·QR·산출내역 -->
+  <!-- 준비: 기초 설계·산출내역·제안서 -->
   <section id="step-8" hidden>
+    <div class="panel" style="margin-bottom:16px">
+      <form class="form noprint" id="propForm" style="margin-bottom:0">
+        <label>준비할 행사 이름<input id="pTitle" maxlength="80" value="2027 예시 축제"></label>
+        <label>예상 참가 (명)<input id="pVis" type="number" min="1" value="400"></label>
+        <label>기간 (일)<input id="pDays" type="number" min="1" max="60" value="2"></label>
+        <button class="big" id="estBtn" type="submit">행사 기초 설계 만들기</button>
+      </form>
+    </div>
     <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
       <div class="panel">
-        <div class="ph"><div><h2>행사·거점 개설과 QR 발급</h2><p>행사 이름과 거점을 넣으면 거점마다 QR이 나옵니다</p></div></div>
-        <div class="setup" id="setup"></div>
+        <div class="ph"><div><h2>행사 기초 설계</h2><p id="planNote">지난 회차 QR 기록에서 거점별 방문, 인력, 경품 수량을 계산합니다</p></div></div>
+        <div id="planOut"><div class="empty"><b>지난 회차 기록이 다음 행사의 설계가 됩니다</b>예상 참가와 기간만 넣으면 거점별 예상 방문과 인력 배치가 나옵니다.</div></div>
         <div class="qrs" id="qrs"></div>
-        <p class="nt">QR은 인쇄해 거점에 붙입니다. 참가자는 휴대폰 기본 카메라로 찍고, 앱 설치나 가입은 없습니다.</p>
+        <p class="nt" id="qrNote"></p>
       </div>
       <div class="panel">
-        <div class="ph"><div><h2>산출내역 초안</h2><p>거점 수, 참가 인원, 일수와 지난 완주율로 수량을 계산합니다</p></div></div>
-        <form class="form noprint" id="estForm" style="grid-template-columns:1fr 1fr auto">
-          <label>예상 참가 (명)<input id="eVis" type="number" min="1" value="400"></label>
-          <label>기간 (일)<input id="eDays" type="number" min="1" max="60" value="2"></label>
-          <button class="big" id="estBtn" type="submit">산출내역 초안 만들기</button>
-        </form>
-        <div id="estOut"><div class="empty"><b>QR 참여 프로그램의 산출내역 초안</b>수량은 행사 설정에서, 단가는 가정값에서 옵니다.</div></div>
+        <div class="ph"><div><h2>산출내역 초안</h2><p>설계의 수량에 단가를 곱합니다</p></div></div>
+        <div id="estOut"><div class="empty"><b>QR 참여 프로그램의 산출내역 초안</b>수량은 기초 설계에서, 단가는 가정값에서 옵니다.</div></div>
       </div>
+    </div>
+    <h2 style="font-size:18px;margin:18px 0 8px">같은 숫자로 쓰는 제안서 초안</h2>
+    <div class="panel">
+      <div class="noprint" style="margin-bottom:14px"><button class="big" id="propBtn" type="button">제안서 초안 만들기</button></div>
+      <div id="propOut"><div class="empty"><b>지난 회차 숫자에서 시작하는 제안서</b>과업 이해, 운영 계획, 성과 지표와 목표, 결과 보고 계획을 씁니다. 금액은 넣지 않습니다.</div></div>
     </div>
   </section>
 
@@ -451,19 +457,28 @@
     </div>
   </section>
 
-  <!-- 수집: 집계·설문·매출·자유 응답 -->
+  <!-- 수집: 집계·설문·상권 매출·자유 응답 -->
   <section id="step-10" hidden>
     <div class="kpis5" id="kpis10"></div>
-    <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+    <div class="cols" style="grid-template-columns:minmax(0,5fr) minmax(0,4fr)">
       <div class="panel">
-        <div class="ph"><div><h2>부스별 일일 매출</h2><p>부스 담당자가 휴대폰으로 그날 매출을 보냅니다</p></div></div>
+        <div class="ph"><div><h2>부스별 일일 매출 · 상권 성과</h2><p>부스 담당자가 휴대폰으로 그날 매출을 보냅니다</p></div></div>
+        <p class="why"><b>왜 필요한가.</b> 부스·점포형 행사는 상인 매출이 과업의 성과를 보여 주는 지표이고, 일일 매출 보고를 과업으로 요구하는 공고도 있습니다. 대행사가 부스마다 걷어 합산하던 일을 부스가 직접 보내게 하고, QR 방문 기록과 묶어 <b>방문이 매출로 이어졌는지</b>까지 봅니다.</p>
         <table class="opsT" id="slT"></table>
-        <p class="nt">부스가 직접 보낸 금액을 그대로 더합니다. 카드 단말기나 POS와 연결되지는 않습니다.</p>
+        <div id="slMiss"></div>
+        <p class="nt">부스가 직접 보낸 금액을 그대로 더한 자가 보고 값입니다. 카드 단말기나 POS와 연결되지 않으며, 금액 확인은 대행사가 합니다.</p>
       </div>
-      <div class="panel">
-        <div class="ph"><div><h2>자유 응답 요약</h2><p id="cmNote">설문 한마디를 주제별로 셉니다</p></div></div>
-        <div class="tp" id="cmOut"></div>
-        <p class="nt">낱말 규칙으로 주제를 나눠 건수와 원문을 보여 줍니다. AI가 쓴 요약 문장이 아닙니다.</p>
+      <div>
+        <div class="panel" style="margin-bottom:16px">
+          <div class="ph" style="margin-bottom:10px"><div><h2>구역별 방문 대비 매출</h2><p>구역 매출 ÷ 그 구역 거점의 QR 방문 인원</p></div></div>
+          <table class="opsT" id="slZ"></table>
+          <p class="nt" id="slZn"></p>
+        </div>
+        <div class="panel">
+          <div class="ph" style="margin-bottom:10px"><div><h2>자유 응답 요약</h2><p id="cmNote">설문 한마디를 주제별로 셉니다</p></div></div>
+          <div class="tp" id="cmOut"></div>
+          <p class="nt">낱말 규칙으로 주제를 나눠 건수와 원문을 보여 줍니다. AI가 쓴 요약 문장이 아닙니다.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -583,21 +598,21 @@ const STEPS = {
   1: { h:'QR을 찍으면 <em>바로 지도와 집계</em>에 올라옵니다', paper:'종이 설문을 현장에서 나눠 주고 끝난 뒤 손으로 집계', other:'스탬프 기록과 결과 리포트는 제공 (공개 페이지 기준)', me:'찍는 순간 집계 · 앱 설치와 가입 없음' },
   7: { h:'한 곳이 붐비면 <em>한산한 곳으로 안내</em>하고, 따랐는지 잽니다', paper:'혼잡은 현장 인력이 눈으로 보고 판단', other:'동선·체류 대시보드는 확인, 현장 분산 유도는 확인한 범위에서 찾지 못함', me:'쏠림 감지 → 추천 → 수락률 기록 · 안내이며 안전 통제가 아님' },
   2: { h:'기록이 그대로 <em>공고가 요구하는 문서</em>가 됩니다', paper:'결과자료집을 별도 계약으로 따로 발주 (경북문화재단 640만~1,680만)', other:'통계 중심의 결과 리포트는 제공', me:'숫자를 누르면 근거와 계산식 · 지어낸 숫자는 폐기' },
-  3: { h:'지난 회차 숫자가 <em>다음 제안서의 목표</em>가 됩니다', paper:'작년 자료와 비교는 수작업', other:'회차 비교는 확인한 범위에서 찾지 못함', me:'같은 QR로 회차 비교 → 제안서 초안' },
-  8: { h:'행사와 거점을 넣으면 <em>QR과 산출내역 초안</em>이 나옵니다', note:'행사 전 · 준비 · 산출내역의 단가는 가정값이며 담당자가 고칩니다' },
-  9: { h:'운영 인력도 <em>QR로 출퇴근</em>을 남깁니다', note:'행사 중 · 현장 · 이름과 누른 시각만 기록합니다 · 예시 데이터' },
-  10: { h:'집계, 설문, 매출, 한마디가 <em>한 화면에</em> 모입니다', note:'행사 중 · 수집 · 자유 응답은 낱말 규칙으로 주제별 건수를 셉니다 (AI 아님)' },
-  11: { h:'영수증 내역을 넣으면 <em>비목별 정산표</em>가 됩니다', note:'행사 후 · 보고 · 낱말 규칙 분류이며 미분류는 담당자가 정합니다' },
+  3: { h:'같은 QR이라 <em>회차끼리 바로 비교</em>됩니다', paper:'작년 자료와 비교는 수작업', other:'회차 비교는 확인한 범위에서 찾지 못함', me:'같은 QR·같은 거점·같은 기준으로 회차 비교 → 다음 설계와 제안서의 목표로' },
+  8: { h:'지난 회차 기록에서 <em>다음 행사의 설계와 제안서</em>가 시작됩니다', paper:'제안서와 산출내역을 매번 빈 문서에서 다시 작성', me:'예상 참가만 넣으면 거점별 방문·인력·경품 수량 → 산출내역 → 제안서 초안까지 같은 숫자로' },
+  9: { h:'운영 인력도 <em>QR로 출퇴근</em>을 남깁니다', paper:'출근부에 서명을 받고 끝난 뒤 엑셀로 옮겨 적음', me:'누른 시각이 곧 명단과 근무 시간 · 인건비 정산의 근거로 이어짐' },
+  10: { h:'방문 기록과 상인 매출을 <em>한 화면에서 연결</em>합니다', paper:'부스를 돌며 매출을 걷어 엑셀로 합산, 방문객 수와는 따로 봄', me:'부스가 직접 보고 → 목표 달성률 · 참여자 1인당 · 구역 방문 1명당 매출까지 자동 계산' },
+  11: { h:'영수증 내역을 넣으면 <em>비목별 정산표</em>가 됩니다', paper:'영수증을 모아 손으로 비목을 나누고 합계를 냄', me:'넣는 즉시 비목별 합계 · 애매한 내역은 미분류로 남겨 담당자가 확정' },
   5: { h:'인원을 늘리면 <em>어디가 막히는지</em> 미리 봅니다', note:'질문용 · 보정 전 추정 모델이며 안전 예측이 아닙니다' },
   6: { h:'어떻게 만들었고, <em>무엇을 근거로</em> 만들었나', note:'질문용 · 공개 원자료 분석 → 숫자는 코드, 문장은 틀·AI → 숫자 대조' },
 };
 const ORDER = [8, 1, 7, 9, 10, 2, 3, 11, 5, 6], ALL = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11];
 /* 행사 순서대로 묶은 기능 목록: [이름, 보여 주는 화면, 덧붙임] */
 const PHASES = [
-  { k:'prep', n:'준비', first:8, feats:[['행사·거점 개설', 8], ['QR 발급', 8], ['산출내역 초안', 8], ['제안서 초안', 3, '보고 단계에서']] },
+  { k:'prep', n:'준비', first:8, feats:[['행사 기초 설계', 8], ['거점·QR 발급', 8], ['산출내역 초안', 8], ['제안서 초안', 8]] },
   { k:'field', n:'현장', first:1, feats:[['QR 스탬프', 1], ['다국어 안내', 1], ['경품 지급 확인', 1], ['혼잡 경고', 7], ['분산 유도', 7], ['인력 재배치 제안', 7], ['인력 출퇴근 QR', 9]] },
-  { k:'collect', n:'수집', first:10, feats:[['실시간 집계', 10], ['모바일 설문', 10], ['부스별 일일 매출', 10], ['자유 응답 요약', 10]] },
-  { k:'report', n:'보고', first:2, feats:[['결과보고서 초안', 2], ['숫자 검증', 2], ['회차 비교', 3], ['다음 제안서 초안', 3], ['영수증 정산 분류', 11]] },
+  { k:'collect', n:'수집', first:10, feats:[['실시간 집계', 10], ['모바일 설문', 10], ['부스별 일일 매출', 10], ['방문 대비 매출', 10], ['자유 응답 요약', 10]] },
+  { k:'report', n:'보고', first:2, feats:[['결과보고서 초안', 2], ['숫자 검증', 2], ['회차 비교', 3], ['영수증 정산 분류', 11]] },
   { k:'q5', n:'질문용', first:5, feats:[['혼잡 시뮬레이션', 5, '보정 전 추정']] },
   { k:'q6', n:'질문용', first:6, feats:[['만든 방법과 근거', 6]] },
 ];
@@ -614,10 +629,11 @@ function show(n) {
   if (step === 9) { if (!$('stPh').src) $('stPh').src = '/staff?f=' + FID; opsPoll(); }
   if (step === 10 || step === 11) opsPoll();
   const s = STEPS[step]; $('sayH').innerHTML = s.h;
-  $('sayV').innerHTML = s.paper ? `<span class="o"><em>종이 방식</em>${s.paper}</span><span class="o"><em>타사</em>${s.other}</span><span class="ar">→</span><span class="me">솔루넷 · ${s.me}</span><small>타사: 업체 공개 자료 기준 (2026-11 열람)</small>` : `<span class="o">${s.note}</span>`;
+  $('sayV').innerHTML = s.paper ? `<span class="o"><em>종이 방식</em>${s.paper}</span>${s.other ? `<span class="o"><em>타사</em>${s.other}</span>` : ''}<span class="ar">→</span><span class="me">솔루넷 · ${s.me}</span>${s.other ? '<small>타사: 업체 공개 자료 기준 (2026-11 열람)</small>' : ''}` : `<span class="o">${s.note}</span>`;
   if (step === 6) loadHow();
+  if (step === 1 || step === 7) post('/api/demo/live').then(() => { if (step === 7) spPoll(); }).catch(() => {});
   if (step === 7) spStart();
-  if (last) { if (step === 2 && !made.report) makeReport(); if (step === 3 && !made.prop) makeProposal(); if (step === 5 && !made.sim) runSim(); }
+  if (last) { if (step === 2 && !made.report) makeReport(); if (step === 5 && !made.sim) runSim(); }
   scrollTo({ top:0 });
 }
 document.querySelectorAll('[data-phase]').forEach(b => b.onclick = () => show(PHASES.find(p => p.k === b.dataset.phase).first));
@@ -630,20 +646,21 @@ document.addEventListener('keydown', e => {
   else if (e.key === ' ') { e.preventDefault(); if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); dirGo(); }
 });
 /* Space: 지금 단계에서 발표자가 누를 버튼 하나 */
-function primary() { const b = step === 1 ? document.querySelector('#phFoot .cta:not(:disabled)') : step === 7 ? $('spBtn') : step === 2 ? $('reportBtn') : step === 3 ? $('propBtn') : step === 5 ? $('simBtn') : null; if (b && !b.disabled) b.click(); }
+function primary() { const b = step === 1 ? document.querySelector('#phFoot .cta:not(:disabled)') : step === 7 ? $('spBtn') : step === 2 ? $('reportBtn') : step === 8 ? (made.est ? $('propBtn') : $('estBtn')) : step === 5 ? $('simBtn') : null; if (b && !b.disabled) b.click(); }
 
 /* ---------- ▶ 다음: 한 번 누를 때마다 한 동작 ----------
    1단계: QR 찍기 → 설문 보내기 / 분산 유도: 몰림 → 추천 → 추천 거점 찍기 / 나머지는 단계만 넘기면 문서가 자동으로 만들어진다 */
-const NAME = { 8:'개설·QR·산출내역', 1:'QR 스탬프', 7:'분산 유도', 9:'인력 출퇴근', 10:'집계·설문·매출', 2:'결과보고서', 3:'회차 비교·제안서', 11:'영수증 정산', 5:'시뮬레이션', 6:'만든 방법' };
+const NAME = { 8:'기초 설계·제안서', 1:'QR 스탬프', 7:'분산 유도', 9:'인력 출퇴근', 10:'집계·상권 매출', 2:'결과보고서', 3:'회차 비교', 11:'영수증 정산', 5:'시뮬레이션', 6:'만든 방법' };
 let opsBusy = false;
-function dirBusy() { return !!(opsBusy || ph.busy || $('spBtn').disabled || (step === 2 && $('reportBtn').disabled) || (step === 3 && $('propBtn').disabled) || (step === 5 && $('simBtn').disabled)); }
+function dirBusy() { return !!(opsBusy || ph.busy || $('spBtn').disabled || (step === 2 && $('reportBtn').disabled) || (step === 8 && $('propBtn').disabled) || (step === 5 && $('simBtn').disabled)); }
 function dirPlan() {
   if (step === 1 && ph.stage === 'scan' && $('scanBtn')) return { t:'QR 찍기', go:() => $('scanBtn').click() };
   if (step === 1 && ph.stage === 'survey' && $('sendBtn')) return { t:'설문 보내고 경품 받기', go:() => $('sendBtn').click() };
   if (step === 7 && spN < 3) return { t:SPSEQ[spN].replace(/^[①②③]\s*/, ''), go:() => $('spBtn').click() };
-  if (step === 8 && !made.est) return { t:'산출내역 초안 만들기', go:() => makeEstimate() };
+  if (step === 8 && !made.est) return { t:'행사 기초 설계 만들기', go:() => makeEstimate() };
+  if (step === 8 && !made.prop) return { t:'제안서 초안 만들기', go:() => makeProposal() };
   if (step === 9 && !did.staff) return { t:'운영요원 출근 QR 찍기', go:() => staffDemo() };
-  if (step === 10 && !did.sales) return { t:'부스 매출 2일차 받기', go:() => salesDemo() };
+  if (step === 10 && !did.sales) return { t:'부스 2일차 매출 받기', go:() => salesDemo() };
   if (step === 11 && !did.rcpt) return { t:'영수증 내역 넣어 분류', go:() => rcptDemo() };
   const at = ORDER.indexOf(step);
   if (at < ORDER.length - 1) return { t:'다음: ' + NAME[ORDER[at + 1]], go:() => show(ORDER[at + 1]) };
@@ -839,7 +856,7 @@ function docHtml(o) {
 }
 function reportDoc(st, d) {
   const c = st.current, m = st.comparison, f = st.festival, sv = c.survey, rv = Object.entries(sv.revisit || {});
-  return docHtml({ d, title: `${f.name} ${f.edition}회차 결과보고서`, sections: d.sections || ['행사 개요', '방문객 집계 결과', '만족도 조사 결과', '전 회차 대비 성과', '문제점 및 개선 방안'],
+  return docHtml({ d, title: `${f.name} ${f.edition}회차 결과보고서`, sections: d.sections || ['행사 개요', '방문객 집계 결과', '만족도 조사 결과', '전 회차 대비 성과', '문제점 및 개선 방안', '현장 운영 및 상권 성과'],
     head: [[['행사명', esc(f.name)], ['회차', f.edition + '회차']], [['행사 일시', FILL], ['장소', FILL]], [['주최·주관', FILL], ['수행 업체', FILL]], [['집계 방식', `거점 QR ${c.checkpoints.length}곳`], ['집계 기준', `${hhmm(Date.now())} · 스캔 ${c.scans.toLocaleString()}건`]]],
     tables: {
       2: tbl(['거점', '방문 인원', '다음 거점으로 가지 않은 인원', '이탈률'], c.checkpoints.map((x, i) => [`${i + 1}. ${esc(x.name)}`, x.visitors + '명', i < c.checkpoints.length - 1 ? x.dropped_after + '명' : '-', i < c.checkpoints.length - 1 ? x.drop_rate + '%' : '-'])),
@@ -847,8 +864,22 @@ function reportDoc(st, d) {
         ...(rv.length ? [['재방문 의사', rv.map(([k, v]) => `${esc(k)} ${v}건`).join(' · '), '']] : [])]) : '',
       4: m ? tbl(['지표', `${f.edition - 1}회차`, `${f.edition}회차`, '증감'], [['참여 인원', m.visitors_prev + '명', m.visitors_cur + '명', dsign(m.visitors_prev, m.visitors_cur, '명')], ['완주율', m.completion_prev + '%', m.completion_cur + '%', dsign(m.completion_prev, m.completion_cur, '%p')],
         ['만족도 평균', m.satisfaction_prev, m.satisfaction_cur, dsign(m.satisfaction_prev, m.satisfaction_cur)], ['재방문 의사', m.revisit_prev != null ? m.revisit_prev + '%' : '-', m.revisit_cur != null ? m.revisit_cur + '%' : '-', dsign(m.revisit_prev, m.revisit_cur, '%p')],
-        ['혼잡도 평균', m.crowd_prev, m.crowd_cur, dsign(m.crowd_prev, m.crowd_cur, '', false)]]) : '' },
-    manual: [['예산 집행(정산) 내역', '세부 집행 내역과 증빙은 QR 기록에 없습니다. 정산 담당자가 작성합니다.'], ['홍보 실적 및 현장 사진', '보도·SNS 실적과 현장 사진은 담당자가 첨부합니다.'], ['붙임: 원자료', '스캔·설문 기록(CSV)은 실시간 현황 화면에서 내려받아 첨부합니다.']] });
+        ['혼잡도 평균', m.crowd_prev, m.crowd_cur, dsign(m.crowd_prev, m.crowd_cur, '', false)]]) : '',
+      5: spTable(c), 6: opsTables(d.ops) },
+    manual: [['예산 집행(정산) 내역', '입력한 내역의 비목별 합계는 Ⅵ의 표에 있습니다. 증빙 첨부와 미분류 내역의 비목 확정은 정산 담당자가 합니다.'], ['홍보 실적 및 현장 사진', '보도·SNS 실적과 현장 사진은 담당자가 첨부합니다.'], ['붙임: 원자료', '스캔·설문 기록(CSV)은 실시간 현황 화면에서 내려받아 첨부합니다.']] });
+}
+const spTable = c => { const sp = c.spread || {}; return sp.activations || sp.issued ? tbl(['분산 유도', '값', '계산'], [['작동 횟수', sp.activations + '회', '쏠림 기준을 넘어 켜진 횟수'], ['한산한 거점 추천', sp.issued + '건', '켜진 동안 스탬프를 찍은 참가자에게 안내'], ['추천 거점 실제 방문', sp.accepted + '건', '추천 뒤 그 거점을 찍은 기록'], ['수락률', sp.rate != null ? sp.rate + '%' : '-', `${sp.accepted} ÷ ${sp.issued} × 100`]]) : ''; };
+function opsTables(o) {
+  if (!o) return ''; const st = o.staff, sl = o.sales, cm = o.comments, rc = o.receipts; let h = '';
+  if (sl.total) h += tbl(['상권 성과 지표', '값', '계산'], [['부스 매출 합계', won(sl.total) + '원', `부스 ${sl.booths.length}곳 · ${sl.days.length}일 자가 보고 합산`],
+    ...(sl.achievement != null ? [['목표 달성률', sl.achievement + '%', `${won(sl.total)} ÷ 목표 ${won(sl.target)} × 100`]] : []),
+    ...(sl.per_visitor ? [['스탬프 참여자 1인당 매출', won(sl.per_visitor) + '원', `${won(sl.total)} ÷ 참여 ${won(sl.visitors)}명`]] : []),
+    ...(sl.day_change != null ? [['전일 대비', (sl.day_change > 0 ? '+' : '') + sl.day_change + '%', `${sl.days[sl.days.length - 2]}일차 ${won(sl.day_totals[sl.day_totals.length - 2])}원 → ${sl.days[sl.days.length - 1]}일차 ${won(sl.day_totals[sl.day_totals.length - 1])}원`]] : []),
+    ...sl.zones.map(z => [`${esc(z.zone)} 방문 1명당 매출`, z.per_visit != null ? won(z.per_visit) + '원' : '-', `${won(z.sales)} ÷ QR 방문 ${won(z.visits)}명`])]);
+  if (st.checked_in) h += tbl(['운영 인력', '값', '비고'], [['QR 출근 기록', st.checked_in + '명', '운영 인력이 직접 누른 기록'], ['근무 시간 합계', st.hours ? st.hours + '시간' : '-', '출근과 퇴근이 모두 있는 인원만']]);
+  if (cm.topics.length) h += tbl(['설문 한마디 주제', '건수', '원문 예'], cm.topics.map(t => [esc(t.topic), t.count + '건', esc(t.examples[0] || '')]));
+  if (rc.total) h += tbl(['집행 비목', '건수', '금액'], rc.by_category.map(x => [esc(x.category), x.count + '건', won(x.amount) + '원']).concat([['합계', rc.rows.length + '건', won(rc.total) + '원']]));
+  return h;
 }
 function proposalDoc(d) {
   const s = d.basis, m = s.measured, t = s.targets;
@@ -885,7 +916,7 @@ async function draftCall(url, body) {
 async function makeReport() {
   const b = $('reportBtn'); if (b.disabled || !last) return; startTimer(); made.report = true; b.disabled = true; b.textContent = '작성 중'; $('reportOut').innerHTML = skeleton;
   const st = last; drawPipe(st, { pending:true }, 0, 3);
-  try { const d = await draftCall('/api/report/' + FID), c = st.current;
+  try { const d = await draftCall('/api/report/' + FID), c = st.current; lastOps = d.ops || null;
     const doc = reportDoc(st, d);
     $('reportOut').innerHTML = doc.html; drawPipe(st, d, doc.n, 3); await wait(400); drawPipe(st, d, doc.n, 4);
     $('reportPrint').hidden = false; b.textContent = '다시 만들기';
@@ -907,7 +938,7 @@ async function makeProposal() {
   } catch (e) { made.prop = false; $('propOut').innerHTML = '<div class="empty"><b>만들지 못했습니다</b>잠시 후 다시 눌러 주세요.</div>'; b.textContent = '제안서 초안 만들기'; }
   b.disabled = false;
 }
-$('propForm').onsubmit = e => { e.preventDefault(); makeProposal(); };
+$('propBtn').onclick = makeProposal;
 
 /* ---------- 5단계: 인원별 시뮬레이션 ---------- */
 let simBase = null;
@@ -963,6 +994,7 @@ $('mLive').onclick = () => { closeMore(); openFrame('moreFrame', '/sim?embed=1&m
 
 
 /* ---------- 숫자 근거: 누르면 계산식과 원천 기록이 열린다 ---------- */
+let lastOps = null;
 function evidFor(v) {
   const x = parseFloat(String(v).replace(/,/g, '')), out = []; if (!last || isNaN(x)) return out;
   const c = last.current, m = last.comparison, f = last.festival, sp = c.spread || {}, K = c.checkpoints.length, eq = a => a != null && Math.abs(a - x) < 1e-9;
@@ -975,6 +1007,19 @@ function evidFor(v) {
     if (eq(p.visitors)) add(`${p.name} 방문`, `이 거점을 찍은 방문 ID = ${p.visitors}명`, '스캔 기록');
     if (i < K - 1 && eq(p.dropped_after)) add(`${p.name} 이후 이탈`, `이 거점까지 오고 다음 거점은 찍지 않은 방문 ID = ${p.dropped_after}명`, '스캔 기록');
     if (i < K - 1 && eq(p.drop_rate)) add(`${p.name} 이후 이탈률`, `${p.dropped_after} ÷ ${p.visitors} × 100 = ${p.drop_rate}%`, '코드 계산'); });
+  if (lastOps) { const sl = lastOps.sales, stf = lastOps.staff, cmm = lastOps.comments, rcp = lastOps.receipts;
+    if (eq(sl.total)) add('부스 매출 합계', `부스 ${sl.booths.length}곳이 ${sl.days.length}일 동안 보낸 매출의 합 = ${won(sl.total)}원`, '부스 자가 보고 기록');
+    if (eq(sl.target)) add('매출 목표', `${won(sl.target)}원`, '행사 설정값 (예시)');
+    if (eq(sl.achievement)) add('목표 달성률', `${won(sl.total)} ÷ ${won(sl.target)} × 100 = ${sl.achievement}%`, '코드 계산');
+    if (eq(sl.per_visitor)) add('스탬프 참여자 1인당 매출', `${won(sl.total)} ÷ ${won(sl.visitors)}명 = ${won(sl.per_visitor)}원`, '코드 계산 (매출 기록 ÷ QR 참여 인원)');
+    if (eq(sl.booths.length)) add('매출 보고 부스', `${sl.booths.length}곳`, '부스 자가 보고 기록');
+    sl.zones.forEach(z => { if (eq(z.per_visit)) add(`${z.zone} 방문 1명당 매출`, `${won(z.sales)} ÷ QR 방문 ${won(z.visits)}명 = ${won(z.per_visit)}원`, '코드 계산'); });
+    if (eq(stf.checked_in)) add('QR 출근 인원', `출근을 누른 운영 인력 = ${stf.checked_in}명`, '출퇴근 기록');
+    if (eq(cmm.total)) add('설문 한마디', `한마디를 적은 응답 = ${cmm.total}건`, '설문 기록');
+    cmm.topics.forEach(t => { if (eq(t.count)) add(`'${t.topic}' 관련 한마디`, `주제 낱말이 든 응답 = ${t.count}건`, '낱말 규칙 분류'); });
+    if (eq(rcp.total)) add('집행 내역 합계', `입력한 내역 ${rcp.rows.length}건의 합 = ${won(rcp.total)}원`, '영수증 내역 입력 기록');
+    if (eq(rcp.rows.length)) add('집행 내역 건수', `${rcp.rows.length}건`, '영수증 내역 입력 기록');
+    if (eq(rcp.unclassified)) add('미분류 내역', `낱말 규칙에 맞지 않은 내역 = ${rcp.unclassified}건`, '낱말 규칙 분류'); }
   const sv = c.survey;
   if (eq(sv.count)) add('설문 응답', `${sv.count}건`, '완주자 모바일 설문 기록');
   if (eq(sv.satisfaction_avg)) add('만족도 평균', `응답 ${sv.satisfaction_count}건의 평균 = ${sv.satisfaction_avg}점 (5점 척도)`, '설문 기록');
@@ -1015,9 +1060,9 @@ function drawSpread(d) {
   $('spState').className = 'sp-state ' + (d.active ? 'on' : 'off');
   $('spStateT').textContent = d.active ? '분산 유도 켜짐 · 쏠린 거점: ' + d.rows.filter(r => r.level === 'hot').map(r => r.name).join(', ') : '분산 유도 꺼짐 · 쏠림 없음';
   $('spWin').textContent = `최근 ${d.window_min}분 기준`;
-  $('spMap').innerHTML = '<g stroke="#E2E8F0" stroke-width=".2">' + [10,20,30,40,50,60,70,80,90].map(v => `<line x1="${v}" y1="0" x2="${v}" y2="50"/>`).join('') + '</g>' +
-    d.rows.filter(r => r.x != null).map(r => { const rad = 2.4 + Math.min(r.actual, 40) / 40 * 3.2;
-      return `<g><circle cx="${r.x}" cy="${r.y / 2}" r="${rad}" fill="${SPC[r.level]}" fill-opacity=".88"/><text x="${r.x}" y="${r.y / 2 - rad - 1}" font-size="2.7" text-anchor="middle" fill="#0F172A">${esc(r.name)}</text><text x="${r.x}" y="${r.y / 2 + 1}" font-size="2.7" font-weight="700" text-anchor="middle" fill="#fff">${r.actual}</text></g>`; }).join('');
+  $('spMap').innerHTML = '<g stroke="#E2E8F0" stroke-width=".2">' + [10,20,30,40,50,60,70,80,90].map(v => `<line x1="${v}" y1="-5" x2="${v}" y2="55"/>`).join('') + '</g>' +
+    d.rows.filter(r => r.x != null).map(r => { const rad = 2.6 + Math.min(r.actual, 100) / 100 * 3.6;
+      return `<g><circle cx="${r.x}" cy="${r.y / 2}" r="${rad}" fill="${SPC[r.level]}" fill-opacity=".88"/><text x="${r.x}" y="${r.y / 2 - rad - 1}" font-size="2.7" text-anchor="middle" fill="#0F172A">${esc(r.name)}</text><text x="${r.x}" y="${r.y / 2 + 1}" font-size="2.7" font-weight="700" text-anchor="middle" fill="#fff">${r.actual}</text><text x="${r.x}" y="${r.y / 2 + rad + 3.2}" font-size="2.2" text-anchor="middle" fill="#64748B">예상 ${Math.round(r.expected)}명${r.ratio != null ? ' · ' + r.ratio + '배' : ''}</text></g>`; }).join('');
   $('spRule').textContent = `예상 = 최근 ${d.window_min}분 전체 스캔 ÷ 거점 수 (균등 배분, 가정). 빨강: 예상의 ${d.rules.on}배 이상이면서 ${d.rules.min_n}명 이상. 파랑: ${d.rules.calm}배 이하. 기준값은 가정이며 첫 행사에서 조정합니다.`;
   const a = d.acceptance;
   $('spAct').innerHTML = d.activations + '<u>회</u>'; $('spIss').innerHTML = a.issued + '<u>건</u>'; $('spRate').innerHTML = a.rate == null ? '-' : a.rate + '<u>%</u>';
@@ -1028,7 +1073,7 @@ function drawSpread(d) {
 $('spBtn').onclick = async () => {
   startTimer(); const b = $('spBtn'); b.disabled = true;
   try {
-    if (spN === 0) { await post('/api/demo/crowd?cp=stage&n=36'); feed('메인 무대에 방문 집중', '시연용 재현'); $('spStep').textContent = '메인 무대에 방문자가 몰렸습니다'; }
+    if (spN === 0) { await post('/api/demo/crowd'); feed('메인 무대에 방문 집중', '시연용 재현'); $('spStep').textContent = '메인 무대에 방문자가 몰렸습니다'; }
     else if (spN === 1) {
       const sid = newSession(); try { localStorage.setItem('solunet_sid', sid); localStorage.removeItem('solunet_prize_' + FID); localStorage.setItem('solunet_lang', 'ko'); } catch (e) {}
       $('spPh').src = `/s/${FID}/gate?t=${Date.now()}`; await wait(1500);
@@ -1046,22 +1091,29 @@ const won = n => Number(n).toLocaleString('ko-KR');
 let prepDone = false;
 function loadPrep() {
   if (prepDone || !fest) return; prepDone = true;
-  $('setup').innerHTML = `<div><span>행사 이름</span>${esc(fest.name)}</div><div><span>회차 · 거점</span>${fest.edition}회차 · 거점 ${fest.checkpoints.length}곳</div>`;
   $('qrs').innerHTML = fest.checkpoints.map(c => { const q = qrcode(0, 'M'); q.addData(`${location.origin}/s/${FID}/${c.id}`); q.make(); return `<div>${q.createSvgTag({ cellSize:3, margin:2, scalable:true })}${esc(c.name)}</div>`; }).join('');
+  $('qrNote').textContent = `거점 ${fest.checkpoints.length}곳의 QR이 바로 발급됩니다. 인쇄해 붙이면 준비가 끝나고, 참가자는 앱 설치나 가입 없이 기본 카메라로 찍습니다.`;
 }
 async function makeEstimate() {
-  opsBusy = true; $('estBtn').disabled = true;
-  const d = await fetch(`/api/estimate/${FID}?visitors=${+$('eVis').value || 400}&days=${+$('eDays').value || 2}`).then(r => r.ok ? r.json() : null).catch(() => null);
+  if (opsBusy) return; opsBusy = true; $('estBtn').disabled = true; startTimer();
+  const d = await fetch(`/api/plan/${FID}?visitors=${+$('pVis').value || 400}&days=${+$('pDays').value || 2}${aiOk ? '' : '&mode=template'}`).then(r => r.ok ? r.json() : null).catch(() => null);
   opsBusy = false; $('estBtn').disabled = false;
-  if (!d) { $('estOut').innerHTML = '<div class="empty"><b>불러오지 못했습니다</b>다시 눌러 주세요.</div>'; return; }
-  made.est = true;
+  if (!d) { $('planOut').innerHTML = '<div class="empty"><b>불러오지 못했습니다</b>다시 눌러 주세요.</div>'; return; }
+  made.est = true; made.prop = false;
+  const p = d.plan, e = d.estimate, ai = d.explanation.source === 'llm';
+  $('planNote').textContent = `근거: ${p.based_on.festival} ${p.based_on.edition}회차 · 참여 ${won(p.based_on.visitors)}명의 QR 기록`;
+  $('planOut').innerHTML = `<table class="opsT"><tr><th>거점</th><th class="n">지난 회차 도달률</th><th class="n">예상 방문</th><th class="n">안내 인력</th><th>근거</th></tr>` +
+    p.checkpoints.map(r => `<tr><td>${esc(r.name)}</td><td class="n">${r.reach}%</td><td class="n">${won(r.expected)}명</td><td class="n">${r.staff}명</td><td>${r.staff > 1 ? `<span class="tag un">${esc(r.why)}</span>` : esc(r.why)}</td></tr>`).join('') +
+    `<tr class="sum"><td>합계 · 목표</td><td class="n">목표 완주율 ${p.target_completion}%</td><td class="n">경품 ${won(p.prizes)}개</td><td class="n">${p.staff_total}명</td><td></td></tr></table>
+    <div class="expl">${esc(d.explanation.text)}<small>${ai ? 'AI가 쓴 설명입니다. 문장 속 숫자를 설계값과 대조해 통과했습니다.' : '설계 숫자를 문장 틀에 넣어 쓴 설명입니다. AI 문장 모듈이 연결되면 이 자리에 AI가 쓴 설명이 들어가고, 같은 숫자 대조를 거칩니다.'}</small></div>
+    <p class="nt"><span class="tag as">가정 규칙</span> ${esc(p.rules)}</p>`;
   $('estOut').innerHTML = `<table class="opsT"><tr><th>항목</th><th>산식</th><th class="n">금액 (원)</th></tr>` +
-    d.rows.map(r => `<tr><td>${esc(r.item)}<small>${esc(r.group)}</small></td><td>${esc(r.formula)}</td><td class="n">${won(r.amount)}</td></tr>`).join('') +
-    `<tr class="sum"><td>합계</td><td></td><td class="n">${won(d.total)}</td></tr></table>
-     <p class="nt"><span class="tag as">가정</span> 단가(안내판 15,000원, 경품 3,000원, 일반관리비 6%, 이윤 5%)는 가정값이며 담당자가 고칩니다. 수량은 거점 ${d.basis.checkpoints}곳, 참가 ${won(d.basis.visitors)}명, ${d.basis.days}일, 이번 회차 완주율 ${d.basis.completion_rate}%에서 계산했습니다. 무대·음향 등 다른 과업은 들어 있지 않습니다.</p>`;
+    e.rows.map(r => `<tr><td>${esc(r.item)}<small>${esc(r.group)}</small></td><td>${esc(r.formula)}</td><td class="n">${won(r.amount)}</td></tr>`).join('') +
+    `<tr class="sum"><td>합계</td><td></td><td class="n">${won(e.total)}</td></tr></table>
+     <p class="nt"><span class="tag as">가정</span> 단가(안내판 15,000원, 경품 3,000원, 일반관리비 6%, 이윤 5%)는 가정값이며 담당자가 고칩니다. 수량은 왼쪽 기초 설계의 안내 인력 ${e.basis.staff}명, 경품 ${won(e.basis.prizes)}개를 그대로 씁니다. 무대·음향 등 다른 과업은 들어 있지 않습니다.</p>`;
 }
-$('estForm').onsubmit = e => { e.preventDefault(); makeEstimate(); };
-$('estForm').addEventListener('keydown', e => e.stopPropagation());
+$('propForm').onsubmit = e => { e.preventDefault(); makeEstimate(); };
+$('propForm').addEventListener('keydown', e => e.stopPropagation());
 
 /* ---------- 현장·수집·보고: 운영 기록 ---------- */
 const hm2 = t => t ? new Date(t).toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', hour12:false }) : '-';
@@ -1074,14 +1126,25 @@ async function opsPoll() {
   $('stT').innerHTML = '<tr><th>이름</th><th>출근</th><th>퇴근</th><th class="n">근무</th><th>상태</th></tr>' + (st.people.length ? st.people.map(p =>
     `<tr class="${p.name === opsNew.staff ? 'new' : ''}"><td>${esc(p.name)}</td><td>${hm2(p.in)}</td><td>${hm2(p.out)}</td><td class="n">${p.hours != null ? p.hours + '시간' : '-'}</td><td><span class="tag ${p.on_site ? '' : 'as'}">${p.on_site ? '현장' : '퇴근'}</span></td></tr>`).join('') : '<tr><td colspan="5">아직 기록이 없습니다.</td></tr>');
   const sl = d.sales;
-  $('slT').innerHTML = `<tr><th>부스</th>${sl.days.map(x => `<th class="n">${x}일차</th>`).join('')}<th class="n">합계</th></tr>` +
-    (sl.booths.length ? sl.booths.map(b => `<tr><td>${esc(b.booth)}</td>${b.days.map(v => `<td class="n">${v == null ? '-' : won(v)}</td>`).join('')}<td class="n">${won(b.total)}</td></tr>`).join('') +
-    `<tr class="sum"><td>합계</td>${sl.day_totals.map(v => `<td class="n">${won(v)}</td>`).join('')}<td class="n">${won(sl.total)}</td></tr>` : '<tr><td>아직 보낸 매출이 없습니다.</td></tr>');
+  $('slT').innerHTML = `<tr><th>부스</th><th>구역</th>${sl.days.map(x => `<th class="n">${x}일차</th>`).join('')}<th class="n">합계</th></tr>` +
+    (sl.booths.length ? sl.booths.map(b => `<tr><td>${esc(b.booth)}</td><td>${b.zone ? esc(b.zone) : '-'}</td>${b.days.map(v => `<td class="n">${v == null ? '<span class="tag un">미제출</span>' : won(v)}</td>`).join('')}<td class="n">${won(b.total)}</td></tr>`).join('') +
+    `<tr class="sum"><td>합계</td><td></td>${sl.day_totals.map(v => `<td class="n">${won(v)}</td>`).join('')}<td class="n">${won(sl.total)}</td></tr>` : '<tr><td>아직 보낸 매출이 없습니다.</td></tr>');
+  const ms = (sl.missing || []).filter(m => m.booths.length);
+  $('slMiss').innerHTML = ms.length ? `<p class="miss"><b>아직 보내지 않은 부스</b> · ${ms.map(m => `${m.day}일차: ${m.booths.map(esc).join(', ')}`).join(' / ')}</p>` : '';
+  const zmax = Math.max(...sl.zones.map(z => z.per_visit || 0), 1);
+  $('slZ').innerHTML = sl.zones.length ? '<tr><th>구역</th><th class="n">QR 방문</th><th class="n">매출 (원)</th><th class="n">방문 1명당</th></tr>' + sl.zones.map(z =>
+    `<tr><td>${esc(z.zone)}<span class="bar2"><i style="width:${(z.per_visit || 0) / zmax * 100}%"></i></span></td><td class="n">${won(z.visits)}명</td><td class="n">${won(z.sales)}</td><td class="n"><b>${z.per_visit != null ? won(z.per_visit) + '원' : '-'}</b></td></tr>`).join('') : '<tr><td>부스에 구역을 지정하면 방문 대비 매출이 계산됩니다.</td></tr>';
+  const lo = sl.zones.length > 1 ? sl.zones[sl.zones.length - 1] : null;
+  $('slZn').textContent = lo ? `'${lo.zone}'은 방문 ${won(lo.visits)}명에 비해 매출이 가장 낮습니다. 방문이 매출로 이어지지 않는 구역을 다음 배치에서 손볼 근거가 됩니다. 스탬프를 찍은 사람만 센 값이라 전체 방문객 기준은 아닙니다.` : '';
   const cm = d.comments;
   $('cmNote').textContent = `설문 한마디 ${cm.total}건을 주제별로 셉니다`;
   $('cmOut').innerHTML = cm.topics.length ? cm.topics.map(t => `<div class="t"><b>${esc(t.topic)}</b><u>${t.count}건</u><p>${t.examples.map(x => '“' + esc(x) + '”').join(' · ')}</p></div>`).join('') + (cm.unmatched ? `<div class="t"><b>분류되지 않음</b><u>${cm.unmatched}건</u><p>규칙에 없는 응답은 원문 그대로 남깁니다.</p></div>` : '') : '<div class="empty"><b>아직 한마디가 없습니다</b>설문 끝의 한마디 칸에 적은 응답이 여기에 모입니다.</div>';
   if (s) { const c = s.current;
-    $('kpis10').innerHTML = [['참여자', c.visitors, '명', '거점 QR을 찍은 사람'], ['완주율', c.completion_rate.toFixed(1), '%', `완주 ${c.completed}명`], ['만족도', c.survey.satisfaction_avg != null ? c.survey.satisfaction_avg.toFixed(1) : '-', '/ 5', '완주자 설문 기준'], ['설문 응답', c.survey.count, '건', `한마디 ${cm.total}건`], ['부스 매출', sl.total ? (sl.total / 10000).toLocaleString('ko-KR', { maximumFractionDigits:0 }) : '-', sl.total ? '만 원' : '', `${sl.booths.length}개 부스 · ${sl.days.length}일`]]
+    $('kpis10').innerHTML = [['참여자 · 완주율', c.visitors, '명', `완주율 ${c.completion_rate.toFixed(1)}% · 만족도 ${c.survey.satisfaction_avg != null ? c.survey.satisfaction_avg.toFixed(1) : '-'}`],
+      ['설문 응답', c.survey.count, '건', `한마디 ${cm.total}건`],
+      ['부스 매출 합계', sl.total ? (sl.total / 10000).toLocaleString('ko-KR', { maximumFractionDigits:0 }) : '-', sl.total ? '만 원' : '', sl.day_change != null ? `전일 대비 ${sl.day_change > 0 ? '+' : ''}${sl.day_change}%` : `${sl.days.length}일차까지`],
+      ['목표 달성률', sl.achievement != null ? sl.achievement : '-', sl.achievement != null ? '%' : '', sl.target ? `과업 목표 ${(sl.target / 10000).toLocaleString('ko-KR')}만 원 (예시)` : '목표 미설정'],
+      ['참여자 1인당 매출', sl.per_visitor ? won(sl.per_visitor) : '-', sl.per_visitor ? '원' : '', '매출 합계 ÷ 스탬프 참여자']]
       .map(([k, v, u, sm]) => `<div class="kp"><span>${k}</span><b>${v}<u>${u}</u></b><small>${sm}</small></div>`).join(''); }
   const rc = d.receipts;
   $('rcT').innerHTML = '<tr><th>내역</th><th>비목</th><th>맞은 낱말</th><th class="n">금액 (원)</th></tr>' + (rc.rows.length ? rc.rows.map((r, i) =>
@@ -1095,7 +1158,7 @@ async function staffDemo() {
 }
 async function salesDemo() {
   opsBusy = true; startTimer();
-  for (const [booth, amount] of [['먹거리 1호', 2110000], ['먹거리 2호', 1450000], ['체험 부스', 690000], ['기념품', 610000]]) await post('/api/sales', { festival:FID, booth, day:2, amount }).catch(() => null);
+  for (const [booth, amount] of [['먹거리 1호', 2110000], ['먹거리 2호', 1450000], ['분식 코너', 1120000], ['체험 공방', 690000], ['기념품 가게', 610000]]) await post('/api/sales', { festival:FID, booth, day:2, amount }).catch(() => null);
   await opsPoll(); did.sales = true; opsBusy = false;
 }
 async function addReceipt(desc, amount) { const r = await post('/api/receipts', { festival:FID, desc, amount }).catch(() => null); if (r && r.ok) opsNew.receipts++; }

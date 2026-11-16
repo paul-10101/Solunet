@@ -56,3 +56,27 @@ def proposal_basis(festival, cur, comparison, req):
         b["trend"] = {"completion_prev": comparison["completion_prev"], "completion_cur": comparison["completion_cur"],
                       "satisfaction_prev": comparison.get("satisfaction_prev"), "satisfaction_cur": comparison.get("satisfaction_cur")}
     return b
+
+
+STAFF_EXTRA_DROP = 20.0  # 지난 회차 이탈률이 이 이상인 거점에는 안내 인력을 1명 더 둔다 (가정 규칙)
+
+
+def base_plan(festival, cur, visitors, days):
+    """다음 행사의 기초 설계. 지난 회차 QR 기록의 거점별 도달률을 예상 참가 인원에 곱해 수량을 정한다.
+    숫자는 전부 여기서 계산하고, AI는 이 결과를 설명하는 문장만 쓴다."""
+    cps, base = cur["checkpoints"], cur["visitors"] or 1
+    rows = []
+    for c in cps:
+        reach = round(c["visitors"] / base * 100, 1)
+        rows.append({"name": c["name"], "last_visitors": c["visitors"], "reach": reach,
+                     "expected": round(visitors * c["visitors"] / base), "drop_rate": c["drop_rate"], "staff": 1, "why": "기본 1명"})
+    for r in rows[:-1]:
+        if r["drop_rate"] >= STAFF_EXTRA_DROP:
+            r["staff"], r["why"] = 2, f"지난 회차 이탈률 {r['drop_rate']}%"
+    target = round(min(cur["completion_rate"] + 5, 100), 1)
+    return {"based_on": {"festival": festival["name"], "edition": festival.get("edition", 1), "visitors": cur["visitors"]},
+            "visitors": visitors, "days": days, "checkpoints": rows, "staff_total": sum(r["staff"] for r in rows),
+            "target_completion": target, "prizes": round(visitors * target / 100),
+            "changes": propose(cur)["changes"],
+            "rules": "거점별 예상 방문 = 예상 참가 × 지난 회차 도달률. 안내 인력은 거점당 1명, 지난 회차 이탈률 20% 이상 거점은 2명. "
+                     "경품 수량 = 예상 참가 × 목표 완주율(지난 회차 + 5%p). 모두 가정 규칙이며 담당자가 고칩니다."}
