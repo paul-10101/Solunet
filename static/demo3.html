@@ -730,6 +730,9 @@ let opsBusy = false;
 function flowOf(n) { return ORDER.find(i => PH_OF[i] === PH_OF[n]) ?? ORDER[ORDER.length - 1]; }
 function dirBusy() { return !!(opsBusy || ph.busy || $('spBtn').disabled || (step === 2 && $('reportBtn').disabled) || (step === 8 && $('propBtn').disabled) || (step === 5 && $('simBtn').disabled)); }
 function dirPlan() {
+  if (step === 1 && ph.stage === 'scan' && !ph.done.length && $('scanBtn')) return { t:'QR 찍기', go:() => $('scanBtn').click() };
+  if (step === 9 && !did.call) return { t:'참가자가 도움 요청', go:() => callDemo() };
+  if (step === 9 && !did.acc && opsNew.call) return { t:'운영요원이 [제가 갑니다]', go:() => acceptDemo() };
   const at = ORDER.indexOf(step);
   if (at < 0) { const b = flowOf(step); return { t:'시연 흐름으로: ' + NAME[b], go:() => show(b) }; }
   if (at < ORDER.length - 1) return { t:'다음: ' + NAME[ORDER[at + 1]], go:() => show(ORDER[at + 1]) };
@@ -1309,7 +1312,12 @@ async function callDemo() {
   const r = await post('/api/call', { festival:FID, token:'craft', reason:'경품 문의' }).then(x => x.ok ? x.json() : null).catch(() => null);
   if (r) opsNew.call = r.id;
   $('stPh').src = `/staff?f=${FID}&tab=call&name=${encodeURIComponent('운영요원 B')}&t=${Date.now()}`;
-  await opsPoll(); opsBusy = false;
+  await opsPoll(); did.call = true; opsBusy = false;
+}
+async function acceptDemo() {
+  opsBusy = true;
+  $('stPh').src = `/staff?f=${FID}&tab=call&name=${encodeURIComponent('운영요원 B')}&accept=${opsNew.call}&t=${Date.now()}`;
+  await wait(1300); await opsPoll(); did.acc = true; opsBusy = false;
 }
 document.addEventListener('DOMContentLoaded', () => { $('callBtn').onclick = callDemo; });
 async function staffDemo() {

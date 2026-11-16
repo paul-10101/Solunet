@@ -82,6 +82,11 @@ $('sale').onclick = async () => {
   const ok = await post('/api/sales', { festival:FID, booth, day, amount }).then(x => x.ok).catch(() => false);
   $('rB').innerHTML = ok ? `<div class="res">${esc(booth)} · ${day}일차 ${amount.toLocaleString('ko-KR')}원 기록됨</div>` : '<div class="res err">기록하지 못했습니다. 다시 눌러 주세요.</div>';
 };
+/* 시연 화면 안에 들어가 있을 때: 스페이스와 → 를 바깥 시연 화면의 '다음'으로 넘긴다 */
+if (window.parent !== window) document.addEventListener('keydown', e => {
+  if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || (e.key !== ' ' && e.key !== 'ArrowRight')) return;
+  try { if (typeof window.parent.dirGo === 'function') { e.preventDefault(); window.parent.dirGo(); } } catch (err) {}
+});
 /* 시연용: ?name=...&auto=in 또는 ?tab=sales&booth=...&day=...&amt=... 로 열면 그대로 입력해 보낸다 */
 if (Q.get('name')) $('name').value = Q.get('name');
 if (Q.get('auto')) check(Q.get('auto') === 'out' ? 'out' : 'in');
