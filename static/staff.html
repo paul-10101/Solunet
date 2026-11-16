@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>운영 기록 · Solunet</title>
+<link rel="stylesheet" href="/ui.css">
+<style>
+  body { max-width:480px; margin:0 auto; min-height:100vh; background:#F8FAFC; }
+  .head { background:var(--ink); color:#fff; padding:20px; }
+  .head .ev { font-size:13px; opacity:.8; }
+  .head h1 { font-size:22px; margin-top:4px; color:#fff; }
+  .tabs { display:flex; gap:8px; padding:16px 20px 0; }
+  .tabs button { flex:1; padding:12px 0; font:inherit; font-weight:700; border:1px solid var(--grid); border-radius:10px; background:#fff; color:var(--ink); cursor:pointer; }
+  .tabs button[aria-selected="true"] { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .wrap { padding:20px; }
+  label { display:block; font-size:14px; font-weight:500; margin-bottom:12px; }
+  input, select { display:block; width:100%; margin-top:6px; padding:13px; font:inherit; border:1px solid #CBD5E1; border-radius:10px; background:#fff; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .go { width:100%; padding:16px 0; font:inherit; font-size:17px; font-weight:700; border:0; border-radius:12px; cursor:pointer; background:var(--route); color:#fff; }
+  .go.out { background:#fff; color:var(--ink); border:2px solid var(--ink); }
+  .go:focus-visible, .tabs button:focus-visible, input:focus-visible { outline:3px solid var(--sign); outline-offset:2px; }
+  .res { margin-top:16px; padding:16px; border-radius:12px; background:#ECFDF5; border:1px solid #A7F3D0; font-weight:700; }
+  .res.err { background:#FEF2F2; border-color:#FECACA; }
+  .res small { display:block; font-weight:400; color:var(--muted); margin-top:4px; }
+  .note { font-size:13px; color:var(--muted); margin-top:16px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="head"><div class="ev" id="ev">행사</div><h1>운영 기록</h1></div>
+<div class="tabs" role="tablist"><button role="tab" id="tA" aria-selected="true">출퇴근</button><button role="tab" id="tB" aria-selected="false">부스 매출</button></div>
+<div class="wrap">
+  <section id="pA">
+    <label>이름<input id="name" maxlength="20" autocomplete="name" placeholder="예) 김운영"></label>
+    <div class="two"><button class="go" id="in">출근</button><button class="go out" id="out">퇴근</button></div>
+    <div id="rA" aria-live="polite"></div>
+    <p class="note">운영 인력용 화면입니다. 이름과 누른 시각만 기록하며, 운영자 화면의 출퇴근 명단에 올라갑니다.</p>
+  </section>
+  <section id="pB" hidden>
+    <label>부스 이름<input id="booth" maxlength="30" placeholder="예) 먹거리 1호"></label>
+    <div class="two"><label>행사 며칠째<input id="day" type="number" min="1" max="60" value="1"></label><label>그날 매출 (원)<input id="amt" type="number" min="0" inputmode="numeric" placeholder="0"></label></div>
+    <button class="go" id="sale">매출 보내기</button>
+    <div id="rB" aria-live="polite"></div>
+    <p class="note">같은 부스, 같은 날을 다시 보내면 마지막 값으로 바뀝니다.</p>
+  </section>
+</div>
+<script>
+const $ = id => document.getElementById(id), Q = new URLSearchParams(location.search), FID = Q.get('f') || 'demo';
+const post = (u, b) => fetch(u, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(b) });
+const hm = t => new Date(t).toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', hour12:false });
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+function tab(b) { $('tA').setAttribute('aria-selected', !b); $('tB').setAttribute('aria-selected', b); $('pA').hidden = b; $('pB').hidden = !b; }
+$('tA').onclick = () => tab(false); $('tB').onclick = () => tab(true);
+fetch('/api/festival/' + encodeURIComponent(FID)).then(r => r.ok ? r.json() : null).then(f => { if (f) $('ev').textContent = f.name; else $('ev').textContent = '등록되지 않은 행사입니다'; });
+async function check(action) {
+  const name = $('name').value.trim(); if (!name) { $('rA').innerHTML = '<div class="res err">이름을 입력해 주세요.</div>'; $('name').focus(); return; }
+  const r = await post('/api/staff/check', { festival:FID, name, action }).then(x => x.ok ? x.json() : null).catch(() => null);
+  $('rA').innerHTML = r ? `<div class="res">${esc(r.name)} · ${action === 'in' ? '출근' : '퇴근'} 기록됨<small>${hm(r.ts)}</small></div>` : '<div class="res err">기록하지 못했습니다. 다시 눌러 주세요.</div>';
+}
+$('in').onclick = () => check('in'); $('out').onclick = () => check('out');
+$('sale').onclick = async () => {
+  const booth = $('booth').value.trim(), day = +$('day').value, amount = Math.round(+$('amt').value);
+  if (!booth || !(day >= 1) || !(amount >= 0) || $('amt').value === '') { $('rB').innerHTML = '<div class="res err">부스 이름과 매출을 입력해 주세요.</div>'; return; }
+  const ok = await post('/api/sales', { festival:FID, booth, day, amount }).then(x => x.ok).catch(() => false);
+  $('rB').innerHTML = ok ? `<div class="res">${esc(booth)} · ${day}일차 ${amount.toLocaleString('ko-KR')}원 기록됨</div>` : '<div class="res err">기록하지 못했습니다. 다시 눌러 주세요.</div>';
+};
+/* 시연용: ?name=...&auto=in 또는 ?tab=sales&booth=...&day=...&amt=... 로 열면 그대로 입력해 보낸다 */
+if (Q.get('name')) $('name').value = Q.get('name');
+if (Q.get('auto')) check(Q.get('auto') === 'out' ? 'out' : 'in');
+if (Q.get('tab') === 'sales') { tab(true); ['booth', 'day', 'amt'].forEach(k => { if (Q.get(k)) $(k).value = Q.get(k); }); if (Q.get('send')) $('sale').click(); }
+</script>
+</body>
+</html>
