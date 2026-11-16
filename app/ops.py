@@ -2,7 +2,8 @@
 모두 규칙·산식으로 계산한다(AI 호출 없음). 단가와 분류 규칙은 가정값이며 담당자가 고친다."""
 from datetime import datetime
 
-KINDS = ("ops_staff", "ops_sales", "ops_receipt")
+KINDS = ("ops_staff", "ops_sales", "ops_receipt", "ops_call")
+CALL_REASONS = ("길 안내", "경품 문의", "QR 오류", "분실물", "기타")
 
 RECEIPT_RULES = [
     ("식비", ["식대", "도시락", "생수", "다과", "커피", "간식"]),
@@ -44,6 +45,37 @@ def summarize_receipts(rows):
             "by_category": sorted(cats.values(), key=lambda c: order.index(c["category"])),
             "total": sum(r["amount"] for r in rows),
             "unclassified": sum(1 for r in rows if r["category"] == "미분류")}
+
+
+def summarize_calls(rows, cp_names=None):
+    """도움 요청 기록. 요청(new) → 수락(accept) → 완료(done)를 id로 묶고, 요청에서 수락까지 걸린 시간을 잰다.
+    거점별 건수는 다음 회차에 순회 인력을 몇 명 둘지 협의할 때 쓰는 근거 자료다."""
+    calls = {}
+    for r in sorted(rows, key=lambda r: r["ts"]):
+        c = calls.setdefault(r["id"], {"id": r["id"], "cp": None, "reason": "", "ts": None, "accepted": None, "by": None, "done": None})
+        if r["event"] == "new":
+            c.update(cp=r.get("cp"), reason=r.get("reason", ""), ts=r["ts"])
+        elif r["event"] == "accept" and c["accepted"] is None:
+            c.update(accepted=r["ts"], by=r.get("name"))
+        elif r["event"] == "done":
+            c["done"] = r["ts"]
+    out = []
+    for c in calls.values():
+        if not c["ts"]:
+            continue
+        wait = None
+        if c["accepted"]:
+            wait = max(0, int((datetime.fromisoformat(c["accepted"]) - datetime.fromisoformat(c["ts"])).total_seconds()))
+        out.append({**c, "cp_name": (cp_names or {}).get(c["cp"]) or "위치 미상", "wait_sec": wait,
+                    "status": "완료" if c["done"] else "이동 중" if c["accepted"] else "대기"})
+    out.sort(key=lambda c: c["ts"], reverse=True)
+    waits = [c["wait_sec"] for c in out if c["wait_sec"] is not None]
+    by = {}
+    for c in out:
+        by[c["cp_name"]] = by.get(c["cp_name"], 0) + 1
+    return {"rows": out, "total": len(out), "open": sum(1 for c in out if c["status"] == "대기"),
+            "avg_wait_sec": round(sum(waits) / len(waits)) if waits else None,
+            "by_cp": sorted(({"cp": k, "count": v} for k, v in by.items()), key=lambda x: -x["count"])}
 
 
 def summarize_staff(rows):

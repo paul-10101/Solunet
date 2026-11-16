@@ -339,7 +339,6 @@
     <button role="tab" data-phase="q6"><b>Q</b><span>만든 방법 (질문용)</span></button>
   </nav>
   <div class="feats" id="feats" aria-label="이 단계의 기능"></div>
-  <div class="basis noprint" id="basis" aria-label="이 화면 기능의 근거"></div>
 
   <div class="say" aria-live="polite">
     <h1 id="sayH"></h1>
@@ -491,28 +490,25 @@
   <section id="step-9" hidden>
     <div class="stage">
       <aside aria-label="운영 인력 휴대폰 화면">
-        <div class="cap"><b>운영요원 휴대폰</b><span class="muted">출퇴근 QR을 찍으면 열리는 화면</span></div>
+        <div class="cap"><b>운영요원 휴대폰</b><span class="muted">출퇴근과 도움 요청을 받는 화면</span></div>
         <div class="p7"><iframe id="stPh" title="운영 인력 화면"></iframe></div>
       </aside>
       <main aria-label="운영자 화면">
-        <div class="cap"><b>대행사 운영자 화면 · 인력 출퇴근</b><span class="muted">예시 데이터</span></div>
+        <div class="cap"><b>대행사 운영자 화면 · 호출 배치와 출퇴근</b><span class="muted">예시 데이터</span></div>
+        <div class="panel" id="staffEv" style="margin-bottom:12px;scroll-margin-top:12px">
+          <div class="ph" style="margin-bottom:8px"><div><h2>도움 요청 · 호출 배치</h2><p>거점마다 세워 두는 대신, 요청이 온 곳으로 갑니다</p></div></div>
+          <div class="kpis3" style="margin-bottom:10px"><div class="kp"><span>도움 요청</span><b id="clN">-</b></div><div class="kp"><span>수락까지 평균</span><b id="clW">-</b></div><div class="kp"><span>지금 대기</span><b id="clO">-</b></div></div>
+          <table class="opsT" id="clT"></table>
+          <p class="miss" id="clBy" style="margin-top:10px"></p>
+          <p class="nt">참가자나 부스가 휴대폰에서 [직원 도움 요청]을 누르면 운영요원 휴대폰에 뜨고, 한 명이 [제가 갑니다]를 누릅니다. 거점별 요청 건수와 수락 시간이 남아, 다음 회차 운영 인원을 정하는 자료가 됩니다. 안전관리요원과 경비는 이 기능과 상관없이 그대로 배치하며, 긴급 신고용이 아닙니다.</p>
+        </div>
+        
         <div class="kpis3"><div class="kp"><span>출근 기록</span><b id="stIn">-</b></div><div class="kp"><span>지금 현장</span><b id="stOn">-</b></div><div class="kp"><span>근무 시간 합계</span><b id="stHr">-</b></div></div>
         <div class="panel" style="margin-top:12px">
           <table class="opsT" id="stT"></table>
           <p class="nt">운영 인력이 직접 누른 시각입니다. 이름과 시각만 기록하고, 근무 시간은 출근과 퇴근이 모두 있을 때만 계산합니다.</p>
         </div>
-        <div class="panel" id="staffEv" style="margin-top:12px;scroll-margin-top:12px">
-          <div class="ph" style="margin-bottom:8px"><div><h2>인력은 무엇이 그대로이고, 무엇이 바뀌나</h2><p>안전 인력은 건드리지 않고, 운영 인원은 발주처와 협의할 일입니다</p></div></div>
-          <table class="opsT"><thead><tr><th scope="col">역할</th><th scope="col">근거</th><th scope="col">솔루넷 이후</th></tr></thead><tbody>
-            <tr><td>안전관리요원</td><td>재난안전법 제66조의11, 시행령 제73조의9: 순간 최대 관람객 1,000명 이상 예상 지역축제는 안전관리계획(요원 배치 포함) 수립. 인원수는 법령에 없고 경찰·소방 등과 협의해 정함</td><td><b>그대로</b></td></tr>
-            <tr><td>경비 인력</td><td>공고 과업에 별도 명시 (예: 관저동 포차 야장축제 공고, 경비 10명 × 2일)</td><td><b>그대로</b></td></tr>
-            <tr><td>스탬프 확인·도장 인력</td><td>법정 배치가 아닌 운영 인력. 거점에서 도장을 찍고 스탬프북을 확인하는 일</td><td>참가자가 QR을 직접 찍어 확인 업무가 없어짐. 남는 인원 배치는 대행사가 발주처와 협의</td></tr>
-            <tr><td>설문 배포·집계 인력</td><td>공고가 만족도 조사를 과업으로 요구 (예: 안산 겨울 빛의 나라)</td><td>완주 화면에서 바로 설문, 집계는 코드가 함</td></tr>
-          </tbody></table>
-          <p class="why" style="margin-top:10px"><b>계산 예 (가정).</b> 체크포인트 10곳 × 2명 × 2일 × 15만 원 = 600만 원 → 거점당 1명이면 300만 원. 인원과 단가는 가정값이며 실측이 아닙니다.</p>
-          <p class="nt">진행요원 상시 배치를 과업으로 요구하는 공고도 있어(전주문화재단 과업지시서), 인원을 대행사가 마음대로 줄일 수는 없습니다. 솔루넷은 역할별 실제 투입 인원과 시간을 남겨, 다음 회차 인원을 발주처와 협의할 때 쓸 근거 자료를 만듭니다.</p>
-        </div>
-      </main>
+        </main>
     </div>
   </section>
 
@@ -677,45 +673,24 @@ const STEPS = {
   2: { h:'기록이 그대로 <em>공고가 요구하는 문서</em>가 됩니다', paper:'결과자료집을 별도 계약으로 따로 발주 (경북문화재단 640만~1,680만)', other:'통계 중심의 결과 리포트는 제공', me:'공고 항목에 기록을 붙인 양식 · 숫자를 누르면 근거와 계산식 · 지어낸 숫자는 폐기' },
   3: { h:'같은 QR이라 <em>회차끼리 바로 비교</em>됩니다', paper:'작년 자료와 비교는 수작업', other:'회차 비교는 확인한 범위에서 찾지 못함', me:'같은 QR·같은 거점·같은 기준으로 회차 비교 → 다음 설계와 제안서의 목표로' },
   8: { h:'지난 회차 기록에서 <em>다음 행사의 설계와 제안서</em>가 시작됩니다', paper:'제안서와 산출내역을 매번 빈 문서에서 다시 작성', me:'예상 참가만 넣으면 거점별 방문·인력·경품 수량 → 산출내역 → 제안서 초안까지 같은 숫자로' },
-  9: { h:'운영 인력의 <em>실제 투입을 기록</em>해 다음 인원 협의의 근거로 씁니다', paper:'출근부에 서명을 받아 엑셀로 옮겨 적고, 인원은 관행대로 거점 수에 맞춰 잡음', me:'출퇴근 QR이 곧 운영인력 현황표 · 안전 인력은 그대로, 스탬프 확인 업무만 QR이 대신' },
+  9: { h:'운영요원은 거점에 서 있지 않고, <em>요청이 온 곳으로</em> 갑니다', paper:'거점마다 운영요원을 세워 두고, 출근부는 서명으로 받음', me:'도움 요청 → 요원 호출 → 수락 시간 기록 · 출퇴근도 QR로 · 안전 인력은 그대로' },
   10: { h:'공고가 요구하는 <em>집계와 만족도 조사</em>가 행사 중에 끝납니다', paper:'계수기로 세고, 종이 설문을 걷어 끝난 뒤 손으로 입력', me:'QR 기록이 곧 집계 · 완주 화면에서 설문 · 부스 매출은 참고 지표로 함께 봄' },
   11: { h:'영수증 내역을 넣으면 <em>비목별 정산표</em>가 됩니다', paper:'영수증을 모아 손으로 비목을 나누고 합계를 냄', me:'넣는 즉시 비목별 합계 · 애매한 내역은 미분류로 남겨 담당자가 확정' },
   5: { h:'인원을 늘리면 <em>어디가 막히는지</em> 미리 봅니다', note:'질문용 · 보정 전 추정 모델이며 안전 예측이 아닙니다' },
   6: { h:'어떻게 만들었고, <em>무엇을 근거로</em> 만들었나', note:'질문용 · 공개 원자료 분석 → 숫자는 코드, 문장은 틀·AI → 숫자 대조' },
 };
-const ORDER = [8, 1, 10, 2], ALL = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11];   // ORDER: ▶ 다음으로 도는 기본 흐름(공고가 요구하는 기능 위주). 나머지는 기능 칩으로 연다
-/* 기능별 근거와 판정: req 공고 요구 / ind 지침·사례 / dem 수요만 확인 */
-const VD = { req:'공고 요구', ind:'지침·사례', dem:'수요만 확인' };
-const BASIS = {
-  '행사 기초 설계': ['ind', '재난안전법 시행령 제73조의9: 순간 최대 관람객 1,000명 이상 예상 축제는 안전관리계획 대상 → 예상 인원 산정이 출발점'],
-  '거점·QR 발급': ['ind', '스탬프투어를 과업에 넣은 공고(관저동 포차 야장축제), 나라장터 스탬프투어 용역 낙찰 6건(2025~2026)'],
-  '산출내역 초안': ['ind', '계약내역서 제출 요구(전통놀이 야외행사 과업지시서). 단가는 가정값'],
-  '제안서 초안': ['req', '협상에 의한 계약은 제안서로 평가. 분석한 공고의 기술 배점 80~90%'],
-  'QR 스탬프': ['ind', '스탬프투어를 과업에 넣은 공고(관저동 포차 야장축제)'],
-  '혼잡 경고': ['ind', '지역축제장 안전관리 매뉴얼(행정안전부 2024): 인파 밀집 상황을 참여자에게 계속 안내. 솔루넷은 QR 기록 기준'],
-  '분산 유도': ['ind', '같은 매뉴얼의 인파 분산 방안. 안내이며 안전 통제가 아님, 효과는 미측정'],
-  '인력 재배치 제안': ['ind', '같은 매뉴얼의 혼잡 구간 요원 집중 배치. 운영 인력에 대한 제안이며 자동 실행하지 않음'],
-  '인력 출퇴근 QR': ['req', '행사 전체 운영인력 현황표 제출 요구(전통놀이 야외행사 과업지시서)'],
-  '실시간 집계': ['req', '방문객 수 통계·관람객 집계 요구(전주문화재단 과업지시서, 전통놀이 야외행사 과업지시서)'],
-  '모바일 설문': ['req', '만족도 조사와 결과 분석 요구(전주문화재단, 마토예술제, 안산 겨울 빛의 나라)'],
-  '부스별 일일 매출': ['dem', '과업으로 요구한 공고는 확인하지 못함. 야시장·상권 행사에서 점포 매출 성과를 묻는 보도(경산, 대전 2026)'],
-  '방문 대비 매출': ['dem', '위와 같음. 자가 보고 값이라 참고 지표'],
-  '결과보고서 초안': ['req', '결과보고서 제출 요구(마산가고파국화축제: 종료 후 30일 이내, 전주문화재단, 강릉 초당 K-푸드로드)'],
-  '숫자 검증': ['ind', '제출 서류 사이의 통계가 일치해야 한다는 조건(임실N치즈축제 제안요청서)'],
-  '회차 비교': ['ind', '결과보고서에 개선방안 포함 요구(강릉 초당 K-푸드로드). 회차 비교 자체를 요구한 공고는 확인하지 못함'],
-  '영수증 정산 분류': ['req', '집행내역과 증빙을 비목별로 편철해 제출(임실N치즈축제), 정산표와 증빙(전주문화재단, 강릉)'],
-};
+const ORDER = [8, 1, 9, 10, 2], ALL = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11];   // ORDER: ▶ 다음으로 도는 기본 흐름(공고가 요구하는 기능 위주). 나머지는 기능 칩으로 연다
 /* 행사 순서대로 묶은 기능 목록: [이름, 보여 주는 화면, 덧붙임] */
 const PHASES = [
   { k:'prep', n:'준비', first:8, feats:[['행사 기초 설계', 8], ['거점·QR 발급', 8], ['산출내역 초안', 8], ['제안서 초안', 8]] },
-  { k:'field', n:'현장', first:1, feats:[['QR 스탬프', 1], ['혼잡 경고', 7], ['분산 유도', 7], ['인력 재배치 제안', 7], ['인력 출퇴근 QR', 9], ['인력 배치 근거', 9, '', 'staffEv']] },
+  { k:'field', n:'현장', first:1, feats:[['QR 스탬프', 1], ['혼잡 경고', 7], ['분산 유도', 7], ['인력 재배치 제안', 7], ['인력 출퇴근 QR', 9], ['도움 요청·호출 배치', 9, '', 'staffEv']] },
   { k:'collect', n:'수집', first:10, feats:[['실시간 집계', 10], ['모바일 설문', 10], ['부스별 일일 매출', 10], ['방문 대비 매출', 10]] },
   { k:'report', n:'보고', first:2, feats:[['결과보고서 초안', 2], ['숫자 검증', 2], ['보고서 양식·비용 근거', 2, '', 'repEv'], ['회차 비교', 3], ['영수증 정산 분류', 11]] },
   { k:'q5', n:'질문용', first:5, feats:[['혼잡 시뮬레이션', 5, '보정 전 추정'], ['기록 CSV로 돌리기', 5], ['크기·배치도로 지도 만들기', 5]] },
   { k:'q6', n:'질문용', first:6, feats:[['만든 방법과 근거', 6]] },
 ];
 const PH_OF = { 8:'prep', 1:'field', 7:'field', 9:'field', 10:'collect', 2:'report', 3:'report', 11:'report', 5:'q5', 6:'q6' };
-let step = 8; const seen = new Set([8]), made = { report:false, prop:false, sim:false, est:false }, did = { staff:false, sales:false, rcpt:false };
+let step = 8; const seen = new Set([8]), made = { report:false, prop:false, sim:false, est:false }, did = { staff:false, sales:false, rcpt:false, call:false, acc:false };
 function show(n) {
   if (!ALL.includes(n)) n = 8; step = n; seen.add(step);
   ALL.forEach(i => { $('step-' + i).hidden = i !== step; });
@@ -723,9 +698,6 @@ function show(n) {
   document.querySelectorAll('[data-phase]').forEach(b => { const k = b.dataset.phase; b.setAttribute('aria-selected', k === pk); b.classList.toggle('done', k !== pk && Object.keys(PH_OF).some(i => PH_OF[i] === k && seen.has(+i))); });
   $('feats').innerHTML = '<span class="lb">이 단계의 기능</span>' + P.feats.map(([t, to, sub, an]) => `<button type="button" data-go="${to}"${an ? ` data-an="${an}"` : ''} class="${to === step ? 'on' : seen.has(to) ? 'seen' : ''}">${t}${sub ? `<small>${sub}</small>` : ''}</button>`).join('');
   $('feats').querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const an = b.dataset.an; if (+b.dataset.go !== step) show(+b.dataset.go); if (an) setTimeout(() => $(an).scrollIntoView({ behavior:'smooth', block:'start' }), 60); });
-  { const rows = P.feats.filter(f => f[1] === step && BASIS[f[0]]);
-    $('basis').hidden = !rows.length;
-    $('basis').innerHTML = rows.length ? '<table><thead><tr><th scope="col">기능</th><th scope="col">근거</th><th scope="col">판정</th></tr></thead><tbody>' + rows.map(f => { const [v, t] = BASIS[f[0]]; return `<tr><td>${f[0]}</td><td>${t}</td><td><span class="vd ${v}">${VD[v]}</span></td></tr>`; }).join('') + '</tbody></table>' : ''; }
   if (step === 8) loadPrep();
   if (step === 9) { if (!$('stPh').src) $('stPh').src = '/staff?f=' + FID; opsPoll(); }
   if (step === 10 || step === 11) opsPoll();
@@ -751,7 +723,7 @@ function primary() { const b = step === 1 ? document.querySelector('#phFoot .cta
 
 /* ---------- ▶ 다음: 한 번 누를 때마다 한 동작 ----------
    1단계: QR 찍기 → 설문 보내기 / 분산 유도: 몰림 → 추천 → 추천 거점 찍기 / 나머지는 단계만 넘기면 문서가 자동으로 만들어진다 */
-const NAME = { 8:'기초 설계·제안서', 1:'QR 스탬프', 7:'분산 유도', 9:'인력 출퇴근·근거', 10:'집계·설문', 2:'결과보고서', 3:'회차 비교', 11:'영수증 정산', 5:'시뮬레이션', 6:'만든 방법' };
+const NAME = { 8:'기초 설계·제안서', 1:'QR 스탬프', 7:'분산 유도', 9:'호출 배치·출퇴근', 10:'집계·설문', 2:'결과보고서', 3:'회차 비교', 11:'영수증 정산', 5:'시뮬레이션', 6:'만든 방법' };
 let opsBusy = false;
 /* 기본 흐름 밖의 화면에서 돌아갈 곳: 같은 단계의 흐름 화면, 없으면 마지막 */
 function flowOf(n) { return ORDER.find(i => PH_OF[i] === PH_OF[n]) ?? ORDER[ORDER.length - 1]; }
@@ -761,7 +733,8 @@ function dirPlan() {
   if (step === 1 && ph.stage === 'survey' && $('sendBtn')) return { t:'설문 보내고 경품 받기', go:() => $('sendBtn').click() };
   if (step === 7 && spN < 3) return { t:SPSEQ[spN].replace(/^[①②③]\s*/, ''), go:() => $('spBtn').click() };
   if (step === 8 && !made.est) return { t:'행사 기초 설계 만들기', go:() => makeEstimate() };
-  if (step === 9 && !did.staff) return { t:'운영요원 출근 QR 찍기', go:() => staffDemo() };
+  if (step === 9 && !did.call) return { t:'참가자가 도움 요청', go:() => callDemo() };
+  if (step === 9 && !did.acc) return { t:'운영요원이 [제가 갑니다]', go:() => acceptDemo() };
   if (step === 11 && !did.rcpt) return { t:'영수증 내역 넣어 분류', go:() => rcptDemo() };
   const at = ORDER.indexOf(step);
   if (at < 0) { const b = flowOf(step); return { t:'시연 흐름으로: ' + NAME[b], go:() => show(b) }; }
@@ -1296,7 +1269,7 @@ $('propForm').addEventListener('keydown', e => e.stopPropagation());
 
 /* ---------- 현장·수집·보고: 운영 기록 ---------- */
 const hm2 = t => t ? new Date(t).toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', hour12:false }) : '-';
-let opsNew = { staff:'', receipts:0 };
+let opsNew = { staff:'', receipts:0, call:'' };
 async function opsPoll() {
   const [d, s] = await Promise.all([fetch('/api/ops/' + FID).then(r => r.ok ? r.json() : null).catch(() => null), fetch('/api/stats/' + FID).then(r => r.ok ? r.json() : null).catch(() => null)]);
   if (!d) return;
@@ -1304,6 +1277,13 @@ async function opsPoll() {
   $('stIn').innerHTML = st.checked_in + '<u>명</u>'; $('stOn').innerHTML = st.on_site + '<u>명</u>'; $('stHr').innerHTML = st.hours ? st.hours + '<u>시간</u>' : '-';
   $('stT').innerHTML = '<tr><th>이름</th><th>출근</th><th>퇴근</th><th class="n">근무</th><th>상태</th></tr>' + (st.people.length ? st.people.map(p =>
     `<tr class="${p.name === opsNew.staff ? 'new' : ''}"><td>${esc(p.name)}</td><td>${hm2(p.in)}</td><td>${hm2(p.out)}</td><td class="n">${p.hours != null ? p.hours + '시간' : '-'}</td><td><span class="tag ${p.on_site ? '' : 'as'}">${p.on_site ? '현장' : '퇴근'}</span></td></tr>`).join('') : '<tr><td colspan="5">아직 기록이 없습니다.</td></tr>');
+  const cl = d.calls; if (cl) {
+    const sec = v => v == null ? '-' : v >= 60 ? Math.floor(v / 60) + '분 ' + (v % 60) + '초' : v + '초';
+    $('clN').innerHTML = cl.total + '<u>건</u>'; $('clW').textContent = sec(cl.avg_wait_sec); $('clO').innerHTML = cl.open + '<u>건</u>';
+    $('clT').innerHTML = '<tr><th>요청</th><th>거점</th><th>내용</th><th>담당</th><th class="n">수락까지</th><th>상태</th></tr>' + (cl.rows.length ? cl.rows.slice(0, 6).map(c =>
+      `<tr class="${c.id === opsNew.call ? 'new' : ''}"><td>${hm2(c.ts)}</td><td>${esc(c.cp_name)}</td><td>${esc(c.reason)}</td><td>${c.by ? esc(c.by) : '-'}</td><td class="n">${sec(c.wait_sec)}</td><td><span class="tag ${c.status === '대기' ? 'un' : c.status === '완료' ? 'as' : ''}">${c.status}</span></td></tr>`).join('') : '<tr><td colspan="6">아직 요청이 없습니다.</td></tr>');
+    $('clBy').innerHTML = cl.by_cp.length ? '<b>거점별 요청</b> · ' + cl.by_cp.map(x => `${esc(x.cp)} ${x.count}건`).join(' / ') : '';
+  }
   const sl = d.sales;
   $('slT').innerHTML = `<tr><th>부스</th><th>구역</th>${sl.days.map(x => `<th class="n">${x}일차</th>`).join('')}<th class="n">합계</th></tr>` +
     (sl.booths.length ? sl.booths.map(b => `<tr><td>${esc(b.booth)}</td><td>${b.zone ? esc(b.zone) : '-'}</td>${b.days.map(v => `<td class="n">${v == null ? '<span class="tag un">미제출</span>' : won(v)}</td>`).join('')}<td class="n">${won(b.total)}</td></tr>`).join('') +
@@ -1329,6 +1309,18 @@ async function opsPoll() {
   $('rcT').innerHTML = '<tr><th>내역</th><th>비목</th><th>맞은 낱말</th><th class="n">금액 (원)</th></tr>' + (rc.rows.length ? rc.rows.map((r, i) =>
     `<tr class="${i < opsNew.receipts ? 'new' : ''}"><td>${esc(r.desc)}</td><td><span class="tag ${r.category === '미분류' ? 'un' : ''}">${esc(r.category)}</span></td><td>${r.matched ? esc(r.matched) : '-'}</td><td class="n">${won(r.amount)}</td></tr>`).join('') : '<tr><td colspan="4">아직 넣은 내역이 없습니다.</td></tr>');
   $('rcC').innerHTML = '<tr><th>비목</th><th class="n">건수</th><th class="n">금액 (원)</th></tr>' + rc.by_category.map(c => `<tr><td><span class="tag ${c.category === '미분류' ? 'un' : ''}">${esc(c.category)}</span></td><td class="n">${c.count}</td><td class="n">${won(c.amount)}</td></tr>`).join('') + `<tr class="sum"><td>합계</td><td class="n">${rc.rows.length}</td><td class="n">${won(rc.total)}</td></tr>`;
+}
+async function callDemo() {
+  opsBusy = true; startTimer();
+  const r = await post('/api/call', { festival:FID, token:'craft', reason:'경품 문의' }).then(x => x.ok ? x.json() : null).catch(() => null);
+  if (r) opsNew.call = r.id;
+  $('stPh').src = `/staff?f=${FID}&tab=call&name=${encodeURIComponent('운영요원 B')}&t=${Date.now()}`;
+  await wait(900); await opsPoll(); did.call = true; opsBusy = false;
+}
+async function acceptDemo() {
+  opsBusy = true;
+  if (opsNew.call) $('stPh').src = `/staff?f=${FID}&tab=call&name=${encodeURIComponent('운영요원 B')}&accept=${opsNew.call}&t=${Date.now()}`;
+  await wait(1300); await opsPoll(); did.acc = true; opsBusy = false;
 }
 async function staffDemo() {
   opsBusy = true; startTimer(); opsNew.staff = '운영요원 F';
