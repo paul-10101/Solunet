@@ -287,6 +287,15 @@
   .tag.un { background:#FEF3C7; color:#92400E; } .tag.as { background:#F1F5F9; color:#475569; font-weight:500; }
   .why { background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:11px 14px; font-size:13.5px; line-height:1.65; margin-bottom:14px; color:#1E3A8A; }
   .why b { color:var(--ink); }
+  .basis { margin:8px 0 12px; border:1px solid var(--line, #E2E8F0); border-radius:12px; background:#fff; overflow-x:auto; }
+  .basis table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  .basis th { text-align:left; font-weight:600; color:#64748B; font-size:12.5px; padding:7px 12px; border-bottom:1px solid #E2E8F0; white-space:nowrap; }
+  .basis td { padding:7px 12px; border-bottom:1px solid #F1F5F9; vertical-align:top; line-height:1.5; }
+  .basis tr:last-child td { border-bottom:0; }
+  .basis td:first-child { font-weight:700; white-space:nowrap; }
+  .vd { display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:700; white-space:nowrap; }
+  .vd.req { background:#DCFCE7; color:#166534; } .vd.ind { background:#DBEAFE; color:#1E40AF; } .vd.dem { background:#FEF3C7; color:#92400E; }
+  @media (max-width:700px) { .basis td:first-child { white-space:normal; } }
   .expl { background:#F8FAFC; border-left:3px solid var(--route); border-radius:0 8px 8px 0; padding:11px 14px; font-size:14px; line-height:1.75; margin:12px 0 4px; }
   .expl small { display:block; color:var(--muted); font-size:12px; margin-top:6px; }
   .miss { font-size:13px; margin-top:10px; padding:9px 12px; border-radius:8px; background:#FEF3C7; color:#92400E; }
@@ -330,6 +339,7 @@
     <button role="tab" data-phase="q6"><b>Q</b><span>만든 방법 (질문용)</span></button>
   </nav>
   <div class="feats" id="feats" aria-label="이 단계의 기능"></div>
+  <div class="basis noprint" id="basis" aria-label="이 화면 기능의 근거"></div>
 
   <div class="say" aria-live="polite">
     <h1 id="sayH"></h1>
@@ -430,6 +440,12 @@
           <tr><td>군산시간여행축제 조사평가 용역 (설문 약 320부)</td><td style="text-align:right">1,800만 원</td></tr>
           <tr><td>대행사 공개 단가 (결과보고서 / 설문)</td><td style="text-align:right">50만~ / 20만~ 원</td></tr>
         </tbody></table>
+        <table class="opsT" style="margin-top:10px"><thead><tr><th scope="col">보고서 작업</th><th scope="col">솔루넷 이후</th></tr></thead><tbody>
+          <tr><td>설문 배포·회수·입력</td><td>줄어듦 (모바일 설문, 자동 저장)</td></tr>
+          <tr><td>집계, 표, 전 회차 비교</td><td>줄어듦 (코드가 계산)</td></tr>
+          <tr><td>본문 초안</td><td>일부 줄어듦 (초안 생성, 숫자 대조)</td></tr>
+          <tr><td>사진, 디자인, 인쇄본 납품, 회계 감수</td><td>그대로</td></tr>
+        </tbody></table>
         <p class="why" style="margin-top:10px"><b>솔루넷이 맡는 범위.</b> 집계, 표, 숫자가 맞는 초안까지입니다. 사진, 디자인, 인쇄, 평가 해석은 하지 않고 담당자 칸으로 남깁니다.</p>
         <p class="nt">이익률 개선은 위 비용 중 집계·초안 작성 시간이 줄어든다는 가정의 계산입니다. 실제 품질과 절감 시간은 첫 행사에서 기존 보고서와 나란히 놓고 확인하겠습니다.</p>
       </div>
@@ -486,15 +502,15 @@
           <p class="nt">운영 인력이 직접 누른 시각입니다. 이름과 시각만 기록하고, 근무 시간은 출근과 퇴근이 모두 있을 때만 계산합니다.</p>
         </div>
         <div class="panel" id="staffEv" style="margin-top:12px;scroll-margin-top:12px">
-          <div class="ph" style="margin-bottom:8px"><div><h2>인력은 무엇이 줄고, 무엇이 그대로인가</h2><p>법이 정한 안전 인력은 건드리지 않습니다</p></div></div>
+          <div class="ph" style="margin-bottom:8px"><div><h2>인력은 무엇이 그대로이고, 무엇이 바뀌나</h2><p>안전 인력은 건드리지 않고, 운영 인원은 발주처와 협의할 일입니다</p></div></div>
           <table class="opsT"><thead><tr><th scope="col">역할</th><th scope="col">근거</th><th scope="col">솔루넷 이후</th></tr></thead><tbody>
             <tr><td>안전관리요원</td><td>재난안전법 제66조의11, 시행령 제73조의9: 순간 최대 관람객 1,000명 이상 예상 지역축제는 안전관리계획(요원 배치 포함) 수립. 인원수는 법령에 없고 경찰·소방 등과 협의해 정함</td><td><b>그대로</b></td></tr>
             <tr><td>경비 인력</td><td>공고 과업에 별도 명시 (예: 관저동 포차 야장축제 공고, 경비 10명 × 2일)</td><td><b>그대로</b></td></tr>
-            <tr><td>스탬프 확인·도장 인력</td><td>법정 배치가 아닌 운영 인력. 거점에서 도장을 찍고 스탬프북을 확인하는 일</td><td>참가자가 QR을 직접 찍어 확인 업무가 없어짐. 거점당 안내 1명만 남김</td></tr>
+            <tr><td>스탬프 확인·도장 인력</td><td>법정 배치가 아닌 운영 인력. 거점에서 도장을 찍고 스탬프북을 확인하는 일</td><td>참가자가 QR을 직접 찍어 확인 업무가 없어짐. 남는 인원 배치는 대행사가 발주처와 협의</td></tr>
             <tr><td>설문 배포·집계 인력</td><td>공고가 만족도 조사를 과업으로 요구 (예: 안산 겨울 빛의 나라)</td><td>완주 화면에서 바로 설문, 집계는 코드가 함</td></tr>
           </tbody></table>
           <p class="why" style="margin-top:10px"><b>계산 예 (가정).</b> 체크포인트 10곳 × 2명 × 2일 × 15만 원 = 600만 원 → 거점당 1명이면 300만 원. 인원과 단가는 가정값이며 실측이 아닙니다.</p>
-          <p class="nt">이 출퇴근 기록이 감축을 확인하는 방법입니다. 첫 행사에서 역할별 실제 투입 인원과 시간을 남기고, 다음 회차와 비교해 정말 줄었는지 숫자로 보여 드리겠습니다.</p>
+          <p class="nt">진행요원 상시 배치를 과업으로 요구하는 공고도 있어(전주문화재단 과업지시서), 인원을 대행사가 마음대로 줄일 수는 없습니다. 솔루넷은 역할별 실제 투입 인원과 시간을 남겨, 다음 회차 인원을 발주처와 협의할 때 쓸 근거 자료를 만듭니다.</p>
         </div>
       </main>
     </div>
@@ -506,7 +522,8 @@
     <div class="cols" style="grid-template-columns:minmax(0,5fr) minmax(0,4fr)">
       <div class="panel">
         <div class="ph"><div><h2>부스별 일일 매출 · 상권 성과</h2><p>부스 담당자가 휴대폰으로 그날 매출을 보냅니다</p></div></div>
-        <p class="why"><b>왜 필요한가.</b> 부스·점포형 행사는 상인 매출이 과업의 성과를 보여 주는 지표이고, 일일 매출 보고를 과업으로 요구하는 공고도 있습니다. 대행사가 부스마다 걷어 합산하던 일을 부스가 직접 보내게 하고, QR 방문 기록과 묶어 <b>방문이 매출로 이어졌는지</b>까지 봅니다.</p>
+        <p class="why"><b>왜 필요한가.</b> 부스·점포형 행사는 방문객이 점포 매출로 이어졌는지가 성과로 거론됩니다. 과업으로 요구한 공고는 확인하지 못했고, 발주처와 언론이 묻는 숫자입니다. 대행사가 부스마다 걷어 합산하던 일을 부스가 직접 보내게 하고, QR 방문 기록과 묶어 <b>방문이 매출로 이어졌는지</b>까지 봅니다.</p>
+        <div class="noprint" style="margin-bottom:10px"><button class="ghost" type="button" id="slDemo">예시: 부스 2일차 매출 받기</button></div>
         <table class="opsT" id="slT"></table>
         <div id="slMiss"></div>
         <p class="nt">부스가 직접 보낸 금액을 그대로 더한 자가 보고 값입니다. 카드 단말기나 POS와 연결되지 않으며, 금액 확인은 대행사가 합니다.</p>
@@ -660,31 +677,55 @@ const STEPS = {
   2: { h:'기록이 그대로 <em>공고가 요구하는 문서</em>가 됩니다', paper:'결과자료집을 별도 계약으로 따로 발주 (경북문화재단 640만~1,680만)', other:'통계 중심의 결과 리포트는 제공', me:'공고 항목에 기록을 붙인 양식 · 숫자를 누르면 근거와 계산식 · 지어낸 숫자는 폐기' },
   3: { h:'같은 QR이라 <em>회차끼리 바로 비교</em>됩니다', paper:'작년 자료와 비교는 수작업', other:'회차 비교는 확인한 범위에서 찾지 못함', me:'같은 QR·같은 거점·같은 기준으로 회차 비교 → 다음 설계와 제안서의 목표로' },
   8: { h:'지난 회차 기록에서 <em>다음 행사의 설계와 제안서</em>가 시작됩니다', paper:'제안서와 산출내역을 매번 빈 문서에서 다시 작성', me:'예상 참가만 넣으면 거점별 방문·인력·경품 수량 → 산출내역 → 제안서 초안까지 같은 숫자로' },
-  9: { h:'안전 인력은 그대로, <em>스탬프 확인 인력만</em> 줄입니다', paper:'거점마다 도장 인력을 두고, 출근부에 서명을 받아 엑셀로 옮겨 적음', me:'QR이 확인 업무를 대신 · 출퇴근 기록으로 실제 투입 인원과 시간을 남겨 감축을 숫자로 확인' },
-  10: { h:'방문 기록과 상인 매출을 <em>한 화면에서 연결</em>합니다', paper:'부스를 돌며 매출을 걷어 엑셀로 합산, 방문객 수와는 따로 봄', me:'부스가 직접 보고 → 목표 달성률 · 참여자 1인당 · 구역 방문 1명당 매출까지 자동 계산' },
+  9: { h:'운영 인력의 <em>실제 투입을 기록</em>해 다음 인원 협의의 근거로 씁니다', paper:'출근부에 서명을 받아 엑셀로 옮겨 적고, 인원은 관행대로 거점 수에 맞춰 잡음', me:'출퇴근 QR이 곧 운영인력 현황표 · 안전 인력은 그대로, 스탬프 확인 업무만 QR이 대신' },
+  10: { h:'공고가 요구하는 <em>집계와 만족도 조사</em>가 행사 중에 끝납니다', paper:'계수기로 세고, 종이 설문을 걷어 끝난 뒤 손으로 입력', me:'QR 기록이 곧 집계 · 완주 화면에서 설문 · 부스 매출은 참고 지표로 함께 봄' },
   11: { h:'영수증 내역을 넣으면 <em>비목별 정산표</em>가 됩니다', paper:'영수증을 모아 손으로 비목을 나누고 합계를 냄', me:'넣는 즉시 비목별 합계 · 애매한 내역은 미분류로 남겨 담당자가 확정' },
   5: { h:'인원을 늘리면 <em>어디가 막히는지</em> 미리 봅니다', note:'질문용 · 보정 전 추정 모델이며 안전 예측이 아닙니다' },
   6: { h:'어떻게 만들었고, <em>무엇을 근거로</em> 만들었나', note:'질문용 · 공개 원자료 분석 → 숫자는 코드, 문장은 틀·AI → 숫자 대조' },
 };
-const ORDER = [8, 1, 7, 9, 10, 2, 3, 5, 6], ALL = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11];
+const ORDER = [8, 1, 10, 2], ALL = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11];   // ORDER: ▶ 다음으로 도는 기본 흐름(공고가 요구하는 기능 위주). 나머지는 기능 칩으로 연다
+/* 기능별 근거와 판정: req 공고 요구 / ind 지침·사례 / dem 수요만 확인 */
+const VD = { req:'공고 요구', ind:'지침·사례', dem:'수요만 확인' };
+const BASIS = {
+  '행사 기초 설계': ['ind', '재난안전법 시행령 제73조의9: 순간 최대 관람객 1,000명 이상 예상 축제는 안전관리계획 대상 → 예상 인원 산정이 출발점'],
+  '거점·QR 발급': ['ind', '스탬프투어를 과업에 넣은 공고(관저동 포차 야장축제), 나라장터 스탬프투어 용역 낙찰 6건(2025~2026)'],
+  '산출내역 초안': ['ind', '계약내역서 제출 요구(전통놀이 야외행사 과업지시서). 단가는 가정값'],
+  '제안서 초안': ['req', '협상에 의한 계약은 제안서로 평가. 분석한 공고의 기술 배점 80~90%'],
+  'QR 스탬프': ['ind', '스탬프투어를 과업에 넣은 공고(관저동 포차 야장축제)'],
+  '혼잡 경고': ['ind', '지역축제장 안전관리 매뉴얼(행정안전부 2024): 인파 밀집 상황을 참여자에게 계속 안내. 솔루넷은 QR 기록 기준'],
+  '분산 유도': ['ind', '같은 매뉴얼의 인파 분산 방안. 안내이며 안전 통제가 아님, 효과는 미측정'],
+  '인력 재배치 제안': ['ind', '같은 매뉴얼의 혼잡 구간 요원 집중 배치. 운영 인력에 대한 제안이며 자동 실행하지 않음'],
+  '인력 출퇴근 QR': ['req', '행사 전체 운영인력 현황표 제출 요구(전통놀이 야외행사 과업지시서)'],
+  '실시간 집계': ['req', '방문객 수 통계·관람객 집계 요구(전주문화재단 과업지시서, 전통놀이 야외행사 과업지시서)'],
+  '모바일 설문': ['req', '만족도 조사와 결과 분석 요구(전주문화재단, 마토예술제, 안산 겨울 빛의 나라)'],
+  '부스별 일일 매출': ['dem', '과업으로 요구한 공고는 확인하지 못함. 야시장·상권 행사에서 점포 매출 성과를 묻는 보도(경산, 대전 2026)'],
+  '방문 대비 매출': ['dem', '위와 같음. 자가 보고 값이라 참고 지표'],
+  '결과보고서 초안': ['req', '결과보고서 제출 요구(마산가고파국화축제: 종료 후 30일 이내, 전주문화재단, 강릉 초당 K-푸드로드)'],
+  '숫자 검증': ['ind', '제출 서류 사이의 통계가 일치해야 한다는 조건(임실N치즈축제 제안요청서)'],
+  '회차 비교': ['ind', '결과보고서에 개선방안 포함 요구(강릉 초당 K-푸드로드). 회차 비교 자체를 요구한 공고는 확인하지 못함'],
+  '영수증 정산 분류': ['req', '집행내역과 증빙을 비목별로 편철해 제출(임실N치즈축제), 정산표와 증빙(전주문화재단, 강릉)'],
+};
 /* 행사 순서대로 묶은 기능 목록: [이름, 보여 주는 화면, 덧붙임] */
 const PHASES = [
   { k:'prep', n:'준비', first:8, feats:[['행사 기초 설계', 8], ['거점·QR 발급', 8], ['산출내역 초안', 8], ['제안서 초안', 8]] },
-  { k:'field', n:'현장', first:1, feats:[['QR 스탬프', 1], ['다국어 안내', 1], ['경품 지급 확인', 1], ['혼잡 경고', 7], ['분산 유도', 7], ['인력 재배치 제안', 7], ['인력 출퇴근 QR', 9], ['인력 감축 근거', 9, '', 'staffEv']] },
-  { k:'collect', n:'수집', first:10, feats:[['실시간 집계', 10], ['모바일 설문', 10], ['부스별 일일 매출', 10], ['방문 대비 매출', 10], ['자유 응답 요약', 10]] },
-  { k:'report', n:'보고', first:2, feats:[['결과보고서 초안', 2], ['숫자 검증', 2], ['보고서 양식·비용 근거', 2, '', 'repEv'], ['회차 비교', 3]] },
+  { k:'field', n:'현장', first:1, feats:[['QR 스탬프', 1], ['혼잡 경고', 7], ['분산 유도', 7], ['인력 재배치 제안', 7], ['인력 출퇴근 QR', 9], ['인력 배치 근거', 9, '', 'staffEv']] },
+  { k:'collect', n:'수집', first:10, feats:[['실시간 집계', 10], ['모바일 설문', 10], ['부스별 일일 매출', 10], ['방문 대비 매출', 10]] },
+  { k:'report', n:'보고', first:2, feats:[['결과보고서 초안', 2], ['숫자 검증', 2], ['보고서 양식·비용 근거', 2, '', 'repEv'], ['회차 비교', 3], ['영수증 정산 분류', 11]] },
   { k:'q5', n:'질문용', first:5, feats:[['혼잡 시뮬레이션', 5, '보정 전 추정'], ['기록 CSV로 돌리기', 5], ['크기·배치도로 지도 만들기', 5]] },
   { k:'q6', n:'질문용', first:6, feats:[['만든 방법과 근거', 6]] },
 ];
 const PH_OF = { 8:'prep', 1:'field', 7:'field', 9:'field', 10:'collect', 2:'report', 3:'report', 11:'report', 5:'q5', 6:'q6' };
 let step = 8; const seen = new Set([8]), made = { report:false, prop:false, sim:false, est:false }, did = { staff:false, sales:false, rcpt:false };
 function show(n) {
-  if (!ORDER.includes(n)) n = 8; step = n; seen.add(step);
+  if (!ALL.includes(n)) n = 8; step = n; seen.add(step);
   ALL.forEach(i => { $('step-' + i).hidden = i !== step; });
   const pk = PH_OF[step], P = PHASES.find(p => p.k === pk);
   document.querySelectorAll('[data-phase]').forEach(b => { const k = b.dataset.phase; b.setAttribute('aria-selected', k === pk); b.classList.toggle('done', k !== pk && Object.keys(PH_OF).some(i => PH_OF[i] === k && seen.has(+i))); });
   $('feats').innerHTML = '<span class="lb">이 단계의 기능</span>' + P.feats.map(([t, to, sub, an]) => `<button type="button" data-go="${to}"${an ? ` data-an="${an}"` : ''} class="${to === step ? 'on' : seen.has(to) ? 'seen' : ''}">${t}${sub ? `<small>${sub}</small>` : ''}</button>`).join('');
   $('feats').querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const an = b.dataset.an; if (+b.dataset.go !== step) show(+b.dataset.go); if (an) setTimeout(() => $(an).scrollIntoView({ behavior:'smooth', block:'start' }), 60); });
+  { const rows = P.feats.filter(f => f[1] === step && BASIS[f[0]]);
+    $('basis').hidden = !rows.length;
+    $('basis').innerHTML = rows.length ? '<table><thead><tr><th scope="col">기능</th><th scope="col">근거</th><th scope="col">판정</th></tr></thead><tbody>' + rows.map(f => { const [v, t] = BASIS[f[0]]; return `<tr><td>${f[0]}</td><td>${t}</td><td><span class="vd ${v}">${VD[v]}</span></td></tr>`; }).join('') + '</tbody></table>' : ''; }
   if (step === 8) loadPrep();
   if (step === 9) { if (!$('stPh').src) $('stPh').src = '/staff?f=' + FID; opsPoll(); }
   if (step === 10 || step === 11) opsPoll();
@@ -702,7 +743,7 @@ document.addEventListener('keydown', e => {
   const at = ORDER.indexOf(step);
   if (e.key >= '1' && e.key <= '6') show(PHASES[+e.key - 1].first);
   else if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === 'Enter') { e.preventDefault(); dirGo(); }
-  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(ORDER[Math.max(0, at - 1)]); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(at < 0 ? flowOf(step) : ORDER[Math.max(0, at - 1)]); }
   else if (e.key === ' ') { e.preventDefault(); if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); dirGo(); }
 });
 /* Space: 지금 단계에서 발표자가 누를 버튼 하나 */
@@ -710,19 +751,20 @@ function primary() { const b = step === 1 ? document.querySelector('#phFoot .cta
 
 /* ---------- ▶ 다음: 한 번 누를 때마다 한 동작 ----------
    1단계: QR 찍기 → 설문 보내기 / 분산 유도: 몰림 → 추천 → 추천 거점 찍기 / 나머지는 단계만 넘기면 문서가 자동으로 만들어진다 */
-const NAME = { 8:'기초 설계·제안서', 1:'QR 스탬프', 7:'분산 유도', 9:'인력 출퇴근·근거', 10:'집계·상권 매출', 2:'결과보고서', 3:'회차 비교', 11:'영수증 정산', 5:'시뮬레이션', 6:'만든 방법' };
+const NAME = { 8:'기초 설계·제안서', 1:'QR 스탬프', 7:'분산 유도', 9:'인력 출퇴근·근거', 10:'집계·설문', 2:'결과보고서', 3:'회차 비교', 11:'영수증 정산', 5:'시뮬레이션', 6:'만든 방법' };
 let opsBusy = false;
+/* 기본 흐름 밖의 화면에서 돌아갈 곳: 같은 단계의 흐름 화면, 없으면 마지막 */
+function flowOf(n) { return ORDER.find(i => PH_OF[i] === PH_OF[n]) ?? ORDER[ORDER.length - 1]; }
 function dirBusy() { return !!(opsBusy || ph.busy || $('spBtn').disabled || (step === 2 && $('reportBtn').disabled) || (step === 8 && $('propBtn').disabled) || (step === 5 && $('simBtn').disabled)); }
 function dirPlan() {
   if (step === 1 && ph.stage === 'scan' && $('scanBtn')) return { t:'QR 찍기', go:() => $('scanBtn').click() };
   if (step === 1 && ph.stage === 'survey' && $('sendBtn')) return { t:'설문 보내고 경품 받기', go:() => $('sendBtn').click() };
   if (step === 7 && spN < 3) return { t:SPSEQ[spN].replace(/^[①②③]\s*/, ''), go:() => $('spBtn').click() };
   if (step === 8 && !made.est) return { t:'행사 기초 설계 만들기', go:() => makeEstimate() };
-  if (step === 8 && !made.prop) return { t:'제안서 초안 만들기', go:() => makeProposal() };
   if (step === 9 && !did.staff) return { t:'운영요원 출근 QR 찍기', go:() => staffDemo() };
-  if (step === 10 && !did.sales) return { t:'부스 2일차 매출 받기', go:() => salesDemo() };
   if (step === 11 && !did.rcpt) return { t:'영수증 내역 넣어 분류', go:() => rcptDemo() };
   const at = ORDER.indexOf(step);
+  if (at < 0) { const b = flowOf(step); return { t:'시연 흐름으로: ' + NAME[b], go:() => show(b) }; }
   if (at < ORDER.length - 1) return { t:'다음: ' + NAME[ORDER[at + 1]], go:() => show(ORDER[at + 1]) };
   return null;
 }
@@ -1293,6 +1335,7 @@ async function staffDemo() {
   $('stPh').src = `/staff?f=${FID}&name=${encodeURIComponent(opsNew.staff)}&auto=in&t=${Date.now()}`;
   await wait(1400); await opsPoll(); did.staff = true; opsBusy = false;
 }
+document.addEventListener('DOMContentLoaded', () => { const b = $('slDemo'); if (b) b.onclick = () => { if (!did.sales && !opsBusy) salesDemo(); }; });
 async function salesDemo() {
   opsBusy = true; startTimer();
   for (const [booth, amount] of [['먹거리 1호', 2110000], ['먹거리 2호', 1450000], ['분식 코너', 1120000], ['체험 공방', 690000], ['기념품 가게', 610000]]) await post('/api/sales', { festival:FID, booth, day:2, amount }).catch(() => null);
