@@ -80,3 +80,19 @@ def test_report_has_ops_section():
     c.post("/api/demo/seed")
     d = c.post("/api/report/demo?mode=template").json()
     assert len(d["sections"]) == 6 and "6. 현장 운영 및 상권 성과" in d["text"] and "5,850,000원" in d["text"]
+
+
+def test_call_flow_keeps_stats():
+    c.post("/api/demo/seed")
+    before = c.get("/api/stats/demo").json()["current"]
+    n0 = c.get("/api/ops/demo").json()["calls"]["total"]
+    assert n0 == 7
+    cid = c.post("/api/call", json={"festival": "demo", "token": "craft", "reason": "경품 문의"}).json()["id"]
+    assert any(x["id"] == cid and x["status"] == "대기" for x in c.get("/api/calls/demo").json()["calls"])
+    assert c.post("/api/call/act", json={"festival": "demo", "id": "nope0000", "name": "A", "action": "accept"}).status_code == 404
+    assert c.post("/api/call/act", json={"festival": "demo", "id": cid, "name": "운영요원 B", "action": "accept"}).status_code == 200
+    calls = c.get("/api/ops/demo").json()["calls"]
+    row = next(x for x in calls["rows"] if x["id"] == cid)
+    assert calls["total"] == n0 + 1 and row["status"] == "이동 중" and row["by"] == "운영요원 B" and row["wait_sec"] is not None
+    after = c.get("/api/stats/demo").json()["current"]
+    assert (before["visitors"], before["completion_rate"]) == (after["visitors"], after["completion_rate"])

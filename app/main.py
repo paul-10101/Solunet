@@ -314,6 +314,19 @@ class StaffCheck(BaseModel):
     action: str = Field(pattern="^(in|out)$")
 
 
+class CallNew(BaseModel):
+    festival: str = Field(max_length=40)
+    token: str = Field(default="", max_length=40)   # 요청한 사람이 마지막으로 찍은 거점 (없으면 위치 미상)
+    reason: str = Field(default="기타", max_length=20)
+
+
+class CallAct(BaseModel):
+    festival: str = Field(max_length=40)
+    id: str = Field(min_length=4, max_length=16)
+    name: str = Field(min_length=1, max_length=20)
+    action: str = Field(pattern="^(accept|done)$")
+
+
 class SalesEntry(BaseModel):
     festival: str = Field(max_length=40)
     booth: str = Field(min_length=1, max_length=30)
@@ -343,6 +356,35 @@ def staff_check(q: StaffCheck):
     f = _festival(q.festival)
     row = _ops_add(f, "ops_staff", name=q.name.strip(), action=q.action)
     return {"ok": True, "name": row["name"], "action": row["action"], "ts": row["ts"]}
+
+
+@app.post("/api/call")
+def call_new(q: CallNew):
+    """참가자나 부스가 도움을 요청한다. 이름·연락처는 받지 않고 거점과 사유만 남긴다. 긴급 신고용이 아니다."""
+    f = _festival(q.festival)
+    cp = _checkpoint_by_token(f, q.token) if q.token else None
+    reason = q.reason if q.reason in ops.CALL_REASONS else "기타"
+    row = _ops_add(f, "ops_call", id=secrets.token_hex(4), event="new", cp=cp["id"] if cp else None, reason=reason)
+    return {"ok": True, "id": row["id"]}
+
+
+@app.post("/api/call/act")
+def call_act(q: CallAct):
+    """운영요원이 요청을 맡거나(accept) 끝냈다고(done) 누른다."""
+    f = _festival(q.festival)
+    if not any(r.get("id") == q.id and r.get("event") == "new" for r in _ops_rows(f, "ops_call")):
+        raise HTTPException(404, "없는 요청입니다")
+    _ops_add(f, "ops_call", id=q.id, event=q.action, name=q.name.strip())
+    return {"ok": True}
+
+
+@app.get("/api/calls/{fid}")
+def calls_open(fid: str):
+    """운영요원 휴대폰용 목록. 끝나지 않은 요청만, 담당자 이름 없이 보낸다."""
+    f = _festival(fid)
+    s = ops.summarize_calls(_ops_rows(f, "ops_call"), {c["id"]: c["name"] for c in f["checkpoints"]})
+    return {"calls": [{"id": c["id"], "cp": c["cp_name"], "reason": c["reason"], "ts": c["ts"], "status": c["status"]}
+                      for c in s["rows"] if c["status"] != "완료"][:20]}
 
 
 @app.post("/api/sales")
@@ -381,6 +423,7 @@ def _ops(f, cur=None):
                                 visitors=cur["visitors"], cp_visits={c["id"]: c["visitors"] for c in cur["checkpoints"]},
                                 cp_names={c["id"]: c["name"] for c in f["checkpoints"]})
     return {"staff": ops.summarize_staff(_ops_rows(f, "ops_staff")), "sales": sales,
+            "calls": ops.summarize_calls(_ops_rows(f, "ops_call"), {c["id"]: c["name"] for c in f["checkpoints"]}),
             "receipts": ops.summarize_receipts(_ops_rows(f, "ops_receipt")), "comments": ops.summarize_comments(comments)}
 
 
@@ -858,6 +901,14 @@ def _seed_ops():
     for i, name in enumerate(["운영요원 A", "운영요원 B", "운영요원 C", "운영요원 D", "운영요원 E"]):
         add("ops_staff", base + timedelta(minutes=5 * i), name=name, action="in")
     add("ops_staff", base + timedelta(hours=6), name="운영요원 A", action="out")
+    for i, (cp, reason, who, wait, took) in enumerate([("stage", "길 안내", "운영요원 B", 40, 3), ("market", "경품 문의", "운영요원 C", 65, 4),
+                                                        ("stage", "QR 오류", "운영요원 B", 30, 2), ("craft", "길 안내", "운영요원 D", 95, 5),
+                                                        ("stage", "분실물", "운영요원 E", 55, 6), ("view", "QR 오류", "운영요원 D", 120, 4),
+                                                        ("market", "길 안내", "운영요원 C", 45, 2)]):
+        t = base + timedelta(hours=1, minutes=37 * i)
+        add("ops_call", t, id=f"ex{i:02d}", event="new", cp=cp, reason=reason)
+        add("ops_call", t + timedelta(seconds=wait), id=f"ex{i:02d}", event="accept", name=who)
+        add("ops_call", t + timedelta(seconds=wait, minutes=took), id=f"ex{i:02d}", event="done", name=who)
     for b, amt in zip(DEMO_BOOTHS, DEMO_SALES_DAY1):
         add("ops_sales", base + timedelta(hours=7), booth=b["name"], day=1, amount=amt)
     for desc, amt in [("QR 안내판 인쇄", 75000), ("운영요원 일당 5명", 412800), ("음향 장비 렌탈", 800000),

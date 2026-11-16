@@ -29,7 +29,7 @@
 </head>
 <body>
 <div class="head"><div class="ev" id="ev">행사</div><h1>운영 기록</h1></div>
-<div class="tabs" role="tablist"><button role="tab" id="tA" aria-selected="true">출퇴근</button><button role="tab" id="tB" aria-selected="false">부스 매출</button></div>
+<div class="tabs" role="tablist"><button role="tab" id="tA" aria-selected="true">출퇴근</button><button role="tab" id="tB" aria-selected="false">부스 매출</button><button role="tab" id="tC" aria-selected="false">도움 요청</button></div>
 <div class="wrap">
   <section id="pA">
     <label>이름<input id="name" maxlength="20" autocomplete="name" placeholder="예) 김운영"></label>
@@ -44,14 +44,31 @@
     <div id="rB" aria-live="polite"></div>
     <p class="note">같은 부스, 같은 날을 다시 보내면 마지막 값으로 바뀝니다.</p>
   </section>
+  <section id="pC" hidden>
+    <label>내 이름<input id="cname" maxlength="20" placeholder="예) 김운영"></label>
+    <div id="calls" aria-live="polite"></div>
+    <p class="note">참가자와 부스가 누른 도움 요청입니다. [제가 갑니다]를 누르면 다른 요원 화면에서 '이동 중'으로 바뀝니다. 긴급 상황은 안전요원에게 바로 알려 주세요.</p>
+  </section>
 </div>
 <script>
 const $ = id => document.getElementById(id), Q = new URLSearchParams(location.search), FID = Q.get('f') || 'demo';
 const post = (u, b) => fetch(u, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(b) });
 const hm = t => new Date(t).toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', hour12:false });
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
-function tab(b) { $('tA').setAttribute('aria-selected', !b); $('tB').setAttribute('aria-selected', b); $('pA').hidden = b; $('pB').hidden = !b; }
-$('tA').onclick = () => tab(false); $('tB').onclick = () => tab(true);
+let TAB = 0;
+function tab(b) { TAB = +b; ['A', 'B', 'C'].forEach((k, i) => { $('t' + k).setAttribute('aria-selected', i === TAB); $('p' + k).hidden = i !== TAB; }); if (TAB === 2) loadCalls(); }
+$('tA').onclick = () => tab(0); $('tB').onclick = () => tab(1); $('tC').onclick = () => tab(2);
+async function loadCalls() {
+  const d = await fetch('/api/calls/' + encodeURIComponent(FID)).then(r => r.ok ? r.json() : null).catch(() => null); if (!d) return;
+  $('calls').innerHTML = d.calls.length ? d.calls.map(c => `<div class="res" style="text-align:left"><b>${esc(c.cp)}</b> · ${esc(c.reason)}<small>${hm(c.ts)} 요청 · ${esc(c.status)}</small>
+    <button class="go${c.status === '대기' ? '' : ' out'}" style="margin-top:10px;width:100%" data-id="${esc(c.id)}" data-a="${c.status === '대기' ? 'accept' : 'done'}">${c.status === '대기' ? '제가 갑니다' : '처리 완료'}</button></div>`).join('') : '<div class="res">지금 들어온 요청이 없습니다.</div>';
+  $('calls').querySelectorAll('button').forEach(b => b.onclick = () => act(b.dataset.id, b.dataset.a));
+}
+async function act(id, action) {
+  const name = $('cname').value.trim(); if (!name) { $('cname').focus(); return; }
+  await post('/api/call/act', { festival:FID, id, name, action }).catch(() => null); loadCalls();
+}
+setInterval(() => { if (TAB === 2) loadCalls(); }, 3000);
 fetch('/api/festival/' + encodeURIComponent(FID)).then(r => r.ok ? r.json() : null).then(f => { if (f) $('ev').textContent = f.name; else $('ev').textContent = '등록되지 않은 행사입니다'; });
 async function check(action) {
   const name = $('name').value.trim(); if (!name) { $('rA').innerHTML = '<div class="res err">이름을 입력해 주세요.</div>'; $('name').focus(); return; }
@@ -68,7 +85,8 @@ $('sale').onclick = async () => {
 /* 시연용: ?name=...&auto=in 또는 ?tab=sales&booth=...&day=...&amt=... 로 열면 그대로 입력해 보낸다 */
 if (Q.get('name')) $('name').value = Q.get('name');
 if (Q.get('auto')) check(Q.get('auto') === 'out' ? 'out' : 'in');
-if (Q.get('tab') === 'sales') { tab(true); ['booth', 'day', 'amt'].forEach(k => { if (Q.get(k)) $(k).value = Q.get(k); }); if (Q.get('send')) $('sale').click(); }
+if (Q.get('tab') === 'call') { if (Q.get('name')) $('cname').value = Q.get('name'); tab(2); if (Q.get('accept')) act(Q.get('accept'), 'accept'); }
+if (Q.get('tab') === 'sales') { tab(1); ['booth', 'day', 'amt'].forEach(k => { if (Q.get(k)) $(k).value = Q.get(k); }); if (Q.get('send')) $('sale').click(); }
 </script>
 </body>
 </html>
