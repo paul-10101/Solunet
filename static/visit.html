@@ -86,6 +86,7 @@
       <div class="scale" data-k="satisfaction"></div><div class="ends"><span data-t="sat1"></span><span data-t="sat5"></span></div>
       <p style="font-weight:500;margin-bottom:6px" data-t="qRevisit"></p>
       <div id="revisit"></div>
+      <input id="cmt" maxlength="300" autocomplete="off" style="width:100%;margin-top:10px;padding:12px;border:1px solid #CBD5E1;border-radius:10px;font:inherit">
       <button class="btn full" id="surveySend" disabled data-t="send" style="margin-top:8px"></button>
       <button class="skip hidden" id="prizeSkip" data-t="skip"></button>
     </section>
@@ -153,6 +154,7 @@ let state = null, pick = { reason:null, crowd:null, route:null, compare:'', sati
 
 function applyLang() {
   document.documentElement.lang = L;
+  { const c = document.getElementById('cmt'); if (c) { c.placeholder = ({ ko:'한마디 남기기 (선택)', en:'Any comment? (optional)', ja:'ひとこと (任意)', zh:'留言（可选）' })[L]; c.setAttribute('aria-label', c.placeholder); } }
   document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === L));
   document.querySelectorAll('[data-t]').forEach(e => { const v = T[L][e.dataset.t]; if (typeof v === 'string') e.textContent = v; });
   if (state) render();
@@ -230,7 +232,7 @@ async function main() {
     };
     $('surveySend').onclick = async () => {
       $('surveySend').disabled = true;
-      const ok = (await post('/api/survey', { festival: fid, session, crowd: pick.crowd, route: pick.route, compare: pick.compare, satisfaction: pick.satisfaction, revisit: pick.revisit }).catch(() => ({}))).ok;
+      const ok = (await post('/api/survey', { festival: fid, session, crowd: pick.crowd, route: pick.route, compare: pick.compare, satisfaction: pick.satisfaction, revisit: pick.revisit, comment: (($('cmt') || {}).value || '').trim().slice(0, 300) }).catch(() => ({}))).ok;
       state.surveyed = ok;
       $('surveyBox').innerHTML = `<div class="card"><b>${ok ? T[L].thanks : T[L].neterr}</b></div>`;
       $('surveyBox').classList.remove('hidden');

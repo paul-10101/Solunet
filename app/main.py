@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import ai, design, spread, stats
+from . import ai, design, ops, spread, stats
 from .store import make_store, now
 
 if os.getenv("SENTRY_DSN"):
@@ -170,7 +170,7 @@ def _real(rows):
     return [r for r in rows if not str(r.get("session", "")).startswith("test")]  # 운영진 테스트 스캔 제외
 
 
-SPREAD_KINDS = ("rec", "spread_log")
+SPREAD_KINDS = ("rec", "spread_log") + ops.KINDS  # 집계에서 빼는 기록
 
 
 def _stats(f, edition):
@@ -305,6 +305,83 @@ def post_survey(v: Survey):
     db.add_response({"kind": "survey", **v.model_dump(), "festival": f["id"], "edition": f["edition"],
                      "ts": now().isoformat()})
     return {"ok": True}
+
+
+# ---------- 현장 운영 기록 (출퇴근·매출·영수증·자유 응답·산출내역) ----------
+class StaffCheck(BaseModel):
+    festival: str = Field(max_length=40)
+    name: str = Field(min_length=1, max_length=20)
+    action: str = Field(pattern="^(in|out)$")
+
+
+class SalesEntry(BaseModel):
+    festival: str = Field(max_length=40)
+    booth: str = Field(min_length=1, max_length=30)
+    day: int = Field(ge=1, le=60)
+    amount: int = Field(ge=0, le=1_000_000_000)
+
+
+class ReceiptEntry(BaseModel):
+    festival: str = Field(max_length=40)
+    desc: str = Field(min_length=1, max_length=60)
+    amount: int = Field(ge=0, le=1_000_000_000)
+
+
+def _ops_add(f, kind, **doc):
+    row = {"kind": kind, "festival": f["id"], "edition": f["edition"], "session": "ops", "ts": now().isoformat(), **doc}
+    db.add_response(row)
+    return row
+
+
+def _ops_rows(f, kind):
+    return [r for r in db.responses_for(f["id"], f["edition"]) if r.get("kind") == kind]
+
+
+@app.post("/api/staff/check")
+def staff_check(q: StaffCheck):
+    """운영 인력이 출퇴근 QR을 찍고 이름을 넣는다."""
+    f = _festival(q.festival)
+    row = _ops_add(f, "ops_staff", name=q.name.strip(), action=q.action)
+    return {"ok": True, "name": row["name"], "action": row["action"], "ts": row["ts"]}
+
+
+@app.post("/api/sales")
+def sales_add(q: SalesEntry):
+    """부스 담당자가 그날 매출을 넣는다. 같은 부스·같은 날은 마지막 값이 남는다."""
+    f = _festival(q.festival)
+    _ops_add(f, "ops_sales", booth=q.booth.strip(), day=q.day, amount=q.amount)
+    return {"ok": True}
+
+
+@app.post("/api/receipts")
+def receipt_add(q: ReceiptEntry, x_admin_key: str = Header(default=""), x_event_key: str = Header(default="")):
+    """영수증 내역을 넣으면 낱말 규칙으로 비목을 고른다. 맞는 규칙이 없으면 미분류로 남긴다."""
+    f = _festival(q.festival)
+    if not f.get("demo"):
+        _require_manage(f, x_admin_key, x_event_key)
+    cat, word = ops.classify_receipt(q.desc)
+    _ops_add(f, "ops_receipt", desc=q.desc.strip(), amount=q.amount, category=cat, matched=word)
+    return {"ok": True, "category": cat, "matched": word}
+
+
+@app.get("/api/ops/{fid}")
+def ops_summary(fid: str, x_admin_key: str = Header(default=""), x_event_key: str = Header(default="")):
+    """운영자 화면용 요약. 인력 이름이 들어 있어 예시 행사가 아니면 관리 권한이 필요하다."""
+    f = _festival(fid)
+    if not f.get("demo"):
+        _require_manage(f, x_admin_key, x_event_key)
+    comments = [r.get("comment", "") for r in _real(db.responses_for(f["id"], f["edition"])) if r.get("kind") == "survey"]
+    return {"staff": ops.summarize_staff(_ops_rows(f, "ops_staff")), "sales": ops.summarize_sales(_ops_rows(f, "ops_sales")),
+            "receipts": ops.summarize_receipts(_ops_rows(f, "ops_receipt")), "comments": ops.summarize_comments(comments)}
+
+
+@app.get("/api/estimate/{fid}")
+def estimate(fid: str, visitors: int = 400, days: int = 2):
+    """산출내역 초안. 수량은 거점 수·참가 인원·일수와 이번 회차 완주율에서, 단가는 가정값에서 온다."""
+    f = _festival(fid)
+    visitors, days = max(1, min(visitors, 1_000_000)), max(1, min(days, 60))
+    rate = _stats(f, f["edition"]).get("completion_rate") or 50
+    return ops.estimate(len(f["checkpoints"]), visitors, days, rate)
 
 
 # ---------- 경품 교환권 ----------
@@ -682,7 +759,8 @@ def _seed_edition(edition, keep_prob, reasons, survey, n=320, seed=0):
                 db.add_response({"kind": "survey", "festival": DEMO_ID, "session": sess, "crowd": pick(crowd_w),
                                  "route": pick(route_w), "compare": "", "satisfaction": pick(sat_w),
                                  "revisit": rnd.choices(["오고 싶다", "모르겠다", "아니다"], weights=rev_w)[0],
-                                 "comment": "", "edition": edition, "ts": t.isoformat()})
+                                 "comment": DEMO_COMMENTS[(i // 4) % len(DEMO_COMMENTS)] if i % 4 == 0 else "",
+                                 "edition": edition, "ts": t.isoformat()})
 
 
 @app.post("/api/demo/seed")
@@ -696,7 +774,30 @@ def seed_demo():
                   (0.6, [1, 2, 3, 4, 3], [2, 4, 4, 3, 1], [1, 2, 4, 4, 2], [5, 4, 2]), seed=1)
     _seed_edition(2, [0.9, 0.87, 0.78, 0.82], {"대기 줄이 김": 4, "다음 장소가 멀다": 2, "화장실·편의시설 부족": 1},
                   (0.6, [1, 3, 4, 3, 1], [1, 2, 4, 4, 3], [1, 1, 3, 5, 4], [7, 3, 1]), seed=2)
+    _seed_ops()
     return {"ok": True, "festival": DEMO_ID}
+
+
+DEMO_COMMENTS = ["메인 무대 앞 줄이 너무 길었어요", "화장실이 부족했습니다", "스탬프 찍는 게 재미있었어요", "전망대가 멀어서 힘들었어요",
+                 "안내 표지가 더 있으면 좋겠어요", "먹거리 가격이 조금 비쌌어요", "직원분들이 친절했어요", "쉴 곳과 그늘이 더 필요해요",
+                 "아이와 함께하기 좋았어요", "대기 시간이 길었습니다", "체험 부스가 재밌었어요", "다음 장소 찾기가 헷갈렸어요"]
+
+
+def _seed_ops():
+    """예시 운영 기록(실측 아님): 운영요원 출퇴근, 부스 매출 1일차, 영수증 내역."""
+    f = db.get_festival(DEMO_ID)
+    base = now().replace(hour=0, minute=0, second=0, microsecond=0)
+    def add(kind, ts, **doc):
+        db.add_response({"kind": kind, "festival": DEMO_ID, "edition": f["edition"], "session": "ops", "ts": ts.isoformat(), **doc})
+    for i, name in enumerate(["운영요원 A", "운영요원 B", "운영요원 C", "운영요원 D", "운영요원 E"]):
+        add("ops_staff", base + timedelta(minutes=5 * i), name=name, action="in")
+    add("ops_staff", base + timedelta(hours=6), name="운영요원 A", action="out")
+    for booth, amt in [("먹거리 1호", 1840000), ("먹거리 2호", 1320000), ("체험 부스", 760000), ("기념품", 540000)]:
+        add("ops_sales", base + timedelta(hours=7), booth=booth, day=1, amount=amt)
+    for desc, amt in [("QR 안내판 인쇄", 75000), ("운영요원 일당 5명", 412800), ("음향 장비 렌탈", 800000),
+                      ("완주 경품 구입", 480000), ("스태프 도시락", 60000), ("현장 물품 운송", 90000)]:
+        cat, word = ops.classify_receipt(desc)
+        add("ops_receipt", base + timedelta(hours=8), desc=desc, amount=amt, category=cat, matched=word)
 
 
 @app.post("/api/demo/crowd")
@@ -756,6 +857,16 @@ def spread_page():
     return _page("spread.html")
 
 
+@app.get("/staff")
+def staff_page():
+    return _page("staff.html")
+
+
+@app.get("/demo-prev")
+def demo_prev_page():
+    return _page("demo2.html")
+
+
 @app.get("/demo2")
 def demo2_page():
     return _page("demo2.html")
@@ -763,7 +874,7 @@ def demo2_page():
 
 @app.get("/demo")
 def demo_page():
-    return _page("demo2.html")
+    return _page("demo3.html")
 
 
 @app.get("/demo-old")
