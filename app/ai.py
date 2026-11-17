@@ -184,6 +184,9 @@ def _template_report(festival, stats, comparison, improvements=None, ops=None):
         if rv:
             k = next(iter(rv))
             t += f" 재방문 의사는 '{k}' 응답이 {rv[k]}건으로 가장 많음."
+        if sv.get("home_count"):
+            t += (f" 거주지 응답 {sv['home_count']}건 중 지역 주민은 {sv['home_local']}건({sv['home_local_pct']}%), "
+                  f"외지 방문객은 {sv['home_outside']}건({sv['home_outside_pct']}%)임.")
         lines.append(t)
     else:
         lines.append("3. 만족도 조사 결과: 조사 결과 없음.")
