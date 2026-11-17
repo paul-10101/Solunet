@@ -32,6 +32,7 @@ def compute_stats(festival, scans, responses):
     avg = lambda k: round(sum(r[k] for r in surveys) / len(surveys), 2) if surveys else None
     sat = [r["satisfaction"] for r in surveys if r.get("satisfaction")]  # v2 이전 응답은 이 키가 없다
     revisit = Counter(r["revisit"] for r in surveys if r.get("revisit"))
+    home = Counter(r["home"] for r in surveys if r.get("home"))  # v3 이전 응답은 이 키가 없다
     hours = Counter(s["ts"][11:13] for s in scans if isinstance(s.get("ts"), str))
 
     return {
@@ -44,7 +45,13 @@ def compute_stats(festival, scans, responses):
                    "compare": dict(Counter(r.get("compare") or "무응답" for r in surveys)),
                    "satisfaction_count": len(sat),
                    "satisfaction_avg": round(sum(sat) / len(sat), 2) if sat else None,
-                   "revisit": dict(revisit.most_common())},
+                   "revisit": dict(revisit.most_common()),
+                   "home": {k: home.get(k, 0) for k in ("이 지역", "다른 지역", "해외") if home.get(k)},
+                   "home_count": sum(home.values()),
+                   "home_local": home.get("이 지역", 0),
+                   "home_outside": sum(home.values()) - home.get("이 지역", 0),
+                   "home_local_pct": round(home.get("이 지역", 0) / sum(home.values()) * 100, 1) if home else None,
+                   "home_outside_pct": round(100 - home.get("이 지역", 0) / sum(home.values()) * 100, 1) if home else None},
         "checkpoints": per_cp,
         "exit_reasons": dict(reasons.most_common()),
         "scans_by_hour": dict(sorted(hours.items())),

@@ -49,6 +49,7 @@ class Survey(BaseModel):
     compare: str = Field(default="", max_length=20)  # 이전 행사와 비교: 더 나음 / 비슷 / 더 나쁨 / 처음
     satisfaction: int | None = Field(default=None, ge=1, le=5)  # 전반 만족도 (v2, 선택): 1 매우 불만족 ~ 5 매우 만족
     revisit: str = Field(default="", max_length=20)  # 재방문 의사 (v2, 선택): 있다 / 모르겠다 / 없다
+    home: str = Field(default="", max_length=20)  # 거주지 (v3, 선택): 이 지역 / 다른 지역 / 해외 — 지역민·외지인 비율용
     comment: str = Field(default="", max_length=300)
 
 
@@ -808,6 +809,8 @@ DEMO_LAYOUT = {
 def _seed_edition(edition, keep_prob, reasons, survey, n=320, seed=0):
     """survey: (응답 비율, 혼잡도 분포, 동선 분포, 만족도 분포, 재방문 분포) — 가중치 목록"""
     rnd = random.Random(seed)
+    rnd_home = random.Random(seed + 7919)  # 거주지는 별도 난수: 기존 예시 숫자가 바뀌지 않게
+    home_w = {1: [62, 34, 4], 2: [55, 40, 5]}.get(edition, [60, 36, 4])
     day = datetime(2025 + edition - 1, 10, 11, 10, tzinfo=timezone.utc)
     for i in range(n):
         sess = f"demo{edition}-{i:04d}"
@@ -828,6 +831,7 @@ def _seed_edition(edition, keep_prob, reasons, survey, n=320, seed=0):
                 db.add_response({"kind": "survey", "festival": DEMO_ID, "session": sess, "crowd": pick(crowd_w),
                                  "route": pick(route_w), "compare": "", "satisfaction": pick(sat_w),
                                  "revisit": rnd.choices(["오고 싶다", "모르겠다", "아니다"], weights=rev_w)[0],
+                                 "home": rnd_home.choices(["이 지역", "다른 지역", "해외"], weights=home_w)[0],
                                  "comment": DEMO_COMMENTS[(i // 4) % len(DEMO_COMMENTS)] if i % 4 == 0 else "",
                                  "edition": edition, "ts": t.isoformat()})
 
